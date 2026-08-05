@@ -1,0 +1,98 @@
+{
+  "additionalProperties": false,
+  "description": "One reviewer observation; it never mutates a model or threshold.",
+  "properties": {
+    "feedback_id": {
+      "pattern": "^[A-Za-z0-9_.:-]{1,128}$",
+      "title": "Feedback Id",
+      "type": "string"
+    },
+    "image_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Image Sha256",
+      "type": "string"
+    },
+    "image_uri": {
+      "minLength": 1,
+      "title": "Image Uri",
+      "type": "string"
+    },
+    "inspection_id": {
+      "minLength": 1,
+      "title": "Inspection Id",
+      "type": "string"
+    },
+    "model_feedback": {
+      "enum": [
+        "FALSE_POSITIVE",
+        "SUSPECTED_FALSE_NEGATIVE",
+        "CONFIRMED_NORMAL",
+        "CONFIRMED_ANOMALY",
+        "INCONCLUSIVE"
+      ],
+      "title": "Model Feedback",
+      "type": "string"
+    },
+    "model_id": {
+      "minLength": 1,
+      "title": "Model Id",
+      "type": "string"
+    },
+    "model_version": {
+      "minLength": 1,
+      "title": "Model Version",
+      "type": "string"
+    },
+    "notes": {
+      "default": "",
+      "title": "Notes",
+      "type": "string"
+    },
+    "observed_at": {
+      "title": "Observed At",
+      "type": "string"
+    },
+    "product_category": {
+      "minLength": 1,
+      "title": "Product Category",
+      "type": "string"
+    },
+    "reviewer_decision": {
+      "enum": [
+        "PASS",
+        "REWORK",
+        "SCRAP",
+        "INVESTIGATE",
+        "UNABLE_TO_JUDGE"
+      ],
+      "title": "Reviewer Decision",
+      "type": "string"
+    },
+    "reviewer_id": {
+      "minLength": 1,
+      "title": "Reviewer Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "visionqc.model-feedback.v1",
+      "default": "visionqc.model-feedback.v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "feedback_id",
+    "product_category",
+    "inspection_id",
+    "image_sha256",
+    "image_uri",
+    "model_id",
+    "model_version",
+    "model_feedback",
+    "reviewer_id",
+    "reviewer_decision",
+    "observed_at"
+  ],
+  "title": "ModelFeedbackRecord",
+  "type": "object"
+}

@@ -1,0 +1,35 @@
+{
+  "blockers": [],
+  "category": "transistor",
+  "context_name": "benchmark-lab",
+  "data_status": "OFFICIAL_BENCHMARK",
+  "failed_gates": [
+    "defect_error_auto_release_rate",
+    "review_hold_recall",
+    "hold_recall"
+  ],
+  "gate_decision": "NO-GO",
+  "gate_version": "visionqc-pilot-gates.v2",
+  "generated_at": "2026-08-05T03:33:47.601413+00:00",
+  "limitations": [
+    "MVTec AD is an official non-commercial research benchmark, not factory or customer Pilot data.",
+    "Passing benchmark gates only means READY_FOR_CUSTOMER_DATA; it never authorizes APPROVED or ACTIVE.",
+    "MVTec AD does not represent a specific customer's camera, process, or defect distribution.",
+    "Pixel metrics depend on resized heatmaps and benchmark masks.",
+    "Offline routing metrics do not include actual human overrides or downstream quality outcomes.",
+    "MVTec AD is a non-commercial research benchmark and does not establish factory or customer Pilot performance.",
+    "Thresholds are selected from validation only; the held-out test split is used only after thresholds are frozen."
+  ],
+  "metric_status": "AVAILABLE",
+  "model_package_sha256": "c35fc1f3a38d0f488cf031767301315c8999df7db212b04954b0227c1746fa17",
+  "qualification_run_status": "COMPLETED",
+  "qualification_status": "BENCHMARK_NO_GO",
+  "sample_counts": {
+    "ground_truth_masks": 40,
+    "test_anomalous_images": 40,
+    "test_good_images": 60,
+    "train_good_images": 213
+  },
+  "schema_version": "visionqc.pilot-qualification-summary.v1",
+  "source_type": "OFFICIAL_BENCHMARK"
+}

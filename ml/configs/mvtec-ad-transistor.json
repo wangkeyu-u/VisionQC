@@ -1,0 +1,28 @@
+{
+  "schema_version": "visionqc.dataset-source.v1",
+  "source_type": "OFFICIAL_BENCHMARK",
+  "dataset": "MVTec AD",
+  "category": "transistor",
+  "source_page": "https://www.mvtec.com/research-teaching/datasets/mvtec-ad",
+  "archive_url": "https://www.mydrive.ch/shares/38536/3830184030e49fe74747669442f0f282/download/420938113-1629952094/mvtec_anomaly_detection.tar.xz",
+  "archive_filename": "mvtec_anomaly_detection.tar.xz",
+  "archive_sha256": "cf4313b13603bec67abb49ca959488f7eedce2a9f7795ec54446c649ac98cd3d",
+  "archive_scope": "all MVTec AD categories; this workflow extracts transistor only",
+  "expected": {
+    "train_good_images": 213,
+    "test_good_images": 60,
+    "test_anomalous_images": 40,
+    "ground_truth_masks": 40
+  },
+  "license": {
+    "name": "CC BY-NC-SA 4.0",
+    "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+    "commercial_use": false,
+    "notice": "MVTec AD is for non-commercial use under its dataset license. Review terms before redistribution or commercial use."
+  },
+  "provenance": {
+    "download_url_source": "Anomalib v2.0.0 MVTecAD DOWNLOAD_INFO",
+    "download_url_source_url": "https://github.com/open-edge-platform/anomalib/blob/v2.0.0/src/anomalib/data/datamodules/image/mvtecad.py",
+    "checked_on": "2026-08-04"
+  }
+}

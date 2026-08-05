@@ -1,0 +1,137 @@
+{
+  "gates": {
+    "approval_eligible": false,
+    "checks": {
+      "customer_data_provenance": {
+        "operator": "==",
+        "scope": "customer_pilot_approval",
+        "status": "NOT_APPLICABLE",
+        "threshold": true,
+        "value": null
+      },
+      "defect_error_auto_release_rate": {
+        "operator": "<=",
+        "status": "FAIL",
+        "threshold": 0.05,
+        "value": 0.3
+      },
+      "hold_recall": {
+        "operator": ">=",
+        "status": "FAIL",
+        "threshold": 0.8,
+        "value": 0.5
+      },
+      "image_auroc": {
+        "operator": ">=",
+        "status": "PASS",
+        "threshold": 0.9,
+        "value": 1.0
+      },
+      "model_package_integrity": {
+        "operator": "==",
+        "status": "PASS",
+        "threshold": true,
+        "value": true
+      },
+      "no_split_leakage": {
+        "operator": "==",
+        "status": "PASS",
+        "threshold": true,
+        "value": true
+      },
+      "normal_review_hold_rate": {
+        "operator": "<=",
+        "status": "PASS",
+        "threshold": 0.25,
+        "value": 0.0
+      },
+      "review_hold_recall": {
+        "operator": ">=",
+        "status": "FAIL",
+        "threshold": 0.95,
+        "value": 0.7
+      },
+      "warm_p95_ms": {
+        "operator": "<=",
+        "status": "PASS",
+        "threshold": 500.0,
+        "value": 96.5984909737017
+      }
+    },
+    "decision": "NO-GO",
+    "failed": [
+      "defect_error_auto_release_rate",
+      "review_hold_recall",
+      "hold_recall"
+    ],
+    "gate_version": "visionqc-pilot-gates.v2",
+    "missing": [],
+    "report_status": "BENCHMARK_NO_GO",
+    "source_type": "OFFICIAL_BENCHMARK"
+  },
+  "metric_notes": {
+    "reason": null,
+    "unavailable_metrics_are_null": false
+  },
+  "metrics": {
+    "anomalous_sample_count": 20,
+    "aupro": 0.9411454515635378,
+    "cold_start_ms": 259.8453339887783,
+    "defect_error_auto_release_rate": 0.3,
+    "f1": 0.8235294117647058,
+    "hold_recall": 0.5,
+    "image_auroc": 1.0,
+    "manual_review_burden_rate": 0.28,
+    "metric_status": "AVAILABLE",
+    "normal_false_positive_rate": 0.0,
+    "normal_review_hold_rate": 0.0,
+    "normal_sample_count": 30,
+    "pixel_auroc": 0.9721664724634458,
+    "precision": 1.0,
+    "recall": 0.7,
+    "review_hold_recall": 0.7,
+    "sample_count": 50,
+    "unavailable_reason": null,
+    "warm_inference_p50_ms": 92.59222901891917,
+    "warm_inference_p95_ms": 96.5984909737017,
+    "warm_p95_ms": 96.5984909737017
+  },
+  "sample_counts": {
+    "ground_truth_masks": 40,
+    "test_anomalous_images": 40,
+    "test_good_images": 60,
+    "train_good_images": 213
+  },
+  "schema_version": "visionqc.pilot-metrics.v1",
+  "thresholds": {
+    "achieved": {
+      "false_accept_rate": 0.0,
+      "false_reject_rate": 0.0,
+      "hold_rate": 0.32,
+      "hold_recall": 0.8,
+      "review_or_hold_rate": 0.4
+    },
+    "calibrated_at": "2026-08-04T22:21:57.431824+00:00",
+    "constraints": {
+      "max_false_accept_rate": 0.0,
+      "target_hold_recall": 0.8
+    },
+    "constraints_satisfied": true,
+    "hold_threshold": 0.5815433859825134,
+    "objective": "maximize review threshold subject to false-accept control; maximize hold threshold subject to hold-recall target",
+    "policy_version": "factory-a-transistor-policy-1.0.0",
+    "review_threshold": 0.5056430101394653,
+    "safety_margin": 0.0,
+    "sample_counts": {
+      "anomalous": 20,
+      "normal": 30,
+      "total": 50
+    },
+    "schema_version": "visionqc.threshold-calibration.v1",
+    "source_predictions_sha256": "d18d10351bce4820bcbcb6ba17b49997f928e813e5618070aa814fbcfff2f08f",
+    "source_split": "validation",
+    "strategy": "legacy",
+    "threshold_selection_split": "validation",
+    "warnings": []
+  }
+}

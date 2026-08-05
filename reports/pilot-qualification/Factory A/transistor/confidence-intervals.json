@@ -1,0 +1,67 @@
+{
+  "available": true,
+  "class_counts": {
+    "anomalous": 20,
+    "normal": 30
+  },
+  "intervals": {
+    "false_accept_rate": {
+      "confidence": 0.95,
+      "estimate": 0.3,
+      "lower": 0.1,
+      "upper": 0.5
+    },
+    "false_reject_rate": {
+      "confidence": 0.95,
+      "estimate": 0.0,
+      "lower": 0.0,
+      "upper": 0.0
+    },
+    "hold_f1": {
+      "confidence": 0.95,
+      "estimate": 0.6666666666666666,
+      "lower": 0.46153846153846156,
+      "upper": 0.8235294117647058
+    },
+    "hold_precision": {
+      "confidence": 0.95,
+      "estimate": 1.0,
+      "lower": 1.0,
+      "upper": 1.0
+    },
+    "hold_recall": {
+      "confidence": 0.95,
+      "estimate": 0.5,
+      "lower": 0.3,
+      "upper": 0.7
+    },
+    "image_auroc": {
+      "confidence": 0.95,
+      "estimate": 1.0,
+      "lower": 0.9999999999999999,
+      "upper": 1.0
+    },
+    "review_f1": {
+      "confidence": 0.95,
+      "estimate": 0.8235294117647058,
+      "lower": 0.6666666666666666,
+      "upper": 0.9473684210526315
+    },
+    "review_precision": {
+      "confidence": 0.95,
+      "estimate": 1.0,
+      "lower": 1.0,
+      "upper": 1.0
+    },
+    "review_recall": {
+      "confidence": 0.95,
+      "estimate": 0.7,
+      "lower": 0.5,
+      "upper": 0.9
+    }
+  },
+  "method": "stratified percentile bootstrap",
+  "pixel_metrics": "No pixel-level CI is reported; pixel estimates remain sample-size and mask-resolution limited.",
+  "resamples": 1000,
+  "seed": 1351176227
+}

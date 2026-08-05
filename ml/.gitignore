@@ -1,0 +1,22 @@
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+__pycache__/
+*.py[cod]
+
+# Downloaded data, model weights, and generated evaluation artifacts are local only.
+.cache/
+.data/
+.artifacts/
+data/raw/
+data/derived/
+models/
+reports/
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.bin
+*.xml
+

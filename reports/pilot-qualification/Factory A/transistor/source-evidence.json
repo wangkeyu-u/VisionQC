@@ -1,0 +1,822 @@
+{
+  "files": {
+    "calibration/thresholds.json": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/calibration/thresholds.json",
+      "sha256": "726a6fe5923148d62328cc4dba2d956210061aad15358ae520c488cc16c05a2a",
+      "size_bytes": 895
+    },
+    "dataset-directory-receipt.json": {
+      "path": "<REPOSITORY_ROOT>/ml/.data/mvtec-ad/transistor.directory-receipt.json",
+      "sha256": "cb86079c696d119bea09768715d2a262d786c1d4684c7733ce82d06358881ed0",
+      "size_bytes": 1248
+    },
+    "evaluation/evaluation.json": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/evaluation/evaluation.json",
+      "sha256": "60ea1fc52f4bb7db156518c3bb6f3901176918f14204ec8fd94e574a6aafa046",
+      "size_bytes": 9189
+    },
+    "gallery/assets/heatmaps/sample_006d8f5fe7d803a1.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_006d8f5fe7d803a1.png",
+      "sha256": "c1ee09f98cf49f193ce375015a93572bd146ba4eaf81c0bb68c80ed59b6ff838",
+      "size_bytes": 26767
+    },
+    "gallery/assets/heatmaps/sample_07d333260f9a0792.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_07d333260f9a0792.png",
+      "sha256": "a9e29f97d95ef685f27756f1d5ab7ca8cc4cdb8f2b467bfa06533444fb6000e1",
+      "size_bytes": 30060
+    },
+    "gallery/assets/heatmaps/sample_08be3525fdfc1a2e.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_08be3525fdfc1a2e.png",
+      "sha256": "ae191415604151ce269556397578aaad7de0cd6b16aff13a866c13b2cbc8cfe8",
+      "size_bytes": 28049
+    },
+    "gallery/assets/heatmaps/sample_117c6b117f6e87c1.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_117c6b117f6e87c1.png",
+      "sha256": "d9b7488623e6c86d41ab89c0c23f147911637cb9a0e2fb2dbc788355fc1f655a",
+      "size_bytes": 32072
+    },
+    "gallery/assets/heatmaps/sample_1ead063bade63a98.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_1ead063bade63a98.png",
+      "sha256": "14b1cc12d7debebd940e8bb3baad3e244d9b3696ea5e19e71b9c02181011357f",
+      "size_bytes": 29097
+    },
+    "gallery/assets/heatmaps/sample_1ee83e5ce3e3fe8f.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_1ee83e5ce3e3fe8f.png",
+      "sha256": "732b0326c208833c58b7d6152074f39fb11715df5367bc1735e7832b1af4699f",
+      "size_bytes": 33279
+    },
+    "gallery/assets/heatmaps/sample_227bba609907f7c4.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_227bba609907f7c4.png",
+      "sha256": "daee2b4f3c4a504f1dc506c93963629a502ba6092fd8a08a2712401fd519a232",
+      "size_bytes": 29698
+    },
+    "gallery/assets/heatmaps/sample_280b8b333d4495ae.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_280b8b333d4495ae.png",
+      "sha256": "96b68a8cedf3228ed681d05474690c1166fa4cf835a556b807473510412fe543",
+      "size_bytes": 28277
+    },
+    "gallery/assets/heatmaps/sample_3768cae188896f46.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_3768cae188896f46.png",
+      "sha256": "a2a775cf6ecd1f0d04e89423cc6fb5d92151396c20f5bbf45b2c7189461dc373",
+      "size_bytes": 30117
+    },
+    "gallery/assets/heatmaps/sample_4d109fbe10f2e14a.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_4d109fbe10f2e14a.png",
+      "sha256": "4c23fc7b9466f3d00a9a1c6618461003c189415edb23b245d6df3f1fcd6ef8e2",
+      "size_bytes": 30368
+    },
+    "gallery/assets/heatmaps/sample_550c77e9ee86f6ec.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_550c77e9ee86f6ec.png",
+      "sha256": "21b93f4edb4c1dbc157507ea1276760d7d090f45e39bb670f084fc5ef9d22114",
+      "size_bytes": 29685
+    },
+    "gallery/assets/heatmaps/sample_5887b928125de3c5.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_5887b928125de3c5.png",
+      "sha256": "bb4650b115f44327e3bf673bebee468204396561b7ffc25c08f9cc4c5bfe4fbb",
+      "size_bytes": 33863
+    },
+    "gallery/assets/heatmaps/sample_595fed1eac230a01.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_595fed1eac230a01.png",
+      "sha256": "6ad41f609fd7138f692878655b43f20081453ab4953a02edce249e5e8486814a",
+      "size_bytes": 31597
+    },
+    "gallery/assets/heatmaps/sample_599fe951ba6d6aee.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_599fe951ba6d6aee.png",
+      "sha256": "201cbce82fdb96b9f35ac17fa0e8ad03c719d27014ea43ae2236f931fb832ad1",
+      "size_bytes": 32435
+    },
+    "gallery/assets/heatmaps/sample_61f3c0b8d7f4ed1b.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_61f3c0b8d7f4ed1b.png",
+      "sha256": "52bb32ba915f5f47d68b451d76585f39d954a05536de4f20d332f313662592d5",
+      "size_bytes": 29110
+    },
+    "gallery/assets/heatmaps/sample_6c8d84592a7053b9.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_6c8d84592a7053b9.png",
+      "sha256": "952e85a4879b0b559cf467ef295470cf3841122fedc8361ce784ddd6a3201a2f",
+      "size_bytes": 28245
+    },
+    "gallery/assets/heatmaps/sample_73a95752ec7abaf7.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_73a95752ec7abaf7.png",
+      "sha256": "5e4715c793daa0298987244b022cd3ce9e3d315b78488834d69a207711489e33",
+      "size_bytes": 31348
+    },
+    "gallery/assets/heatmaps/sample_741987cd78cf81cd.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_741987cd78cf81cd.png",
+      "sha256": "18dacfb38e46cc318553972afb0ce97d78ab0c987a4b1ae665696ffe88155d50",
+      "size_bytes": 31128
+    },
+    "gallery/assets/heatmaps/sample_75f87312906f8f57.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_75f87312906f8f57.png",
+      "sha256": "4c60be0395fa0c5386976b467311c64ddb279e1087af0ed772470f544d7be40b",
+      "size_bytes": 29357
+    },
+    "gallery/assets/heatmaps/sample_7d7066776a66a57f.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_7d7066776a66a57f.png",
+      "sha256": "8b8e0166bd2736bb41d2902787adca15f670b73a765723b1ff31b9bbd404707a",
+      "size_bytes": 40731
+    },
+    "gallery/assets/heatmaps/sample_8dfdc9945a3f201c.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_8dfdc9945a3f201c.png",
+      "sha256": "f396729d9391e28e83535ad46f3fed967a22ac0d1d56c6a14af6f8bc44661b4f",
+      "size_bytes": 29845
+    },
+    "gallery/assets/heatmaps/sample_8f0effda60d7720a.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_8f0effda60d7720a.png",
+      "sha256": "0a2588bf9b22506de75405b38873e24db994ed342dffe4d68522baee0b92d9e9",
+      "size_bytes": 31229
+    },
+    "gallery/assets/heatmaps/sample_93a33ebd5de60b16.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_93a33ebd5de60b16.png",
+      "sha256": "d12d3535f1f60909718416b3c731940ef609195dd9f4e06b03a31800a353237e",
+      "size_bytes": 31533
+    },
+    "gallery/assets/heatmaps/sample_9a1eb789e7d5b739.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_9a1eb789e7d5b739.png",
+      "sha256": "1de688dd2d8f8246885b314a29a2aa4dae03ad8f54b6cb69c33bbf71cefe1ddc",
+      "size_bytes": 38195
+    },
+    "gallery/assets/heatmaps/sample_9b0b4d970a8df1ae.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_9b0b4d970a8df1ae.png",
+      "sha256": "fd07a2adc51370eef1106085de1b365118b531c2b8bca60d73c603c47d323d30",
+      "size_bytes": 30375
+    },
+    "gallery/assets/heatmaps/sample_a0f322dae63cd0f2.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_a0f322dae63cd0f2.png",
+      "sha256": "85659f061469b576a640230bf5b51d562567fa840daed52d356cfa901d129103",
+      "size_bytes": 32416
+    },
+    "gallery/assets/heatmaps/sample_a4dd65f790ac1892.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_a4dd65f790ac1892.png",
+      "sha256": "25fab6f35ad30aaccfc0868c3e2fd400e923d03ebcba20c0d8eaf768a2658be1",
+      "size_bytes": 28814
+    },
+    "gallery/assets/heatmaps/sample_a6390659bac47e2e.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_a6390659bac47e2e.png",
+      "sha256": "bcea4ae0dc468667411c93714a4090b4e9f8cd3f543f66513112d0839a697fe9",
+      "size_bytes": 30051
+    },
+    "gallery/assets/heatmaps/sample_a8e98aedc1d545d0.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_a8e98aedc1d545d0.png",
+      "sha256": "2f4df2bb2d54f406a81f97b98fa9bceefd47f2ba9b8f18a7c4de03ac92bb6259",
+      "size_bytes": 28848
+    },
+    "gallery/assets/heatmaps/sample_acf859f9225714e5.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_acf859f9225714e5.png",
+      "sha256": "44a72c7fedb57d8ee0fcb32f3b70dd9fea050adf3eceb4acce65acc6e33c049d",
+      "size_bytes": 27414
+    },
+    "gallery/assets/heatmaps/sample_b1f3a20f851e8c11.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_b1f3a20f851e8c11.png",
+      "sha256": "54dd5d6809f0ffb88b164d075d65a0f4e21eb4af4ab5f0adbf602735b1cd83d4",
+      "size_bytes": 28302
+    },
+    "gallery/assets/heatmaps/sample_b81820cf44b81e7b.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_b81820cf44b81e7b.png",
+      "sha256": "9f69d15fc17cd4b05bc8d81ce30d43fa3e871412124ec7b81ce2850b675d6d73",
+      "size_bytes": 27261
+    },
+    "gallery/assets/heatmaps/sample_bbc3c5d25ea3e871.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_bbc3c5d25ea3e871.png",
+      "sha256": "c3069d18dee89d3d893fea66ad6b67b525314a8075ae4bc27c9f556cf8f2fe9a",
+      "size_bytes": 34240
+    },
+    "gallery/assets/heatmaps/sample_bcaadadc0f8d172d.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_bcaadadc0f8d172d.png",
+      "sha256": "02ed8555b06a9e3f1b6c05a709494cdb67de96504445f5bb8db16ced67e90565",
+      "size_bytes": 31088
+    },
+    "gallery/assets/heatmaps/sample_bef66e9bc0db466e.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_bef66e9bc0db466e.png",
+      "sha256": "ed9f996ea88b869426d6135390b800860251e3f5bcc94dbd1376a5afb5e288bd",
+      "size_bytes": 30057
+    },
+    "gallery/assets/heatmaps/sample_c632fe19b3ec32f7.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_c632fe19b3ec32f7.png",
+      "sha256": "8f4c99dd72262c60fb846eba72cc51b906bf1693132b123da5e09e87e3d063c4",
+      "size_bytes": 31314
+    },
+    "gallery/assets/heatmaps/sample_c674c2d4c0f47002.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_c674c2d4c0f47002.png",
+      "sha256": "1dcbaf0bfaab5a80cfa81d72984050c9495689d90893d150f696a7b859c9424c",
+      "size_bytes": 33806
+    },
+    "gallery/assets/heatmaps/sample_c81ffe932e99b4f0.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_c81ffe932e99b4f0.png",
+      "sha256": "7e271374db069092bebc4f2bf862e75668faef2f76752e602bdd8da3d6206ed9",
+      "size_bytes": 28910
+    },
+    "gallery/assets/heatmaps/sample_c862cdf81ad1163c.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_c862cdf81ad1163c.png",
+      "sha256": "91f1403061d17f18776e434d3b79eed6272e87e6e6631a7b53d3634468d9f11c",
+      "size_bytes": 28720
+    },
+    "gallery/assets/heatmaps/sample_cf055dd953b64cac.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_cf055dd953b64cac.png",
+      "sha256": "d7d8d49af20e3b15c6c5cd37fbf542d7668ce44dbbdc6f53286de931d7cc2483",
+      "size_bytes": 28812
+    },
+    "gallery/assets/heatmaps/sample_cf50a8181cd0f42d.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_cf50a8181cd0f42d.png",
+      "sha256": "130cbfcb6f8c44c3210f477daabbe1cb707299a53627664257ba1210cf7fc774",
+      "size_bytes": 28450
+    },
+    "gallery/assets/heatmaps/sample_cfbc0b026c75a976.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_cfbc0b026c75a976.png",
+      "sha256": "6227a0f6d469e5a52e8b6e3730a70a020a97a13951d5dcda59b886de5dba8468",
+      "size_bytes": 27515
+    },
+    "gallery/assets/heatmaps/sample_d60c4b987c68af4f.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_d60c4b987c68af4f.png",
+      "sha256": "672b3a56a9095d22c0dbb838b2fced607e9c470bb58bb289ed6f8a2e4bdfc2b5",
+      "size_bytes": 28000
+    },
+    "gallery/assets/heatmaps/sample_e10beb77acd960cc.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_e10beb77acd960cc.png",
+      "sha256": "515e3afe05b99cc7412f5c0baa79cdf7a5e2715d5466f7f1b60334b4059a9494",
+      "size_bytes": 31030
+    },
+    "gallery/assets/heatmaps/sample_e7b15e04adde7b6a.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_e7b15e04adde7b6a.png",
+      "sha256": "d89d0fb1f01a0709aa7e3cad1472f2e11036ab2651c54ca703345a6b11302264",
+      "size_bytes": 33157
+    },
+    "gallery/assets/heatmaps/sample_f36cab2286ecd89b.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_f36cab2286ecd89b.png",
+      "sha256": "3b7aa13f42d0cfdc1a29a962ebbaa720cf55c43143eb56d53a26f7710d3e8b8d",
+      "size_bytes": 28721
+    },
+    "gallery/assets/heatmaps/sample_f555edcb2df4b6be.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_f555edcb2df4b6be.png",
+      "sha256": "0d3f86ef934f7c25cda00c2a86a03790937c5ebab439c6a7b27d5c188e5907bc",
+      "size_bytes": 32433
+    },
+    "gallery/assets/heatmaps/sample_fc45559fe78f1be0.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_fc45559fe78f1be0.png",
+      "sha256": "c3ff50e84e0a0b94ab31abfad0fcdf7b2c5f436f1f319c41759e79440e9ea4a3",
+      "size_bytes": 30414
+    },
+    "gallery/assets/heatmaps/sample_fd703f45e32a62f4.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_fd703f45e32a62f4.png",
+      "sha256": "43cd6a8c9553da1c6d4184f539cfbb77eb3f0f28df6f64440f445dfd67cd16f8",
+      "size_bytes": 30908
+    },
+    "gallery/assets/heatmaps/sample_feab213295c56c75.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/heatmaps/sample_feab213295c56c75.png",
+      "sha256": "7854937a9aae502a2227eadd4ed7b189156cf69b7f160d569f1fba01a3e8a79e",
+      "size_bytes": 28866
+    },
+    "gallery/assets/originals/sample_006d8f5fe7d803a1.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_006d8f5fe7d803a1.png",
+      "sha256": "4f6455e099d35e1c6f238842347af2d4f657f307b0b30d88a9febe0220845a91",
+      "size_bytes": 1276538
+    },
+    "gallery/assets/originals/sample_07d333260f9a0792.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_07d333260f9a0792.png",
+      "sha256": "2ff00a713914e32e119bac96a0c407f5b3c6e69781bf57f4d637a3b1da62dc23",
+      "size_bytes": 1285035
+    },
+    "gallery/assets/originals/sample_08be3525fdfc1a2e.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_08be3525fdfc1a2e.png",
+      "sha256": "54f96485d1a314fc9865caf1913f14dc76a1dc9a98397cba53c9c0fb7c79f66b",
+      "size_bytes": 1286177
+    },
+    "gallery/assets/originals/sample_117c6b117f6e87c1.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_117c6b117f6e87c1.png",
+      "sha256": "25d10e06c39285d3305500736455f682855abb491852fa7a3e62c98f98b018df",
+      "size_bytes": 1290943
+    },
+    "gallery/assets/originals/sample_1ead063bade63a98.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_1ead063bade63a98.png",
+      "sha256": "83c4198707f01a3251300580d1bbb489413d4643862b45974653d1af67d2f509",
+      "size_bytes": 1273653
+    },
+    "gallery/assets/originals/sample_1ee83e5ce3e3fe8f.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_1ee83e5ce3e3fe8f.png",
+      "sha256": "29b14f810c60417fb81d595ed198f9fb9ff4a7bbdb413f278e21d03dbcc70643",
+      "size_bytes": 1283067
+    },
+    "gallery/assets/originals/sample_227bba609907f7c4.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_227bba609907f7c4.png",
+      "sha256": "373db82d6b2f728236a97b289278e662f03a5ae079c2e4f40e4baa26b4182ce6",
+      "size_bytes": 1291513
+    },
+    "gallery/assets/originals/sample_280b8b333d4495ae.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_280b8b333d4495ae.png",
+      "sha256": "e80dfed8b06995bcf5dae06ae5d428aa6485af13a4ded48f45d3e574f0214a3b",
+      "size_bytes": 1302863
+    },
+    "gallery/assets/originals/sample_3768cae188896f46.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_3768cae188896f46.png",
+      "sha256": "0ea54e13b6968daca380521809d401223da988fb3107575ca2d9aa402431d9e9",
+      "size_bytes": 1290723
+    },
+    "gallery/assets/originals/sample_4d109fbe10f2e14a.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_4d109fbe10f2e14a.png",
+      "sha256": "950ed6b33c78dfcfcd38a0829bb2cefd8a050fdd099230b97177d280a474ea26",
+      "size_bytes": 1282112
+    },
+    "gallery/assets/originals/sample_550c77e9ee86f6ec.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_550c77e9ee86f6ec.png",
+      "sha256": "499bb8c600997248aba0a408eaa442beca38a60c4c4ae43b8b56ed0a2dc39bb0",
+      "size_bytes": 1279215
+    },
+    "gallery/assets/originals/sample_5887b928125de3c5.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_5887b928125de3c5.png",
+      "sha256": "d94e4336f8c15c41ed1fdbb3a904f4c6d48accb797c0bd0ce424359ad1ad18ec",
+      "size_bytes": 1296154
+    },
+    "gallery/assets/originals/sample_595fed1eac230a01.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_595fed1eac230a01.png",
+      "sha256": "aa84cece7d86638f308adf7152a9b5c63ce6de493a87bda96a62df251c9abfec",
+      "size_bytes": 1313376
+    },
+    "gallery/assets/originals/sample_599fe951ba6d6aee.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_599fe951ba6d6aee.png",
+      "sha256": "9ff15394285b7c54e7c7c05f668bdf5ba63a8f60fa2703b3234a918114527d10",
+      "size_bytes": 1303753
+    },
+    "gallery/assets/originals/sample_61f3c0b8d7f4ed1b.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_61f3c0b8d7f4ed1b.png",
+      "sha256": "372cd059adb1cfebe3a6db04a21e5a770b24d0ea771527d5c450dcc8aef2ebfb",
+      "size_bytes": 1281119
+    },
+    "gallery/assets/originals/sample_6c8d84592a7053b9.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_6c8d84592a7053b9.png",
+      "sha256": "7f2ffb1248a324690f3bf9438c7b64115dd675742c31f710f3e159ef4691e08d",
+      "size_bytes": 1280521
+    },
+    "gallery/assets/originals/sample_73a95752ec7abaf7.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_73a95752ec7abaf7.png",
+      "sha256": "20044aa1fd2c5a0f7a779901b2d73480e8eee7d5cd46197d4a11124f135cb803",
+      "size_bytes": 1286774
+    },
+    "gallery/assets/originals/sample_741987cd78cf81cd.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_741987cd78cf81cd.png",
+      "sha256": "c3d0fdaade0c56377f8aace3549b53ed1b8df2302d444572d2ae5f516db83345",
+      "size_bytes": 1269958
+    },
+    "gallery/assets/originals/sample_75f87312906f8f57.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_75f87312906f8f57.png",
+      "sha256": "43fa18f50c54f96d554b44573b933dce9cac1d355df82c84d46bdbac5cb87206",
+      "size_bytes": 1285502
+    },
+    "gallery/assets/originals/sample_7d7066776a66a57f.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_7d7066776a66a57f.png",
+      "sha256": "ee8b9b5490a6ceb942bdc86bd5a1aa55712366d2b9036e955a081599618d2977",
+      "size_bytes": 1320798
+    },
+    "gallery/assets/originals/sample_8dfdc9945a3f201c.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_8dfdc9945a3f201c.png",
+      "sha256": "619f982b985494418ede863e2406c1d138ba2a3d63796adfbcb0c45bc4707899",
+      "size_bytes": 1276396
+    },
+    "gallery/assets/originals/sample_8f0effda60d7720a.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_8f0effda60d7720a.png",
+      "sha256": "c635b47f300d0e291ff61ba7724c85cfa4867a0fa33b32c8ac971d170b95b518",
+      "size_bytes": 1277353
+    },
+    "gallery/assets/originals/sample_93a33ebd5de60b16.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_93a33ebd5de60b16.png",
+      "sha256": "827e69244c8e213841ef917481a5b75e0e540eae0ff2a63d18e7d0691a9610e5",
+      "size_bytes": 1274773
+    },
+    "gallery/assets/originals/sample_9a1eb789e7d5b739.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_9a1eb789e7d5b739.png",
+      "sha256": "fa0789d64a9174fe6180c18c718d1aa28c22cd3e760dc643c7f4a2f23603b88d",
+      "size_bytes": 1277139
+    },
+    "gallery/assets/originals/sample_9b0b4d970a8df1ae.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_9b0b4d970a8df1ae.png",
+      "sha256": "00819dc7f2534c9f58a9d650b035700808748447f37b01b569c272df632c3caa",
+      "size_bytes": 1293840
+    },
+    "gallery/assets/originals/sample_a0f322dae63cd0f2.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_a0f322dae63cd0f2.png",
+      "sha256": "b6a69d4503e69581d4846258dee337d0b4d0e6a0d79f702df6bad8ff35b5bb88",
+      "size_bytes": 1285101
+    },
+    "gallery/assets/originals/sample_a4dd65f790ac1892.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_a4dd65f790ac1892.png",
+      "sha256": "e9313248835fce819b2aa6c909159a3be7674a5b034a6abf42fa369d7e78a31f",
+      "size_bytes": 1287727
+    },
+    "gallery/assets/originals/sample_a6390659bac47e2e.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_a6390659bac47e2e.png",
+      "sha256": "75e339cf7b01108815f08c10f4e7987a9813e9d27678bd5a6c1c07f6c14826b2",
+      "size_bytes": 1299059
+    },
+    "gallery/assets/originals/sample_a8e98aedc1d545d0.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_a8e98aedc1d545d0.png",
+      "sha256": "36b7bcab8290fc43a36e2cf535544f5b0a4054d8e7943ebaec226aead2c042d1",
+      "size_bytes": 1300587
+    },
+    "gallery/assets/originals/sample_acf859f9225714e5.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_acf859f9225714e5.png",
+      "sha256": "ea1313c1d23ba37aafc552a6391113cc261a4c24f871c2a36a7f0e3be01d4bb1",
+      "size_bytes": 1302147
+    },
+    "gallery/assets/originals/sample_b1f3a20f851e8c11.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_b1f3a20f851e8c11.png",
+      "sha256": "9d5161f3e42527e1daade2142ce26eeba98d908b77d57fdc2e977b494f8121c7",
+      "size_bytes": 1268107
+    },
+    "gallery/assets/originals/sample_b81820cf44b81e7b.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_b81820cf44b81e7b.png",
+      "sha256": "fd9d2f0c687f63808c158b1851fc885d4466b36e9c029de8e64e22869adfb3f3",
+      "size_bytes": 1269404
+    },
+    "gallery/assets/originals/sample_bbc3c5d25ea3e871.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_bbc3c5d25ea3e871.png",
+      "sha256": "80f0d646f934adfcb2c1332f94b66a62c5df207840f163e2a330cac4ee9ed71e",
+      "size_bytes": 1299358
+    },
+    "gallery/assets/originals/sample_bcaadadc0f8d172d.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_bcaadadc0f8d172d.png",
+      "sha256": "e4669daa3f1502f03286a449b91c849fdc5f86c8da172754c29c09e167653fd6",
+      "size_bytes": 1289715
+    },
+    "gallery/assets/originals/sample_bef66e9bc0db466e.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_bef66e9bc0db466e.png",
+      "sha256": "48da6154fad0fdd176cfc1619c118da22803cfd2daa74446fc66e888220abf26",
+      "size_bytes": 1288672
+    },
+    "gallery/assets/originals/sample_c632fe19b3ec32f7.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_c632fe19b3ec32f7.png",
+      "sha256": "a6f5a7c2c97b3c88378d391229a18ca8de82bb263b01b0901a89eb193779e287",
+      "size_bytes": 1294864
+    },
+    "gallery/assets/originals/sample_c674c2d4c0f47002.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_c674c2d4c0f47002.png",
+      "sha256": "f4ab373b9ffe8a94b0bf4586c17c610b84c5e8e374b90c1bc082a07a7a7b7d8b",
+      "size_bytes": 1273087
+    },
+    "gallery/assets/originals/sample_c81ffe932e99b4f0.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_c81ffe932e99b4f0.png",
+      "sha256": "f21364b1a8a2171e62c5dd1c9743d6495831dd56f3d82f42d67bc5daa79be623",
+      "size_bytes": 1285148
+    },
+    "gallery/assets/originals/sample_c862cdf81ad1163c.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_c862cdf81ad1163c.png",
+      "sha256": "1f4e6a7067dfa5e988d6b1697478cbb3068e4066b22dec5bfbe068f85fb56667",
+      "size_bytes": 1279539
+    },
+    "gallery/assets/originals/sample_cf055dd953b64cac.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_cf055dd953b64cac.png",
+      "sha256": "34cb6b38a99116b68059012406f5d216bfd8a67842eff28e2294d7e67dbd6134",
+      "size_bytes": 1286791
+    },
+    "gallery/assets/originals/sample_cf50a8181cd0f42d.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_cf50a8181cd0f42d.png",
+      "sha256": "ccace7435c9ef0a711a4babe3009a59053ac197993325bccb87937d297d25e8d",
+      "size_bytes": 1277760
+    },
+    "gallery/assets/originals/sample_cfbc0b026c75a976.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_cfbc0b026c75a976.png",
+      "sha256": "7c91d10c02199683a7e3b46d88188a8d200c6b065f1af738966fc8892b6242e1",
+      "size_bytes": 1279303
+    },
+    "gallery/assets/originals/sample_d60c4b987c68af4f.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_d60c4b987c68af4f.png",
+      "sha256": "d323ab217af2705401d821d0902e0a6e6a970352811b059af4d41bc91b98f581",
+      "size_bytes": 1285834
+    },
+    "gallery/assets/originals/sample_e10beb77acd960cc.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_e10beb77acd960cc.png",
+      "sha256": "daf6bae8d0d1c2fd8910ad72e20641047bb684a806e2edb85171b6504c6fb8a6",
+      "size_bytes": 1284517
+    },
+    "gallery/assets/originals/sample_e7b15e04adde7b6a.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_e7b15e04adde7b6a.png",
+      "sha256": "b3b884f75d62ceb511a7fbc127eed03d6ffdab911fb2ed30b39c90358e812ded",
+      "size_bytes": 1295657
+    },
+    "gallery/assets/originals/sample_f36cab2286ecd89b.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_f36cab2286ecd89b.png",
+      "sha256": "4e56c826c52a47aec159647f44c12e6c9e43b2ae7aba7e1821302a6d88b7a8d4",
+      "size_bytes": 1291680
+    },
+    "gallery/assets/originals/sample_f555edcb2df4b6be.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_f555edcb2df4b6be.png",
+      "sha256": "b7f616807dea69d9ab44caf18b4fd2d2704ad7185d79c04871fb11a762f3e6e9",
+      "size_bytes": 1263793
+    },
+    "gallery/assets/originals/sample_fc45559fe78f1be0.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_fc45559fe78f1be0.png",
+      "sha256": "39aa3785ed25512eec3392723c28015392857cce9e5298ca2474ad998ac540c5",
+      "size_bytes": 1311805
+    },
+    "gallery/assets/originals/sample_fd703f45e32a62f4.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_fd703f45e32a62f4.png",
+      "sha256": "df3ea1445492ec319f2f5dc5468db5e083905992777adf8e24694922bee68c9f",
+      "size_bytes": 1287496
+    },
+    "gallery/assets/originals/sample_feab213295c56c75.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/originals/sample_feab213295c56c75.png",
+      "sha256": "bfbe0aa47d3191a40d2f7a44099340d3e42a7d8b4919f01d41709abd3d9350cb",
+      "size_bytes": 1283834
+    },
+    "gallery/assets/overlays/sample_006d8f5fe7d803a1.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_006d8f5fe7d803a1.png",
+      "sha256": "173eebfb25a2d842e37823b2d30b06d30227d673624eff92db6183c73f404ed4",
+      "size_bytes": 1071517
+    },
+    "gallery/assets/overlays/sample_07d333260f9a0792.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_07d333260f9a0792.png",
+      "sha256": "f6d581b35b8199e32c4af7be9b14ad475c0097dcbfaccd91e5e9de5dd8c6167e",
+      "size_bytes": 1088318
+    },
+    "gallery/assets/overlays/sample_08be3525fdfc1a2e.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_08be3525fdfc1a2e.png",
+      "sha256": "6bb9f50781a4152eb97c89851e1a4ad084b7eb90ae2dfbd580299c919648923b",
+      "size_bytes": 1085126
+    },
+    "gallery/assets/overlays/sample_117c6b117f6e87c1.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_117c6b117f6e87c1.png",
+      "sha256": "b7a014302748a88ffd58be00c570c99a31ec5085184587b56c79a291090f5933",
+      "size_bytes": 1098153
+    },
+    "gallery/assets/overlays/sample_1ead063bade63a98.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_1ead063bade63a98.png",
+      "sha256": "e8bce6d14f0f947e708722f143d69dea8659965d3ff6b7b7d382ced6e1481629",
+      "size_bytes": 1070747
+    },
+    "gallery/assets/overlays/sample_1ee83e5ce3e3fe8f.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_1ee83e5ce3e3fe8f.png",
+      "sha256": "75d35d4658ad5aed93ad2b6def32c0cda70f4713774580cdd2360561e02f2249",
+      "size_bytes": 1093154
+    },
+    "gallery/assets/overlays/sample_227bba609907f7c4.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_227bba609907f7c4.png",
+      "sha256": "dc54f3ef5d7b1bb0e0e4599cae19c17df287a1d695d09e37eefa925b873afc31",
+      "size_bytes": 1091072
+    },
+    "gallery/assets/overlays/sample_280b8b333d4495ae.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_280b8b333d4495ae.png",
+      "sha256": "13c31218f50baaf8b6b6ecea8905fb8484efa52e8c01021c2258222a43b8e554",
+      "size_bytes": 1102567
+    },
+    "gallery/assets/overlays/sample_3768cae188896f46.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_3768cae188896f46.png",
+      "sha256": "f4399eca0e971367182a4ab1b6e33d673c18e852c3fc185e27fecd810885e7dc",
+      "size_bytes": 1093700
+    },
+    "gallery/assets/overlays/sample_4d109fbe10f2e14a.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_4d109fbe10f2e14a.png",
+      "sha256": "c020786b88bcceb8b832457bae9d513e429b3e08375c78efa4a9aff3a222833a",
+      "size_bytes": 1081670
+    },
+    "gallery/assets/overlays/sample_550c77e9ee86f6ec.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_550c77e9ee86f6ec.png",
+      "sha256": "b66e1772cb2e6505b7d87c402b4a27a5f2bc6a7f2762aa5c23dcb795e8dc49cc",
+      "size_bytes": 1082832
+    },
+    "gallery/assets/overlays/sample_5887b928125de3c5.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_5887b928125de3c5.png",
+      "sha256": "c5a1c93385ddf6c5f2af8d9a48da08519382f0177ad2397b988bf0d760986779",
+      "size_bytes": 1109199
+    },
+    "gallery/assets/overlays/sample_595fed1eac230a01.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_595fed1eac230a01.png",
+      "sha256": "01851421debdaa26eace98ce63b3d880994ef9da796e20641ce57ee6cab37463",
+      "size_bytes": 1135639
+    },
+    "gallery/assets/overlays/sample_599fe951ba6d6aee.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_599fe951ba6d6aee.png",
+      "sha256": "a3968c7a2cb7a1f1e6942f256295ccda2fac6e724e9987b6dfd2b605460e1e69",
+      "size_bytes": 1119498
+    },
+    "gallery/assets/overlays/sample_61f3c0b8d7f4ed1b.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_61f3c0b8d7f4ed1b.png",
+      "sha256": "45e5b47922fabcc9116b3e928c8f5219c51277d91ee5358064d54369c08b0d67",
+      "size_bytes": 1081859
+    },
+    "gallery/assets/overlays/sample_6c8d84592a7053b9.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_6c8d84592a7053b9.png",
+      "sha256": "2fa44ae6b8ef8a3877eefbf7d91eabc1ecb85b5c8ef6124c02ccda1c03db9fa3",
+      "size_bytes": 1079429
+    },
+    "gallery/assets/overlays/sample_73a95752ec7abaf7.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_73a95752ec7abaf7.png",
+      "sha256": "01d21bbd1291bb7620091c3c301617b7330b21b13deece1356b9e992cfcec1a0",
+      "size_bytes": 1090296
+    },
+    "gallery/assets/overlays/sample_741987cd78cf81cd.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_741987cd78cf81cd.png",
+      "sha256": "a4581f41a373cd7e1c6fac3e5e59d273759e07c133387c7667eb15ff0647a748",
+      "size_bytes": 1074201
+    },
+    "gallery/assets/overlays/sample_75f87312906f8f57.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_75f87312906f8f57.png",
+      "sha256": "de1b7dff1938e03ee9569861c577beca6d9abe757fa0608537dd95ac89d9665a",
+      "size_bytes": 1086492
+    },
+    "gallery/assets/overlays/sample_7d7066776a66a57f.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_7d7066776a66a57f.png",
+      "sha256": "32cb338f98d99f531043ac3c99bca4c5b3a9ea3d9433b237afc6514c32c14f5d",
+      "size_bytes": 1160069
+    },
+    "gallery/assets/overlays/sample_8dfdc9945a3f201c.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_8dfdc9945a3f201c.png",
+      "sha256": "5a6ee8fa35849433c0386bafd010ff13bf68bdd82295cc09be5bc165020cd69b",
+      "size_bytes": 1076825
+    },
+    "gallery/assets/overlays/sample_8f0effda60d7720a.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_8f0effda60d7720a.png",
+      "sha256": "adc5362cd4d3bf4cf651cfb9345cbe561f56515f94aeaa52d97b7cbf583e66f9",
+      "size_bytes": 1085283
+    },
+    "gallery/assets/overlays/sample_93a33ebd5de60b16.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_93a33ebd5de60b16.png",
+      "sha256": "bf17937e6fbc46a4bb88555c2e831b1279b34d7de9ac3f607537def96dd99ad5",
+      "size_bytes": 1075604
+    },
+    "gallery/assets/overlays/sample_9a1eb789e7d5b739.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_9a1eb789e7d5b739.png",
+      "sha256": "553b399b3064ba7ba1bb982d9887efa234a314e7ea12e054fa0620e703ef310a",
+      "size_bytes": 1102566
+    },
+    "gallery/assets/overlays/sample_9b0b4d970a8df1ae.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_9b0b4d970a8df1ae.png",
+      "sha256": "b27f18f87b4cf048c153b0e50ac19585de7d6ac455131411721bf8ff9d153e11",
+      "size_bytes": 1097542
+    },
+    "gallery/assets/overlays/sample_a0f322dae63cd0f2.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_a0f322dae63cd0f2.png",
+      "sha256": "3273d80fbbe5e137c2d13c1ee12bcd3d57c94317b492627a2e269eaaa32f7bc3",
+      "size_bytes": 1096315
+    },
+    "gallery/assets/overlays/sample_a4dd65f790ac1892.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_a4dd65f790ac1892.png",
+      "sha256": "056d62bffc738e2cb7f02a4e14cd7672771d73c08cef34b84eb20033dae2cae4",
+      "size_bytes": 1086269
+    },
+    "gallery/assets/overlays/sample_a6390659bac47e2e.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_a6390659bac47e2e.png",
+      "sha256": "9a6e267bbbf459d32181f98007bf288f4c187e61c130cdb8278b5295e2f6992f",
+      "size_bytes": 1100674
+    },
+    "gallery/assets/overlays/sample_a8e98aedc1d545d0.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_a8e98aedc1d545d0.png",
+      "sha256": "aa7676af4eb01f9dd420f2debb9c25129398948cf6c1425838d01e2a7dfc93b2",
+      "size_bytes": 1100452
+    },
+    "gallery/assets/overlays/sample_acf859f9225714e5.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_acf859f9225714e5.png",
+      "sha256": "f207d1f91a6db4727c1826c85170aaf8f1c612f4846019aea3b19c43ccace310",
+      "size_bytes": 1102546
+    },
+    "gallery/assets/overlays/sample_b1f3a20f851e8c11.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_b1f3a20f851e8c11.png",
+      "sha256": "3d228ec608b24440e0b53a4d55dbc4ef9fa7efd777817a64f246580fddca25ab",
+      "size_bytes": 1066930
+    },
+    "gallery/assets/overlays/sample_b81820cf44b81e7b.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_b81820cf44b81e7b.png",
+      "sha256": "ac591eac801b7f9791898e012c5430402c3547be7ea731a084b8aa8ee50f5c28",
+      "size_bytes": 1065627
+    },
+    "gallery/assets/overlays/sample_bbc3c5d25ea3e871.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_bbc3c5d25ea3e871.png",
+      "sha256": "de356e3e30e0d4f9458ffff4c24a6a4748b1179e0d05b9e097ddd39c92d31053",
+      "size_bytes": 1114882
+    },
+    "gallery/assets/overlays/sample_bcaadadc0f8d172d.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_bcaadadc0f8d172d.png",
+      "sha256": "0c8b55c159bd0452ce1ff8b3cb5dee24b7a9f302ace899f819a1349a4a101102",
+      "size_bytes": 1097161
+    },
+    "gallery/assets/overlays/sample_bef66e9bc0db466e.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_bef66e9bc0db466e.png",
+      "sha256": "e75837c4c60c5656f66ca9bce5289d3340073cc21991a97758aea20601344baf",
+      "size_bytes": 1090982
+    },
+    "gallery/assets/overlays/sample_c632fe19b3ec32f7.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_c632fe19b3ec32f7.png",
+      "sha256": "47eb3c415b7f14ac7617b2d72166ff65381b143b64ce4a62125932192a4a1146",
+      "size_bytes": 1099511
+    },
+    "gallery/assets/overlays/sample_c674c2d4c0f47002.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_c674c2d4c0f47002.png",
+      "sha256": "62ea8c2c2303c9017ec3f80f9884594dae3532ca515d1966d9e13f90d938a87c",
+      "size_bytes": 1084565
+    },
+    "gallery/assets/overlays/sample_c81ffe932e99b4f0.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_c81ffe932e99b4f0.png",
+      "sha256": "dce6253e95a64fb3e9152e93dff09729bbeb4a4ad0bcb834911ca74f28092462",
+      "size_bytes": 1085616
+    },
+    "gallery/assets/overlays/sample_c862cdf81ad1163c.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_c862cdf81ad1163c.png",
+      "sha256": "4dde00eb30e847d11f0b8feedf1a324036afebb9876f74a6428f90d3f2946085",
+      "size_bytes": 1079832
+    },
+    "gallery/assets/overlays/sample_cf055dd953b64cac.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_cf055dd953b64cac.png",
+      "sha256": "694ff4b13cfbd0960aad01c5f142d3b30eb9204a1f15ad83ed22f71a2480c739",
+      "size_bytes": 1086113
+    },
+    "gallery/assets/overlays/sample_cf50a8181cd0f42d.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_cf50a8181cd0f42d.png",
+      "sha256": "267edccad1030c540b14788101833aa47afe48e611ae296b0da0b885e543ea38",
+      "size_bytes": 1076680
+    },
+    "gallery/assets/overlays/sample_cfbc0b026c75a976.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_cfbc0b026c75a976.png",
+      "sha256": "9327e197aea872eab388bb13d44030cbc174d88961bc96d3866c6e010baf5a2a",
+      "size_bytes": 1075417
+    },
+    "gallery/assets/overlays/sample_d60c4b987c68af4f.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_d60c4b987c68af4f.png",
+      "sha256": "2afb9af26a85af5a350c814ae6fb6c4a34bf21dd9b28ae20711bca0f91d20b7c",
+      "size_bytes": 1087893
+    },
+    "gallery/assets/overlays/sample_e10beb77acd960cc.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_e10beb77acd960cc.png",
+      "sha256": "f5bdd6dcd321a9b576d07077e1291bf9a3f6f3534f36c4f87728b01b2497c2f3",
+      "size_bytes": 1087357
+    },
+    "gallery/assets/overlays/sample_e7b15e04adde7b6a.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_e7b15e04adde7b6a.png",
+      "sha256": "1e4cd181666291b4210de8c76fbe7ef765d5edd1d36364b894a5e61438c9cb54",
+      "size_bytes": 1095019
+    },
+    "gallery/assets/overlays/sample_f36cab2286ecd89b.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_f36cab2286ecd89b.png",
+      "sha256": "8ea26b688aed9f6e4728b74c1f4d74a969261cc3f580d3c20d7d880dfa70c6c7",
+      "size_bytes": 1094449
+    },
+    "gallery/assets/overlays/sample_f555edcb2df4b6be.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_f555edcb2df4b6be.png",
+      "sha256": "a76d40be665d422043cfb382a3f7cf97693809042c457a78c4fbc65134d993e3",
+      "size_bytes": 1073642
+    },
+    "gallery/assets/overlays/sample_fc45559fe78f1be0.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_fc45559fe78f1be0.png",
+      "sha256": "9acfd2395e9a8cd8b6ff3ee8ea2123be3611acb22754296f07b05f6fbb146f54",
+      "size_bytes": 1132434
+    },
+    "gallery/assets/overlays/sample_fd703f45e32a62f4.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_fd703f45e32a62f4.png",
+      "sha256": "6d6dd1ca6f98ee5da690f0dc78473b64f017fbb2b5e3fdd9a684d45f06f20259",
+      "size_bytes": 1095474
+    },
+    "gallery/assets/overlays/sample_feab213295c56c75.png": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/assets/overlays/sample_feab213295c56c75.png",
+      "sha256": "cfdb622a56c0a04b76bb08a0e014cd686411166748cc0e67f681fe66ec44efd6",
+      "size_bytes": 1083663
+    },
+    "gallery/gallery.json": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/gallery.json",
+      "sha256": "9971b35f9ccdc36772acbbbfbabfa640a613e81d2cffc6e7ec6146bb4da50c0b",
+      "size_bytes": 40515
+    },
+    "gallery/index.html": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/gallery/index.html",
+      "sha256": "176e1a80c39089b4af0a5ee5f4dc8b72c9a0db7b8b332b5e8bbe0bded5e520ea",
+      "size_bytes": 64143
+    },
+    "manifest-meta.json": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/manifests/transistor-v1/manifest-meta.json",
+      "sha256": "d4cc838865881102919afd614c997cc0e1239a00dd212c6ea8c2378383748113",
+      "size_bytes": 1197
+    },
+    "manifest.jsonl": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/manifests/transistor-v1/manifest.jsonl",
+      "sha256": "e34e3d90ee040b7026bc47f3d916237c6c5798c159f8317fac97719dee754d8e",
+      "size_bytes": 122388
+    },
+    "package/model-package.json": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/model-packages/patchcore-transistor/1.0.0-rc1/model-package.json",
+      "sha256": "e58a4bbc3505b42f1dd41c2505b42479afdb645004a864e6ed6fc30270c5f94c",
+      "size_bytes": 3278
+    },
+    "performance-probe.json": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/performance-probe.json",
+      "sha256": "c2803f0c7137f85af1502eec8736f1b28fa006aebab5e5e93f178573060f3302",
+      "size_bytes": 931
+    },
+    "predictions/test.jsonl": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/predictions/test.jsonl",
+      "sha256": "3385e72a1cb5acd97956bb825c442d039eb4f241f0bc684371e0e18e191703b4",
+      "size_bytes": 23161
+    },
+    "predictions/validation.jsonl": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/predictions/validation.jsonl",
+      "sha256": "d18d10351bce4820bcbcb6ba17b49997f928e813e5618070aa814fbcfff2f08f",
+      "size_bytes": 23776
+    },
+    "run.json": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/run.json",
+      "sha256": "0db47a1c4d23230eac101edc0a80ce06b185890dd11fd01242b1040f51463554",
+      "size_bytes": 712
+    },
+    "summary.json": {
+      "path": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real/summary.json",
+      "sha256": "76777a42a4bbe4d1f8a3a8c793f297b24d6e1967c7459a65df9ec1e5c60248ee",
+      "size_bytes": 806
+    }
+  },
+  "model_package_dir": "<REPOSITORY_ROOT>/ml/.artifacts/model-packages/patchcore-transistor/1.0.0-rc1",
+  "run_dir": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real",
+  "schema_version": "visionqc.pilot-source-evidence.v1"
+}

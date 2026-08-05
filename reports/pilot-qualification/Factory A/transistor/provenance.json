@@ -1,0 +1,59 @@
+{
+  "audit_reason": "OFFICIAL_BENCHMARK business gates failed; candidate remains DRAFT and cannot be approved or activated.",
+  "blockers": [],
+  "category": "transistor",
+  "code_commit": "c438cc494a21830cdb96c447f411ca8678405bd5",
+  "context_name": "benchmark-lab",
+  "customer_provenance": null,
+  "data_status": "OFFICIAL_BENCHMARK",
+  "dataset_fingerprint": "508950233c88cbf52520899e22587fbbb8ecb1ab1b43d5184fa0599f44c59005",
+  "dataset_receipt": {
+    "acquisition_date": "2026-08-04",
+    "category": "transistor",
+    "counts": {
+      "ground_truth_masks": 40,
+      "test_anomalous_images": 40,
+      "test_good_images": 60,
+      "train_good_images": 213
+    },
+    "dataset": "MVTec AD",
+    "dataset_root": "<REPOSITORY_ROOT>/ml/.data/mvtec-ad",
+    "dataset_summary_sha256": "95e9764e499314660ca02235bb863417e46afadd8f16f174baed25ed10882833",
+    "file_sha256": "e08f68a64e748a99d9e65bd8daae8d56359a2cbea11a4812d029d00ef8485769",
+    "hash_algorithm": "SHA-256",
+    "license": {
+      "commercial_use": false,
+      "name": "CC BY-NC-SA 4.0",
+      "notice": "MVTec AD is for non-commercial use under its dataset license. Review terms before redistribution or commercial use.",
+      "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+    },
+    "license_acknowledged": true,
+    "network_access": false,
+    "schema_version": "visionqc.dataset-directory-receipt.v1",
+    "source_archive_sha256": "cf4313b13603bec67abb49ca959488f7eedce2a9f7795ec54446c649ac98cd3d",
+    "source_config": "<REPOSITORY_ROOT>/ml/configs/mvtec-ad-transistor.json",
+    "source_page": "https://www.mvtec.com/research-teaching/datasets/mvtec-ad",
+    "validated_at": "2026-08-04T22:23:07.926868+00:00"
+  },
+  "dataset_summary_sha256": "95e9764e499314660ca02235bb863417e46afadd8f16f174baed25ed10882833",
+  "environment": {
+    "machine": "arm64",
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.12.13"
+  },
+  "generated_at": "2026-08-05T03:33:47.601413+00:00",
+  "limitations": [
+    "MVTec AD is an official non-commercial research benchmark, not factory or customer Pilot data.",
+    "Passing benchmark gates only means READY_FOR_CUSTOMER_DATA; it never authorizes APPROVED or ACTIVE.",
+    "MVTec AD does not represent a specific customer's camera, process, or defect distribution.",
+    "Pixel metrics depend on resized heatmaps and benchmark masks.",
+    "Offline routing metrics do not include actual human overrides or downstream quality outcomes.",
+    "MVTec AD is a non-commercial research benchmark and does not establish factory or customer Pilot performance.",
+    "Thresholds are selected from validation only; the held-out test split is used only after thresholds are frozen."
+  ],
+  "model_package_sha256": "c35fc1f3a38d0f488cf031767301315c8999df7db212b04954b0227c1746fa17",
+  "qualification_run_status": "COMPLETED",
+  "schema_version": "visionqc.pilot-provenance.v1",
+  "source_evidence_schema": "visionqc.pilot-source-evidence.v1",
+  "source_type": "OFFICIAL_BENCHMARK"
+}

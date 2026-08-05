@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" role="img" aria-label="演示用异常热力图">
+  <defs>
+    <radialGradient id="hot"><stop offset="0" stop-color="#fffbd1" stop-opacity=".98"/><stop offset=".18" stop-color="#ffec36" stop-opacity=".96"/><stop offset=".4" stop-color="#ff7335" stop-opacity=".88"/><stop offset=".65" stop-color="#e3284f" stop-opacity=".62"/><stop offset="1" stop-color="#7529d6" stop-opacity="0"/></radialGradient>
+    <radialGradient id="warm"><stop offset="0" stop-color="#ffef68" stop-opacity=".7"/><stop offset=".42" stop-color="#f64359" stop-opacity=".46"/><stop offset="1" stop-color="#4423b9" stop-opacity="0"/></radialGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="9"/></filter>
+  </defs>
+  <ellipse cx="591" cy="393" rx="142" ry="116" fill="url(#hot)" filter="url(#blur)"/>
+  <ellipse cx="526" cy="337" rx="70" ry="58" fill="url(#hot)" opacity=".7"/>
+  <ellipse cx="300" cy="220" rx="95" ry="74" fill="url(#warm)" filter="url(#blur)"/>
+  <path d="M545 328c36-9 76 20 83 58 9 46-23 86-68 93" fill="none" stroke="#fff5ad" stroke-width="4" stroke-dasharray="9 7" opacity=".9"/>
+</svg>

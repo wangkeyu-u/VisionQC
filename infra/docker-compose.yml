@@ -1,0 +1,199 @@
+name: visionqc
+
+services:
+  postgres:
+    image: postgres:17.5-alpine
+    environment:
+      POSTGRES_DB: visionqc
+      POSTGRES_USER: visionqc
+      POSTGRES_PASSWORD: visionqc-local-only
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U visionqc -d visionqc"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "5432:5432"
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: visionqc
+      MINIO_ROOT_PASSWORD: visionqc-local-minio
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  minio-init:
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        mc alias set local http://minio:9000 visionqc visionqc-local-minio &&
+        mc mb --ignore-existing local/visionqc
+    restart: "no"
+
+  mock-external:
+    build:
+      context: ../backend
+    command: ["uvicorn", "app.mock_external:app", "--host", "0.0.0.0", "--port", "8081"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8081/mes/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "8081:8081"
+
+  api:
+    build:
+      context: ../backend
+    command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+    environment: &backend-environment
+      VQC_ENVIRONMENT: demo
+      VQC_DATABASE_URL: postgresql+psycopg://visionqc:visionqc-local-only@postgres:5432/visionqc
+      VQC_AUTH_SECRET: visionqc-local-jwt-secret-change-me
+      VQC_STORAGE_BACKEND: s3
+      VQC_S3_ENDPOINT_URL: http://minio:9000
+      VQC_S3_BUCKET: visionqc
+      VQC_S3_ACCESS_KEY: visionqc
+      VQC_S3_SECRET_KEY: visionqc-local-minio
+      VQC_MES_BASE_URL: http://mock-external:8081/mes
+      VQC_QMS_BASE_URL: http://mock-external:8081/qms
+      VQC_BOOTSTRAP_TENANT_IDS: factory-a,factory-b
+      VQC_DEMO_SWITCHABLE_TENANT_IDS: factory-a,factory-b
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      mock-external:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "8000:8000"
+
+  worker:
+    build:
+      context: ../backend
+    command: ["python", "-m", "app.worker"]
+    environment: *backend-environment
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        VITE_USE_MOCKS: "false"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "3000:8080"
+
+  edge-gateway-a:
+    build:
+      context: ..
+      dockerfile: edge-gateway/Dockerfile
+    command: ["uvicorn", "edge_gateway.main:app", "--host", "0.0.0.0", "--port", "8091"]
+    environment:
+      VQC_GATEWAY_MODE: demo
+      VQC_GATEWAY_VERSION: 0.1.0
+      VQC_GATEWAY_ID: factory-a-gw-st07
+      VQC_GATEWAY_BACKEND_URL: http://api:8000/api/v1
+      VQC_GATEWAY_PACK_PATH: /app/configs/factory-a-transistor.json
+      VQC_GATEWAY_DATA_DIR: /var/lib/visionqc-gateway
+      VQC_GATEWAY_WATCH_ROOT: /var/lib/visionqc-gateway/incoming
+      VQC_GATEWAY_STATUS_PORT: 8091
+      VQC_GATEWAY_AUTH_SECRET: visionqc-local-jwt-secret-change-me
+      VQC_GATEWAY_AUTH_ISSUER: visionqc
+    volumes:
+      - edge-gateway-a-data:/var/lib/visionqc-gateway
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8091/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "8091:8091"
+
+  edge-gateway-b:
+    build:
+      context: ..
+      dockerfile: edge-gateway/Dockerfile
+    command: ["uvicorn", "edge_gateway.main:app", "--host", "0.0.0.0", "--port", "8092"]
+    environment:
+      VQC_GATEWAY_MODE: demo
+      VQC_GATEWAY_VERSION: 0.1.0
+      VQC_GATEWAY_ID: factory-b-gw-cell12
+      VQC_GATEWAY_BACKEND_URL: http://api:8000/api/v1
+      VQC_GATEWAY_PACK_PATH: /app/configs/factory-b-bottle.json
+      VQC_GATEWAY_DATA_DIR: /var/lib/visionqc-gateway
+      VQC_GATEWAY_WATCH_ROOT: /var/lib/visionqc-gateway/incoming
+      VQC_GATEWAY_STATUS_PORT: 8092
+      VQC_GATEWAY_AUTH_SECRET: visionqc-local-jwt-secret-change-me
+      VQC_GATEWAY_AUTH_ISSUER: visionqc
+    volumes:
+      - edge-gateway-b-data:/var/lib/visionqc-gateway
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8092/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "8092:8092"
+
+  edge-simulator-a:
+    build:
+      context: ..
+      dockerfile: edge-gateway/Dockerfile
+    command: ["python", "-m", "edge_gateway.simulator", "--pack", "/app/configs/factory-a-transistor.json", "--root", "/var/lib/visionqc-gateway/incoming", "--continuous", "--interval", "5"]
+    volumes:
+      - edge-gateway-a-data:/var/lib/visionqc-gateway
+    profiles: ["simulator"]
+
+  edge-simulator-b:
+    build:
+      context: ..
+      dockerfile: edge-gateway/Dockerfile
+    command: ["python", "-m", "edge_gateway.simulator", "--pack", "/app/configs/factory-b-bottle.json", "--root", "/var/lib/visionqc-gateway/incoming", "--continuous", "--interval", "7"]
+    volumes:
+      - edge-gateway-b-data:/var/lib/visionqc-gateway
+    profiles: ["simulator"]
+
+volumes:
+  postgres-data:
+  minio-data:
+  edge-gateway-a-data:
+  edge-gateway-b-data:

@@ -1,0 +1,161 @@
+{
+  "schema_version": "visionqc.deployment-pack.v1",
+  "pack_key": "factory_b/bottle",
+  "version": "2.1.0",
+  "display_name": "Factory B · Bottle surface cell",
+  "tenant": {
+    "id": "factory-b",
+    "name": "Factory B"
+  },
+  "input_mode": "folder_watch",
+  "products": [
+    {
+      "code": "bottle",
+      "display_name": "玻璃瓶体",
+      "revision": "B-2026.07",
+      "aliases": ["BT-BOTTLE-01"]
+    }
+  ],
+  "stations": [
+    {
+      "code": "CELL-12",
+      "display_name": "瓶身环检单元",
+      "description": "360 度瓶身表面与瓶口检测",
+      "camera_profile": "cell-b-ring-8cam"
+    },
+    {
+      "code": "CELL-05",
+      "display_name": "瓶底抽检单元",
+      "description": "瓶底纹理与裂纹抽检",
+      "camera_profile": "cell-b-base-4cam"
+    }
+  ],
+  "field_mapping": {
+    "product_code": "sku",
+    "product_revision": "revision",
+    "batch_no": "lot_id",
+    "station_code": "cell",
+    "captured_at": "captured_at",
+    "source": "source_system"
+  },
+  "field_labels": {
+    "product_code": "SKU",
+    "product_revision": "规格版本",
+    "batch_no": "Lot ID",
+    "station_code": "检测单元",
+    "captured_at": "采集时间",
+    "source": "采集来源"
+  },
+  "model": {
+    "id": "patchcore-bottle",
+    "version": "2.3.0",
+    "feature_bank_version": "fb-bottle-20260802",
+    "adapter": "anomalib.patchcore.v2",
+    "runtime": "torchvision-resnet50-bottle-v2",
+    "device": "CUDA / A10G",
+    "package_uri": "models/patchcore-bottle/2.3.0",
+    "package_sha256": "demo-bottle-package-sha256",
+    "score_semantics": "bottle-surface anomaly evidence; high score is not a semantic crack verdict",
+    "limitations": [
+      "Bottle package is a customer-adaptation placeholder until Factory B labeled evidence is approved.",
+      "Glass transparency and illumination drift require a site calibration before production use."
+    ]
+  },
+  "policy": {
+    "version": "factory-b-bottle-policy-2.1.0",
+    "default": {
+      "review_threshold": 0.28,
+      "hold_threshold": 0.68
+    },
+    "overrides": [
+      {
+        "station_code": "CELL-12",
+        "review_threshold": 0.25,
+        "hold_threshold": 0.62
+      }
+    ]
+  },
+  "connectors": {
+    "mes": {
+      "display_name": "Factory B FlowMES",
+      "driver": "mock_http",
+      "contract_version": "flowmes-lot-v2",
+      "endpoint": "http://mock-external:8081/mes",
+      "payload_mapping": {
+        "batch_no": "lot_id",
+        "product_code": "sku",
+        "station_code": "cell_id",
+        "disposition": "quality_disposition",
+        "reason": "hold_reason"
+      },
+      "fixed_fields": {
+        "source_system": "VisionQC Factory B",
+        "routing_profile": "LOT_HOLD_V2"
+      },
+      "operations": ["HOLD_BATCH", "RELEASE_BATCH"]
+    },
+    "qms": {
+      "display_name": "Factory B QualityHub",
+      "driver": "mock_http",
+      "contract_version": "qualityhub-ncr-v3",
+      "endpoint": "http://mock-external:8081/qms",
+      "payload_mapping": {
+        "inspection_id": "inspection_ref",
+        "batch_no": "lot_id",
+        "product_code": "sku",
+        "product_revision": "revision",
+        "station_code": "cell_id",
+        "disposition": "disposition",
+        "reason": "containment_reason",
+        "root_cause": "root_cause_status"
+      },
+      "fixed_fields": {
+        "supplier_code": "SUPPLIER-B-DEMO",
+        "source_system": "VisionQC Factory B",
+        "priority": "P1"
+      },
+      "operations": ["CREATE_TICKET", "UPDATE_TICKET", "CLOSE_TICKET"]
+    }
+  },
+  "metadata": {
+    "customer_segment": "glass-packaging",
+    "deployment_owner": "fde-quality-platform",
+    "evidence_retention_days": 730,
+    "ingest_contract": "folder-watch-v1"
+  },
+  "edge_gateway": {
+    "gateway_id": "factory-b-gw-cell12",
+    "target_tenant_id": "factory-b",
+    "watch": {
+      "root": "/var/lib/visionqc-gateway/incoming",
+      "relative_path_regex": "^cell/(?P<station_code>CELL-(?:12|05))/date/(?P<date>\\d{4}/\\d{2}/\\d{2})$",
+      "filename_regex": "^(?P<product>BT-BOTTLE-01)__lot=(?P<batch>LOT-[A-Z0-9-]+)__captured=(?P<captured_at>\\d{8}T\\d{6})__seq=(?P<sequence>\\d{6})\\.(?P<extension>png|jpe?g)$",
+      "capture_map": {
+        "product_code": "product",
+        "batch_no": "batch",
+        "station_code": "station_code",
+        "captured_at": "captured_at"
+      },
+      "defaults": {
+        "station_code": "CELL-12",
+        "product_revision": "B-2026.07"
+      },
+      "source": "edge-camera/factory-b/cell12",
+      "allowed_extensions": [".png", ".jpg", ".jpeg"],
+      "timestamp_formats": ["%Y%m%dT%H%M%S"],
+      "timezone_offset": "+08:00",
+      "stable_for_seconds": 1.0,
+      "archive_subdir": ".archive",
+      "quarantine_subdir": ".quarantine"
+    },
+    "simulator": {
+      "relative_dir_template": "cell/{station}/date/{date}",
+      "filename_template": "{product}__lot={batch}__captured={captured_at}__seq={sequence}.{extension}",
+      "product": "BT-BOTTLE-01",
+      "station": "CELL-12",
+      "product_revision": "B-2026.07",
+      "batch_prefix": "LOT-B-DEMO",
+      "extension": ".jpg"
+    }
+  }
+}

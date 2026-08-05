@@ -1,0 +1,164 @@
+{
+  "schema_version": "visionqc.deployment-pack.v1",
+  "pack_key": "factory_a/transistor",
+  "version": "1.0.0",
+  "display_name": "Factory A · Transistor final inspection",
+  "tenant": {
+    "id": "factory-a",
+    "name": "Factory A"
+  },
+  "input_mode": "api_upload",
+  "products": [
+    {
+      "code": "transistor",
+      "display_name": "晶体管模块",
+      "revision": "REV-C",
+      "aliases": ["TR-AX14", "TR-SMOKE"]
+    }
+  ],
+  "stations": [
+    {
+      "code": "ST-07 / 终检",
+      "display_name": "终检工位",
+      "description": "晶体管外观与引脚终检",
+      "camera_profile": "line-a-final-v3"
+    },
+    {
+      "code": "ST-03 / 外观检",
+      "display_name": "外观检工位",
+      "description": "晶体管来料外观筛查",
+      "camera_profile": "line-a-appearance-v2"
+    },
+    {
+      "code": "ST-07",
+      "display_name": "终检工位（旧编码）",
+      "description": "兼容既有产线提交的终检编码",
+      "camera_profile": "line-a-final-v3"
+    },
+    {
+      "code": "ST-01",
+      "display_name": "标准测试工位",
+      "description": "集成测试夹具",
+      "camera_profile": "line-a-test-v1"
+    },
+    {
+      "code": "ST-E2E",
+      "display_name": "演示冒烟工位",
+      "description": "Compose 闭环验收专用",
+      "camera_profile": "demo-v1"
+    }
+  ],
+  "field_mapping": {
+    "product_code": "product_code",
+    "product_revision": "product_revision",
+    "batch_no": "batch_no",
+    "station_code": "station_code",
+    "captured_at": "captured_at",
+    "source": "source"
+  },
+  "field_labels": {
+    "product_code": "产品代码",
+    "product_revision": "产品版本",
+    "batch_no": "批次号",
+    "station_code": "工位",
+    "captured_at": "采集时间",
+    "source": "采集来源"
+  },
+  "model": {
+    "id": "patchcore-transistor",
+    "version": "1.0.0-rc1",
+    "feature_bank_version": "fb-transistor-20260804",
+    "adapter": "anomalib.patchcore.v2",
+    "runtime": "torchvision-wide-resnet50-2",
+    "device": "CUDA / RTX A4000",
+    "package_uri": "models/patchcore-transistor/1.0.0-rc1",
+    "package_sha256": "demo-transistor-package-sha256",
+    "score_semantics": "归一化异常证据；高分只表示外观异常区域",
+    "limitations": [
+      "MVTec AD transistor benchmark package is non-commercial research evidence.",
+      "Semantic defect and root cause still require authorized human confirmation."
+    ]
+  },
+  "policy": {
+    "version": "factory-a-transistor-policy-1.0.0",
+    "default": {
+      "review_threshold": 0.4,
+      "hold_threshold": 0.8
+    }
+  },
+  "connectors": {
+    "mes": {
+      "display_name": "Factory A MES",
+      "driver": "mock_http",
+      "contract_version": "mes-batch-v1",
+      "endpoint": "http://mock-external:8081/mes",
+      "payload_mapping": {
+        "batch_no": "batch_no",
+        "reason": "reason"
+      },
+      "fixed_fields": {
+        "source_system": "VisionQC Factory A"
+      },
+      "operations": ["HOLD_BATCH", "RELEASE_BATCH"]
+    },
+    "qms": {
+      "display_name": "Factory A QMS",
+      "driver": "mock_http",
+      "contract_version": "qms-ticket-v1",
+      "endpoint": "http://mock-external:8081/qms",
+      "payload_mapping": {
+        "inspection_id": "inspection_id",
+        "batch_no": "batch_no",
+        "product_code": "product_code",
+        "station_code": "station_code",
+        "disposition": "disposition",
+        "reason": "reason",
+        "root_cause": "root_cause"
+      },
+      "fixed_fields": {
+        "source_system": "VisionQC Factory A",
+        "priority": "P2"
+      },
+      "operations": ["CREATE_TICKET", "UPDATE_TICKET", "CLOSE_TICKET"]
+    }
+  },
+  "metadata": {
+    "customer_segment": "electronics",
+    "deployment_owner": "fde-quality-platform",
+    "evidence_retention_days": 365
+  },
+  "edge_gateway": {
+    "gateway_id": "factory-a-gw-st07",
+    "target_tenant_id": "factory-a",
+    "watch": {
+      "root": "/var/lib/visionqc-gateway/incoming",
+      "relative_path_regex": "^ST-07-final$",
+      "filename_regex": "^(?P<product>TR-AX14|TR-SMOKE)__(?P<batch>B-[A-Z0-9-]+)__(?P<captured_at>\\d{8}T\\d{6})__(?P<sequence>\\d{6})\\.(?P<extension>png|jpe?g)$",
+      "capture_map": {
+        "product_code": "product",
+        "batch_no": "batch",
+        "captured_at": "captured_at"
+      },
+      "defaults": {
+        "station_code": "ST-07 / 终检",
+        "product_revision": "REV-C"
+      },
+      "source": "edge-camera/factory-a/st07",
+      "allowed_extensions": [".png", ".jpg", ".jpeg"],
+      "timestamp_formats": ["%Y%m%dT%H%M%S"],
+      "timezone_offset": "+08:00",
+      "stable_for_seconds": 1.0,
+      "archive_subdir": ".archive",
+      "quarantine_subdir": ".quarantine"
+    },
+    "simulator": {
+      "relative_dir_template": "ST-07-final",
+      "filename_template": "{product}__{batch}__{captured_at}__{sequence}.{extension}",
+      "product": "TR-AX14",
+      "station": "ST-07 / 终检",
+      "product_revision": "REV-C",
+      "batch_prefix": "B-A-DEMO",
+      "extension": ".png"
+    }
+  }
+}

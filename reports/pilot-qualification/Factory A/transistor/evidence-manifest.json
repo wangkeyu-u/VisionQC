@@ -1,0 +1,45 @@
+{
+  "files": {
+    "confidence-intervals.json": {
+      "sha256": "d7e9e8b1f2d1c802c1db359224bda74173df1b180ccdc28a7fac4ad9c2fe974d",
+      "size_bytes": 1481
+    },
+    "error-cases.json": {
+      "sha256": "c9f30d73660b88a2a5e15fa4eab3399bd93ff36eb974ace3918c1271c003c102",
+      "size_bytes": 40563
+    },
+    "evaluation-report.md": {
+      "sha256": "5d36ac5eb03968ed1e52c1ecded33163160e69bca4ede1ae990236850e2a80e2",
+      "size_bytes": 2898
+    },
+    "metrics.json": {
+      "sha256": "e32ba967d0928a3e7477dfeea3ab623e7d1b4c6cca32582ed0d6cd44812cd7f0",
+      "size_bytes": 3754
+    },
+    "model-card.md": {
+      "sha256": "24e73981a9a08685b3d6984f979a584b7b71b32b711474b7641f3ba57447156c",
+      "size_bytes": 1190
+    },
+    "provenance.json": {
+      "sha256": "29881f7557728e72e47b8aff0f0ef83fcd5de1500be87a9ed8ab7c58134f0d09",
+      "size_bytes": 3007
+    },
+    "qualification-summary.json": {
+      "sha256": "1c03baaf997d4049c0823fa58d7be7ee9858d342beebe0535d052f877777596f",
+      "size_bytes": 1555
+    },
+    "release-decision.json": {
+      "sha256": "f884613a4eb960f5922501442647a4d2a550b7c0495d3a4153c303b861230b2b",
+      "size_bytes": 2491
+    },
+    "source-evidence.json": {
+      "sha256": "e613505398bca527ef52550188a7e027559ebaa78675f0d2c6bcadf75b917416",
+      "size_bytes": 51864
+    },
+    "split-manifest.json": {
+      "sha256": "f18841655f274222b96011a99bb7adef9167d458e9f2e33197ddcface64e12f6",
+      "size_bytes": 127940
+    }
+  },
+  "schema_version": "visionqc.evidence-manifest.v1"
+}

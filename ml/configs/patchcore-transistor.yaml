@@ -1,0 +1,53 @@
+schema_version: visionqc.training-config.v1
+seed: 20260804
+model:
+  id: patchcore-transistor
+  version: 1.0.0-rc1
+  feature_bank_version: fb-transistor-20260804
+  adapter: anomalib.patchcore.v2
+  anomalib_version: 2.0.0
+  backbone: wide_resnet50_2
+  layers:
+    - layer2
+    - layer3
+  pretrained: true
+  coreset_sampling_ratio: 0.1
+  num_neighbors: 9
+preprocessing:
+  color_mode: RGB
+  resize:
+    height: 256
+    width: 256
+    interpolation: bilinear
+    antialias: true
+  center_crop:
+    height: 224
+    width: 224
+  normalize:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+  input_constraints:
+    min_width: 32
+    min_height: 32
+    max_pixels: 25000000
+data:
+  category: transistor
+  source_config: configs/mvtec-ad-transistor.json
+  validation_ratio: 0.5
+  train_batch_size: 8
+  eval_batch_size: 8
+  num_workers: 0
+calibration:
+  policy_version: factory-a-transistor-policy-1.0.0
+  max_false_accept_rate: 0.0
+  target_hold_recall: 0.8
+  strategy: legacy
+  safety_margin: 0.0
+performance:
+  warmup_runs: 3
+  measured_runs: 10
+  warm_p95_target_ms: 3000
+runtime:
+  accelerator: auto
+  devices: 1
+  deterministic: true

@@ -1,0 +1,129 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "VisionQC ModelOps PatchCore 双产品评测状态",
+    "description": "技术评测报告：DEMO_SYNTHETIC Anomalib PatchCore smoke 已验证；OFFICIAL_BENCHMARK 与 CUSTOMER_PILOT 仍按 source contract 管理，transistor 的 benchmark evidence 另见 pilot-qualification 报告，当前不作现场效果声明。",
+    "generatedAt": "2026-08-04T14:38:00Z",
+    "sources": [
+      {
+        "id": "smoke-evidence",
+        "label": "Synthetic PatchCore smoke evidence",
+        "path": "reports/model-eval/smoke-evidence.json",
+        "query": {
+          "description": "Deterministic synthetic-fixture evidence from the real Anomalib PatchCore training, packaging and single-image inference path.",
+          "engine": "local-json-projection",
+          "language": "sql",
+          "sql": "SELECT category, model_id, smoke_tests_passed, mvt_ec_metrics_available, image_auroc, pixel_aupro_at_0_30_fpr, calibration_constraints_satisfied, warm_p95_ms, test_samples FROM smoke_products",
+          "tables_used": ["reports/model-eval/smoke-evidence.json"],
+          "filters": ["synthetic_fixture = true", "two normal and two anomalous samples per product"],
+          "metric_definitions": [
+            "smoke_tests_passed counts completed implementation-contract smoke runs, not quality outcomes",
+            "all AUROC/AUPRO and threshold values in this source are synthetic evidence only",
+            "This smoke-only artifact does not contain benchmark metrics; they must not be inferred from smoke rows"
+          ]
+        }
+      },
+      {
+        "id": "mvtec-source",
+        "label": "MVTec AD official dataset and license page",
+        "href": "https://www.mvtec.com/research-teaching/datasets/mvtec-ad"
+      }
+    ],
+    "charts": [
+      {
+        "id": "smoke-execution",
+        "title": "Synthetic PatchCore smoke checks by product",
+        "subtitle": "One completed implementation smoke per product; this is not MVTec or factory performance.",
+        "intent": "comparison",
+        "question": "Did both product-specific model paths complete the implementation smoke?",
+        "rationale": "A simple category comparison is sufficient because the only currently shareable quantitative evidence is smoke execution status.",
+        "type": "bar",
+        "dataset": "smoke_products",
+        "sourceId": "smoke-evidence",
+        "encodings": {
+          "x": {"field": "category", "type": "nominal", "label": "Product"},
+          "y": {"field": "smoke_tests_passed", "type": "quantitative", "aggregate": "none", "label": "Smoke checks passed", "unit": "checks"}
+        },
+        "unit": "checks",
+        "layout": "full",
+        "surface": {"surface": "export", "viewMode": "both"}
+      }
+    ],
+    "tables": [
+      {
+        "id": "smoke-comparison",
+        "title": "Synthetic smoke evidence by product",
+        "subtitle": "Four-image test fixture per product; values are implementation evidence only.",
+        "dataset": "smoke_products",
+        "sourceId": "smoke-evidence",
+        "defaultSort": {"field": "category", "direction": "asc"},
+        "density": "spacious",
+        "columns": [
+          {"field": "category", "label": "Product", "type": "text"},
+          {"field": "model_id", "label": "Model", "type": "text"},
+          {"field": "smoke_tests_passed", "label": "Smoke checks passed", "type": "number"},
+          {"field": "mvt_ec_metrics_available", "label": "MVTec metrics available", "type": "text"},
+          {"field": "image_auroc", "label": "Synthetic image AUROC", "format": "number", "type": "number"},
+          {"field": "pixel_aupro_at_0_30_fpr", "label": "Synthetic pixel AUPRO", "format": "number", "type": "number"},
+          {"field": "calibration_constraints_satisfied", "label": "Threshold constraints", "type": "text"},
+          {"field": "warm_p95_ms", "label": "Warm P95 ms", "format": "number", "type": "number"}
+        ],
+        "layout": "full"
+      }
+    ],
+    "blocks": [
+      {"id": "title", "type": "markdown", "body": "# VisionQC ModelOps PatchCore 双产品评测状态"},
+      {"id": "technical-summary", "type": "markdown", "body": "## Technical Summary\n\nBoth product-specific PatchCore paths completed Anomalib/PyTorch DEMO_SYNTHETIC smoke runs with package verification, feature-bank export and single-image inference. The transistor OFFICIAL_BENCHMARK result is maintained in the source-scoped pilot-qualification package and is BENCHMARK_NO_GO; this smoke artifact makes no customer, factory or production performance claim."},
+      {"id": "smoke-chart-context", "type": "markdown", "body": "## Implementation evidence is complete; quality evidence is not\n\nThe chart counts implementation-contract smoke runs only. Both rows are synthetic, each uses four test images, and both threshold calibrations failed the configured hold-recall constraint. The correct release decision is to keep both candidates out of ACTIVE until authorized MVTec and customer evidence is available."},
+      {"id": "smoke-chart", "type": "chart", "chartId": "smoke-execution", "sourceId": "smoke-evidence"},
+      {"id": "comparison-table-context", "type": "markdown", "body": "## Product comparison and audit fields\n\nThe table preserves model identity, DEMO_SYNTHETIC metric context, threshold status and warm latency. Synthetic AUROC/AUPRO values are not comparable to OFFICIAL_BENCHMARK or customer results and must not be used as a release gate."},
+      {"id": "comparison-table", "type": "table", "tableId": "smoke-comparison", "sourceId": "smoke-evidence"},
+      {"id": "limits", "type": "markdown", "body": "## Limitations and release recommendation\n\nMVTec AD is non-commercial research data. This smoke artifact intentionally contains no optional source bytes; the controlled import, fixed manifest and SHA-256 checks are implemented, and the source-scoped transistor report is BENCHMARK_NO_GO. Keep both products at DRAFT; benchmark can only yield BENCHMARK_PASS / READY_FOR_CUSTOMER_DATA, while CUSTOMER_PILOT requires provenance, gate, approval evidence and rollback conditions. Anomaly evidence is not a confirmed defect type or root cause."}
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-08-04T14:38:00Z",
+    "status": "partial",
+    "datasets": {
+      "smoke_products": [
+        {
+          "category": "bottle",
+          "model_id": "patchcore-bottle-smoke",
+          "smoke_tests_passed": 1,
+          "smoke_tests_total": 1,
+          "mvt_ec_metrics_available": "no",
+          "image_auroc": 1.0,
+          "pixel_aupro_at_0_30_fpr": 0.9569867343,
+          "calibration_constraints_satisfied": "no",
+          "warm_p95_ms": 2.192333,
+          "test_samples": 4
+        },
+        {
+          "category": "transistor",
+          "model_id": "patchcore-transistor-smoke",
+          "smoke_tests_passed": 1,
+          "smoke_tests_total": 1,
+          "mvt_ec_metrics_available": "no",
+          "image_auroc": 1.0,
+          "pixel_aupro_at_0_30_fpr": 0.9623193406,
+          "calibration_constraints_satisfied": "no",
+          "warm_p95_ms": 1.961041,
+          "test_samples": 4
+        }
+      ]
+    },
+    "accessIssues": [
+      {
+        "id": "mvtec-download",
+        "scope": "OFFICIAL_BENCHMARK MVTec AD metrics",
+        "sourceId": "mvtec-source",
+        "message": "This visualization artifact intentionally contains no optional benchmark bytes; use the source-scoped pilot-qualification package for the read-only transistor benchmark result, or obtain an authorized archive through the official MVTec download flow for another run.",
+        "actionLabel": "Open official MVTec dataset page",
+        "actionHref": "https://www.mvtec.com/research-teaching/datasets/mvtec-ad"
+      }
+    ]
+  }
+}

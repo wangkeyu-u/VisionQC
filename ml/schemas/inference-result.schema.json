@@ -1,0 +1,336 @@
+{
+  "$defs": {
+    "AnomalyEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_scope": {
+          "const": "anomaly_and_region_only",
+          "default": "anomaly_and_region_only",
+          "title": "Claim Scope",
+          "type": "string"
+        },
+        "heatmap": {
+          "$ref": "#/$defs/ImageReference"
+        },
+        "overlay": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImageReference"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "root_cause_confirmed": {
+          "const": false,
+          "default": false,
+          "title": "Root Cause Confirmed",
+          "type": "boolean"
+        },
+        "score": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Score",
+          "type": "number"
+        },
+        "semantic_defect_confirmed": {
+          "const": false,
+          "default": false,
+          "title": "Semantic Defect Confirmed",
+          "type": "boolean"
+        },
+        "statement": {
+          "const": "Anomaly evidence only; defect semantics and root cause require human confirmation.",
+          "default": "Anomaly evidence only; defect semantics and root cause require human confirmation.",
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "score",
+        "heatmap"
+      ],
+      "title": "AnomalyEvidence",
+      "type": "object"
+    },
+    "ImageReference": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "integer"
+        },
+        "mime_type": {
+          "const": "image/png",
+          "default": "image/png",
+          "title": "Mime Type",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "uri": {
+          "minLength": 1,
+          "title": "Uri",
+          "type": "string"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "uri",
+        "sha256",
+        "width",
+        "height"
+      ],
+      "title": "ImageReference",
+      "type": "object"
+    },
+    "InputReference": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "integer"
+        },
+        "mime_type": {
+          "enum": [
+            "image/jpeg",
+            "image/png"
+          ],
+          "title": "Mime Type",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "uri": {
+          "minLength": 1,
+          "title": "Uri",
+          "type": "string"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "uri",
+        "sha256",
+        "mime_type",
+        "width",
+        "height"
+      ],
+      "title": "InputReference",
+      "type": "object"
+    },
+    "LatencyEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "inference_ms": {
+          "minimum": 0.0,
+          "title": "Inference Ms",
+          "type": "number"
+        },
+        "postprocess_ms": {
+          "minimum": 0.0,
+          "title": "Postprocess Ms",
+          "type": "number"
+        },
+        "preprocess_ms": {
+          "minimum": 0.0,
+          "title": "Preprocess Ms",
+          "type": "number"
+        },
+        "total_ms": {
+          "minimum": 0.0,
+          "title": "Total Ms",
+          "type": "number"
+        },
+        "warm": {
+          "title": "Warm",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "preprocess_ms",
+        "inference_ms",
+        "postprocess_ms",
+        "total_ms",
+        "warm"
+      ],
+      "title": "LatencyEvidence",
+      "type": "object"
+    },
+    "ModelReference": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {
+          "const": "anomalib.patchcore.v2",
+          "default": "anomalib.patchcore.v2",
+          "title": "Adapter",
+          "type": "string"
+        },
+        "device": {
+          "minLength": 1,
+          "title": "Device",
+          "type": "string"
+        },
+        "feature_bank_version": {
+          "minLength": 1,
+          "title": "Feature Bank Version",
+          "type": "string"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "package_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Package Sha256",
+          "type": "string"
+        },
+        "runtime": {
+          "minLength": 1,
+          "title": "Runtime",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "feature_bank_version",
+        "package_sha256",
+        "runtime",
+        "device"
+      ],
+      "title": "ModelReference",
+      "type": "object"
+    },
+    "PolicyDecision": {
+      "description": "Deterministic routing outcomes; none is a semantic defect verdict.",
+      "enum": [
+        "AUTO_RELEASE",
+        "REVIEW_REQUIRED",
+        "BATCH_HOLD_AND_REVIEW"
+      ],
+      "title": "PolicyDecision",
+      "type": "string"
+    },
+    "PolicyEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "decision": {
+          "$ref": "#/$defs/PolicyDecision"
+        },
+        "hold_threshold": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Hold Threshold",
+          "type": "number"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "review_threshold": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Review Threshold",
+          "type": "number"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "review_threshold",
+        "hold_threshold",
+        "decision",
+        "reason"
+      ],
+      "title": "PolicyEvidence",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Backend-facing immutable result for one successfully scored image.",
+  "properties": {
+    "anomaly": {
+      "$ref": "#/$defs/AnomalyEvidence"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "input": {
+      "$ref": "#/$defs/InputReference"
+    },
+    "inspection_id": {
+      "minLength": 1,
+      "title": "Inspection Id",
+      "type": "string"
+    },
+    "latency": {
+      "$ref": "#/$defs/LatencyEvidence"
+    },
+    "model": {
+      "$ref": "#/$defs/ModelReference"
+    },
+    "policy": {
+      "$ref": "#/$defs/PolicyEvidence"
+    },
+    "schema_version": {
+      "const": "visionqc.inference.v1",
+      "default": "visionqc.inference.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "const": "SCORED",
+      "default": "SCORED",
+      "title": "Status",
+      "type": "string"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "inspection_id",
+    "model",
+    "input",
+    "anomaly",
+    "policy",
+    "latency"
+  ],
+  "title": "InferenceResult",
+  "type": "object"
+}

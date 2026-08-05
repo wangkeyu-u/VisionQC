@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" role="img" aria-label="演示用晶体管检测图像">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c7ccc7"/>
+      <stop offset="1" stop-color="#8e9892"/>
+    </linearGradient>
+    <filter id="grain"><feTurbulence baseFrequency=".8" numOctaves="2" seed="8" result="n"/><feBlend in="SourceGraphic" in2="n" mode="multiply"/></filter>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#46504c"/><stop offset=".48" stop-color="#aab2ad"/><stop offset=".6" stop-color="#39423f"/><stop offset="1" stop-color="#79827d"/></linearGradient>
+  </defs>
+  <rect width="960" height="640" fill="url(#bg)"/>
+  <g opacity=".18" stroke="#23302a" stroke-width="1">
+    <path d="M0 80H960M0 160H960M0 240H960M0 320H960M0 400H960M0 480H960M0 560H960"/>
+    <path d="M80 0V640M160 0V640M240 0V640M320 0V640M400 0V640M480 0V640M560 0V640M640 0V640M720 0V640M800 0V640M880 0V640"/>
+  </g>
+  <g transform="translate(182 86) rotate(-2 300 220)" filter="url(#grain)">
+    <rect x="98" y="70" width="410" height="318" rx="22" fill="#27302c" stroke="#111715" stroke-width="8"/>
+    <rect x="122" y="95" width="362" height="260" rx="10" fill="#151c19"/>
+    <path d="M122 150H484M122 290H484" stroke="#414b46" stroke-width="5"/>
+    <circle cx="164" cy="128" r="13" fill="#6d7771"/><circle cx="441" cy="128" r="13" fill="#6d7771"/>
+    <path d="M175 388v116M302 388v116M431 388v116" stroke="url(#metal)" stroke-width="35" stroke-linecap="round"/>
+    <path d="M175 417v112M302 417v112M431 417v112" stroke="#4e5853" stroke-width="9"/>
+    <path d="M145 218h45l30-29 36 65 42-99 34 75 31-38 55 3" fill="none" stroke="#b7c1bb" stroke-width="6" stroke-linejoin="round"/>
+    <rect x="387" y="260" width="63" height="49" rx="5" fill="#68716c"/>
+    <path d="M397 268l43 33M440 268l-43 33" stroke="#242c28" stroke-width="5"/>
+    <path d="M399 301c11 14 29 9 35-3" fill="none" stroke="#c58a58" stroke-width="5"/>
+  </g>
+  <g fill="#203029" font-family="monospace" font-size="18" opacity=".78">
+    <text x="28" y="36">CAM-A07 · ST-07</text><text x="730" y="612">0960 × 0640</text>
+  </g>
+  <path d="M821 40h96v3h-96zM915 40v96h3V40z" fill="#d8e4dc" opacity=".7"/>
+</svg>

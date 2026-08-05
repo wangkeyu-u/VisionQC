@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-04T15:00:00+08:00",
+  "title": "Design System: VisionQC Industrial Quality Workbench",
+  "extensions": {
+    "colorMeta": {
+      "signal-blue": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "#155EEF",
+        "tonalRamp": ["#102A63", "#123A8C", "#1246B6", "#155EEF", "#4D7DF0", "#8EA9F6", "#C7D5FC", "#EAF0FF"]
+      },
+      "graphite": {
+        "role": "text",
+        "displayName": "Graphite",
+        "canonical": "#1E2A27",
+        "tonalRamp": ["#101513", "#1E2A27", "#2E3D38", "#485853", "#71817A", "#AAB7B1", "#D6DFDA", "#F7F9F8"]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Industrial Canvas",
+        "canonical": "#EDF1EF",
+        "tonalRamp": ["#D6DFDA", "#E0E7E3", "#E8EEEB", "#EDF1EF", "#F2F5F3", "#F7F9F8", "#FBFCFB", "#FFFFFF"]
+      },
+      "normal-green": {
+        "role": "success",
+        "displayName": "Normal Green",
+        "canonical": "#18794E",
+        "tonalRamp": ["#0B3B27", "#0F5A39", "#18794E", "#2F9A68", "#74C59C", "#B6E3CA", "#E7F5ED", "#F5FCF8"]
+      },
+      "warning-amber": {
+        "role": "warning",
+        "displayName": "Warning Amber",
+        "canonical": "#A65F00",
+        "tonalRamp": ["#512D00", "#7A4600", "#A65F00", "#C68122", "#E3B36B", "#F5D7A7", "#FFF1DC", "#FFFAF2"]
+      },
+      "danger-red": {
+        "role": "danger",
+        "displayName": "Danger Red",
+        "canonical": "#B42318",
+        "tonalRamp": ["#5A120D", "#821A12", "#B42318", "#D14B3D", "#E4938A", "#F4C5BF", "#FBEAE7", "#FFF7F5"]
+      }
+    },
+    "typographyMeta": {
+      "display": {"displayName": "Control-room display", "purpose": "Short page titles and primary operational numbers."},
+      "headline": {"displayName": "Workbench heading", "purpose": "Section and evidence headings with compact Chinese-friendly rhythm."},
+      "body": {"displayName": "Readable body", "purpose": "Descriptions, helper text, and audit context."},
+      "label": {"displayName": "Machine label", "purpose": "Scores, timestamps, IDs, versions, and gateway telemetry."}
+    },
+    "shadows": [
+      {"name": "focus-ring", "value": "0 0 0 3px rgba(21,94,239,0.18)", "purpose": "Keyboard focus and high-confidence interactive state."},
+      {"name": "overlay", "value": "0 10px 30px rgba(30,42,39,0.12)", "purpose": "Transient menus only; never a default card treatment."}
+    ],
+    "motion": [
+      {"name": "ease-standard", "value": "cubic-bezier(0.2, 0, 0, 1)", "purpose": "Short state feedback and navigation transitions."},
+      {"name": "duration-quick", "value": "140ms", "purpose": "Hover, focus, and status changes."}
+    ],
+    "breakpoints": [
+      {"name": "workbench-min", "value": "1024px"},
+      {"name": "compact", "value": "1280px"},
+      {"name": "wide", "value": "1440px"}
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action with a compact industrial footprint and visible keyboard focus.",
+      "html": "<button class=\"ds-btn-primary\">提交决定</button>",
+      "css": ".ds-btn-primary { background: #155EEF; color: #FFFFFF; min-height: 36px; padding: 0 13px; border: 1px solid #155EEF; border-radius: 4px; font: 600 13px/1 Inter, 'PingFang SC', sans-serif; transition: background 140ms ease, box-shadow 140ms ease; } .ds-btn-primary:hover { background: #1246B6; } .ds-btn-primary:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(21,94,239,0.18); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Low-emphasis action for navigation, retry, or recovery.",
+      "html": "<button class=\"ds-btn-secondary\">重试加载</button>",
+      "css": ".ds-btn-secondary { background: #FFFFFF; color: #1E2A27; min-height: 36px; padding: 0 13px; border: 1px solid #D6DFDA; border-radius: 4px; font: 600 13px/1 Inter, 'PingFang SC', sans-serif; transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease; } .ds-btn-secondary:hover { background: #F7F9F8; border-color: #AAB7B1; } .ds-btn-secondary:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(21,94,239,0.18); }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "status-badge",
+      "description": "Text-plus-mark state label; color is supplemental, never the only signal.",
+      "html": "<span class=\"ds-status-badge ds-status-badge--normal\"><span aria-hidden=\"true\">●</span> 正常</span>",
+      "css": ".ds-status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid #D6DFDA; border-radius: 4px; color: #1E2A27; background: #F7F9F8; font: 600 12px/1.25 Inter, 'PingFang SC', sans-serif; } .ds-status-badge--normal { color: #18794E; background: #E7F5ED; border-color: #B6E3CA; } .ds-status-badge--warning { color: #A65F00; background: #FFF1DC; border-color: #F5D7A7; } .ds-status-badge--danger { color: #B42318; background: #FBEAE7; border-color: #F4C5BF; }"
+    },
+    {
+      "name": "Context Navigation",
+      "kind": "nav",
+      "refersTo": "global-context-bar",
+      "description": "Compact customer, Deployment Pack, Gateway, and operator context row.",
+      "html": "<nav class=\"ds-context-nav\" aria-label=\"当前上下文\"><span>Factory A</span><span>factory_a/transistor</span><span class=\"ds-context-nav__health\">● Gateway 在线</span></nav>",
+      "css": ".ds-context-nav { display: flex; align-items: center; gap: 18px; min-height: 42px; padding: 0 16px; border-bottom: 1px solid #D6DFDA; background: #FFFFFF; color: #485853; font: 600 12px/1 Inter, 'PingFang SC', sans-serif; } .ds-context-nav__health { color: #18794E; }"
+    },
+    {
+      "name": "Evidence Panel",
+      "kind": "custom",
+      "refersTo": "evidence-panel",
+      "description": "Dominant image evidence surface with adjacent model, policy, and audit metadata.",
+      "html": "<section class=\"ds-evidence-panel\"><div class=\"ds-evidence-panel__media\">原图 / 热力图</div><div class=\"ds-evidence-panel__meta\"><strong>异常分数 0.82</strong><span>异常不等于已确认缺陷</span></div></section>",
+      "css": ".ds-evidence-panel { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 14px; padding: 14px; border: 1px solid #D6DFDA; border-radius: 6px; background: #FFFFFF; color: #1E2A27; } .ds-evidence-panel__media { min-height: 220px; display: grid; place-items: center; border: 1px solid #D6DFDA; background: #1E2A27; color: #FFFFFF; font: 600 13px/1.4 Inter, 'PingFang SC', sans-serif; } .ds-evidence-panel__meta { display: grid; align-content: start; gap: 8px; padding: 4px; font: 13px/1.45 Inter, 'PingFang SC', sans-serif; } .ds-evidence-panel__meta strong { font: 600 20px/1.2 'IBM Plex Mono', ui-monospace, monospace; }"
+    },
+    {
+      "name": "Metric Card",
+      "kind": "card",
+      "refersTo": "metric-card",
+      "description": "Compact API-backed operational count with a clear semantic caption.",
+      "html": "<article class=\"ds-metric-card\"><span>复核积压</span><strong>3</strong><small>其中高风险 1</small></article>",
+      "css": ".ds-metric-card { display: grid; gap: 8px; padding: 14px; border: 1px solid #D6DFDA; border-radius: 6px; background: #FFFFFF; color: #1E2A27; } .ds-metric-card span, .ds-metric-card small { color: #71817A; font: 600 12px/1.3 Inter, 'PingFang SC', sans-serif; } .ds-metric-card strong { font: 600 28px/1 'IBM Plex Mono', ui-monospace, monospace; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Line-Side Evidence Ledger",
+    "overview": "VisionQC is a mature industrial quality control room: quiet, dense, and accountable. The interface should feel like a well-designed production instrument rather than a marketing surface. Every high-value decision starts with evidence, then exposes the policy, model, operator, and external-system trail that supports it.\n\nThe system uses an industrial white and graphite canvas with one signal-blue interaction accent. Semantic colors are deliberately narrow: green means normal, amber means attention or warning, and red means danger or an unresolved stop condition. A flat tonal hierarchy, compact navigation, and 1px rules keep the workbench readable at 1440px, 1280px, and the 1024px minimum desktop width.",
+    "keyCharacteristics": ["Evidence-first layouts with the original image and heatmap as the visual anchor.", "Chinese as the primary interface language; identifiers and version strings remain machine-readable.", "Dense operational tables and short status labels instead of decorative hero copy.", "Explicit empty, loading, error, and mock-data boundaries; no invented production metrics.", "Keyboard-ready actions, visible focus, and state labels that never rely on color alone."],
+    "rules": [
+      {"name": "The One Signal Rule", "body": "Use `#155EEF` and its deep state `#1246B6` for interaction, selection, links, and primary actions only. Do not use blue as a health or quality status.", "section": "colors"},
+      {"name": "The Instrument Hierarchy Rule", "body": "Use a compact system sans stack (`Inter`, `PingFang SC`, `Noto Sans SC`, system sans) for Chinese-readable headings and body copy. Use `IBM Plex Mono` with a system-mono fallback for scores, timestamps, IDs, hashes, gateway versions, and policy/model identifiers. Headings are concise and sentence case; labels are not decorative all-caps English.", "section": "typography"},
+      {"name": "The Flat Ledger Rule", "body": "Establish hierarchy with white surfaces, the `#D6DFDA` rule, and the subtle `#F7F9F8` tonal layer. Cards have 1px borders and 4–6px radii. Decorative shadows, glassmorphism, blur, and large gradients are not part of the system; a small focus ring or transient overlay may use a restrained shadow when it improves keyboard or modal clarity.", "section": "elevation"},
+      {"name": "The Evidence Before Decoration Rule", "body": "The global shell is a compact header plus a context bar for customer, site, Deployment Pack, Gateway health, and operator state. It never consumes a full permanent sidebar. The overview uses metric rows, an attention queue, event state, and Gateway telemetry. Inspection detail uses an original/heatmap evidence viewer with a compact metadata rail. Review uses a desktop queue → evidence → decision structure, while incidents use a timeline and external MES/QMS actions.", "section": "components"}
+    ],
+    "dos": ["**Do** keep industrial white and graphite as the dominant surfaces and use signal blue only for interaction.", "**Do** use green only for normal, amber for warning/attention, and red for danger or failure; pair each with text.", "**Do** make the original image and heatmap the primary visual area on inspection and review screens.", "**Do** show API-backed values, honest empty states, and a visible Mock mode boundary when fixtures or Mock MES/QMS are active.", "**Do** preserve tenant switching, manual upload, Gateway operations, review, incidents, and keyboard recovery at the 1024px desktop minimum.", "**Do** state that an anomaly is not a confirmed defect until a named operator records the decision."],
+    "donts": ["**Don't** use large gradients, glassmorphism, excessive shadows, or a sea of rounded cards.", "**Don't** use decorative all-caps English labels or static demo copy that consumes operational space.", "**Don't** hardcode fake metrics such as “128 件” or “3 个待处理”; show an honest empty state when the API has no data.", "**Don't** present synthetic smoke metrics as production effectiveness or invent formal MVTec results.", "**Don't** hide actions behind color alone, remove high-risk confirmation, or delete existing pilot functions for visual simplicity."]
+  }
+}

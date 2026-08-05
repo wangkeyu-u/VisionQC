@@ -1,0 +1,112 @@
+{
+  "gates": {
+    "approval_eligible": false,
+    "checks": {
+      "customer_data_provenance": {
+        "operator": "==",
+        "scope": "customer_pilot_approval",
+        "status": "NOT_APPLICABLE",
+        "threshold": true,
+        "value": null
+      },
+      "defect_error_auto_release_rate": {
+        "operator": "<=",
+        "status": "INSUFFICIENT_EVIDENCE",
+        "threshold": 0.05,
+        "value": null
+      },
+      "hold_recall": {
+        "operator": ">=",
+        "status": "INSUFFICIENT_EVIDENCE",
+        "threshold": 0.8,
+        "value": null
+      },
+      "image_auroc": {
+        "operator": ">=",
+        "status": "INSUFFICIENT_EVIDENCE",
+        "threshold": 0.9,
+        "value": null
+      },
+      "model_package_integrity": {
+        "operator": "==",
+        "status": "FAIL",
+        "threshold": true,
+        "value": false
+      },
+      "no_split_leakage": {
+        "operator": "==",
+        "status": "FAIL",
+        "threshold": true,
+        "value": false
+      },
+      "normal_review_hold_rate": {
+        "operator": "<=",
+        "status": "INSUFFICIENT_EVIDENCE",
+        "threshold": 0.25,
+        "value": null
+      },
+      "review_hold_recall": {
+        "operator": ">=",
+        "status": "INSUFFICIENT_EVIDENCE",
+        "threshold": 0.95,
+        "value": null
+      },
+      "warm_p95_ms": {
+        "operator": "<=",
+        "status": "INSUFFICIENT_EVIDENCE",
+        "threshold": 500.0,
+        "value": null
+      }
+    },
+    "decision": "INSUFFICIENT_EVIDENCE",
+    "failed": [
+      "no_split_leakage",
+      "model_package_integrity"
+    ],
+    "gate_version": "visionqc-pilot-gates.v2",
+    "missing": [
+      "image_auroc",
+      "defect_error_auto_release_rate",
+      "review_hold_recall",
+      "hold_recall",
+      "normal_review_hold_rate",
+      "warm_p95_ms"
+    ],
+    "report_status": "BENCHMARK_INSUFFICIENT_EVIDENCE",
+    "source_type": "OFFICIAL_BENCHMARK"
+  },
+  "metric_notes": {
+    "reason": "A verified Anomalib PatchCore model package is not available.; Protocol A/B split evidence is not available.; Prediction scores, heatmaps, and thresholded holdout metrics are not available.; OFFICIAL_BENCHMARK requires an immutable dataset fingerprint.; OFFICIAL_BENCHMARK requires a verified dataset receipt.",
+    "unavailable_metrics_are_null": true
+  },
+  "metrics": {
+    "anomalous_sample_count": 0,
+    "aupro": null,
+    "cold_start_ms": null,
+    "defect_error_auto_release_rate": null,
+    "f1": null,
+    "hold_recall": null,
+    "image_auroc": null,
+    "manual_review_burden_rate": null,
+    "metric_status": "UNAVAILABLE",
+    "normal_false_positive_rate": null,
+    "normal_sample_count": 0,
+    "pixel_auroc": null,
+    "precision": null,
+    "recall": null,
+    "review_hold_recall": null,
+    "sample_count": 0,
+    "unavailable_reason": "A verified Anomalib PatchCore model package is not available.; Protocol A/B split evidence is not available.; Prediction scores, heatmaps, and thresholded holdout metrics are not available.; OFFICIAL_BENCHMARK requires an immutable dataset fingerprint.; OFFICIAL_BENCHMARK requires a verified dataset receipt.",
+    "warm_inference_p50_ms": null,
+    "warm_inference_p95_ms": null,
+    "warm_p95_ms": null
+  },
+  "sample_counts": {
+    "ground_truth_masks": 0,
+    "test_anomalous_images": 0,
+    "test_good_images": 0,
+    "train_good_images": 0
+  },
+  "schema_version": "visionqc.pilot-metrics.v1",
+  "thresholds": null
+}

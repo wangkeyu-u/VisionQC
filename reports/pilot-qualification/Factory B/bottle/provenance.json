@@ -1,0 +1,34 @@
+{
+  "audit_reason": null,
+  "blockers": [
+    "A verified Anomalib PatchCore model package is not available.",
+    "Protocol A/B split evidence is not available.",
+    "Prediction scores, heatmaps, and thresholded holdout metrics are not available.",
+    "OFFICIAL_BENCHMARK requires an immutable dataset fingerprint.",
+    "OFFICIAL_BENCHMARK requires a verified dataset receipt.",
+    "The baseline source-evidence hash inventory is not available."
+  ],
+  "category": "bottle",
+  "code_commit": "c438cc494a21830cdb96c447f411ca8678405bd5",
+  "context_name": "benchmark-lab",
+  "customer_provenance": null,
+  "data_status": "OFFICIAL_BENCHMARK",
+  "dataset_fingerprint": null,
+  "dataset_receipt": null,
+  "dataset_summary_sha256": null,
+  "environment": {
+    "machine": "arm64",
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.12.13"
+  },
+  "generated_at": "2026-08-05T03:30:53.030438+00:00",
+  "limitations": [
+    "MVTec AD is an official non-commercial research benchmark, not factory or customer Pilot data.",
+    "Passing benchmark gates only means READY_FOR_CUSTOMER_DATA; it never authorizes APPROVED or ACTIVE."
+  ],
+  "model_package_sha256": null,
+  "qualification_run_status": "BLOCKED",
+  "schema_version": "visionqc.pilot-provenance.v1",
+  "source_evidence_schema": "visionqc.pilot-source-evidence.v1",
+  "source_type": "OFFICIAL_BENCHMARK"
+}

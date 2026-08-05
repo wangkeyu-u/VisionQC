@@ -1,0 +1,16 @@
+{
+  "available": false,
+  "intervals": {},
+  "reason": "No verified benchmark or customer holdout evaluation records are available.",
+  "resamples": 0,
+  "unavailable_metrics": [
+    "image_auroc",
+    "pixel_auroc",
+    "aupro",
+    "precision",
+    "recall",
+    "f1",
+    "routing_metrics",
+    "latency_metrics"
+  ]
+}

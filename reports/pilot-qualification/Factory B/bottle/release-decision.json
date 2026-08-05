@@ -1,0 +1,90 @@
+{
+  "approval_status": "DRAFT_ONLY",
+  "audit_reason": "official_benchmark_insufficient_evidence_draft_only",
+  "dataset_fingerprint": null,
+  "decision": "BENCHMARK_INSUFFICIENT_EVIDENCE",
+  "evidence_package_sha256": "6bf0c90c25b8a96bb459c82382a1dd9667a6d2cd846d14d140c3614b560cf23e",
+  "gate_decision": "INSUFFICIENT_EVIDENCE",
+  "gate_version": "visionqc-pilot-gates.v2",
+  "gates": {
+    "approval_eligible": false,
+    "checks": {
+      "customer_data_provenance": {
+        "operator": "==",
+        "scope": "customer_pilot_approval",
+        "status": "NOT_APPLICABLE",
+        "threshold": true,
+        "value": null
+      },
+      "defect_error_auto_release_rate": {
+        "operator": "<=",
+        "status": "INSUFFICIENT_EVIDENCE",
+        "threshold": 0.05,
+        "value": null
+      },
+      "hold_recall": {
+        "operator": ">=",
+        "status": "INSUFFICIENT_EVIDENCE",
+        "threshold": 0.8,
+        "value": null
+      },
+      "image_auroc": {
+        "operator": ">=",
+        "status": "INSUFFICIENT_EVIDENCE",
+        "threshold": 0.9,
+        "value": null
+      },
+      "model_package_integrity": {
+        "operator": "==",
+        "status": "FAIL",
+        "threshold": true,
+        "value": false
+      },
+      "no_split_leakage": {
+        "operator": "==",
+        "status": "FAIL",
+        "threshold": true,
+        "value": false
+      },
+      "normal_review_hold_rate": {
+        "operator": "<=",
+        "status": "INSUFFICIENT_EVIDENCE",
+        "threshold": 0.25,
+        "value": null
+      },
+      "review_hold_recall": {
+        "operator": ">=",
+        "status": "INSUFFICIENT_EVIDENCE",
+        "threshold": 0.95,
+        "value": null
+      },
+      "warm_p95_ms": {
+        "operator": "<=",
+        "status": "INSUFFICIENT_EVIDENCE",
+        "threshold": 500.0,
+        "value": null
+      }
+    },
+    "decision": "INSUFFICIENT_EVIDENCE",
+    "failed": [
+      "no_split_leakage",
+      "model_package_integrity"
+    ],
+    "gate_version": "visionqc-pilot-gates.v2",
+    "missing": [
+      "image_auroc",
+      "defect_error_auto_release_rate",
+      "review_hold_recall",
+      "hold_recall",
+      "normal_review_hold_rate",
+      "warm_p95_ms"
+    ],
+    "report_status": "BENCHMARK_INSUFFICIENT_EVIDENCE",
+    "source_type": "OFFICIAL_BENCHMARK"
+  },
+  "generated_at": "2026-08-05T03:30:53.030438+00:00",
+  "model_package_sha256": null,
+  "reason": "Official benchmark evidence and all mandatory gates are required before Benchmark Qualification. MVTec cannot be approved or activated. Blockers: A verified Anomalib PatchCore model package is not available.; Protocol A/B split evidence is not available.; Prediction scores, heatmaps, and thresholded holdout metrics are not available.; OFFICIAL_BENCHMARK requires an immutable dataset fingerprint.; OFFICIAL_BENCHMARK requires a verified dataset receipt.; The baseline source-evidence hash inventory is not available..",
+  "schema_version": "visionqc.release-decision.v1",
+  "source_type": "OFFICIAL_BENCHMARK"
+}

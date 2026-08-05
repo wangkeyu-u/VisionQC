@@ -1,0 +1,6 @@
+{
+  "cases": [],
+  "gallery": null,
+  "note": "No cases are asserted without real predictions; populate from a verified holdout evaluation.",
+  "schema_version": "visionqc.error-cases.v1"
+}
