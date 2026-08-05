@@ -19,7 +19,7 @@ import { ErrorState, LoadingState } from '../components/Feedback'
 import { EvidenceViewer } from '../components/EvidenceViewer'
 import { StatusBadge } from '../components/StatusBadge'
 import type { Inspection, ReviewDecision, ReviewReceipt, ReviewTask } from '../types'
-import { decisionLabels, formatDateTime, formatScore } from '../utils'
+import { decisionLabels, formatAuditActor, formatDateTime, formatPolicyReason, formatScore } from '../utils'
 
 const decisions = [
   { value: 'PASS' as const, label: '合格', icon: CheckCircle2, shortcut: '1', copy: '批准当前产品继续流转' },
@@ -132,7 +132,7 @@ export function ReviewWorkspacePage() {
           <p>该决定已写入审计链，不能原地覆盖。后续更正需要新建事件并保留本次记录。</p>
           <dl>
             <div><dt>质量结论</dt><dd>{decision ? decisionLabels[decision] : '—'}</dd></div>
-            <div><dt>操作者</dt><dd>{receipt.actor}</dd></div>
+            <div><dt>操作者</dt><dd>{formatAuditActor(receipt.actor)}</dd></div>
             <div><dt>提交时间</dt><dd>{formatDateTime(receipt.submittedAt, true)}</dd></div>
             <div><dt>决策记录</dt><dd><code>{receipt.decisionId}</code></dd></div>
             <div><dt>关联 ID</dt><dd><code>{receipt.correlationId}</code></dd></div>
@@ -155,29 +155,29 @@ export function ReviewWorkspacePage() {
     <div className="page review-workspace-page">
       <div className="breadcrumb"><Link href="/reviews"><ArrowLeft size={14} />复核队列</Link><span>/</span><strong>{task.id}</strong></div>
       <div className="review-workspace-heading">
-        <div><span className="page-kicker">具名复核 · 任务 v{task.version}</span><div className="title-line"><h1>质量复核工作台</h1><StatusBadge status={inspection.status} /></div><p>{inspection.context.batchNo} · {inspection.context.productCode} · {inspection.context.station}</p></div>
-        <div className="sla-card"><span>复核 SLA</span><strong>{formatDateTime(task.slaAt)}</strong><small>{task.assignee ? `已由 ${task.assignee} 认领` : '待认领'}</small></div>
+        <div><span className="page-kicker">人工确认 · 所有操作都会留下记录</span><div className="title-line"><h1>请确认这张图片</h1><StatusBadge status={inspection.status} /></div><p>批次 {inspection.context.batchNo} · 产品 {inspection.context.productCode} · 工位 {inspection.context.station}</p></div>
+        <div className="sla-card"><span>建议完成时间</span><strong>{formatDateTime(task.slaAt)}</strong><small>{task.assignee ? `当前负责人：${task.assignee}` : '尚未分配负责人'}</small></div>
       </div>
 
       <div className="review-workspace-grid">
         <div className="review-evidence-column">
           <EvidenceViewer inspection={inspection} compact />
           <div className="evidence-strip">
-            <div><span>异常分数</span><strong>{formatScore(inspection.inference?.score)}</strong></div>
-            <div><span>复核阈值</span><strong>{inspection.policy?.reviewThreshold.toFixed(2) ?? '—'}</strong></div>
-            <div><span>暂扣阈值</span><strong>{inspection.policy?.holdThreshold.toFixed(2) ?? '—'}</strong></div>
+            <div><span>系统可疑分数</span><strong>{formatScore(inspection.inference?.score)}</strong></div>
+            <div><span>超过此分数需人工看</span><strong>{inspection.policy?.reviewThreshold.toFixed(2) ?? '—'}</strong></div>
+            <div><span>超过此分数先停批次</span><strong>{inspection.policy?.holdThreshold.toFixed(2) ?? '—'}</strong></div>
             <div><span>模型版本</span><strong>{inspection.inference?.modelVersion ?? '失败'}</strong></div>
             <div><span>策略版本</span><strong>{inspection.policy?.version.split('-').at(-1) ?? '安全降级'}</strong></div>
           </div>
           <div className="review-context panel">
-            <span><strong>模型路由：</strong>{inspection.policy?.reason ?? '模型不可用，安全降级至人工处理'}</span>
+            <span><strong>为什么需要人工确认：</strong>{formatPolicyReason(inspection.policy?.reason)}</span>
             <span><strong>证据指纹：</strong><code>{inspection.image.sha256.slice(0, 18)}…</code></span>
           </div>
         </div>
 
         <aside className="decision-desk panel">
           <div className="decision-desk-head"><div><span>质量决定</span><h2>提交人工结论</h2></div><ClipboardCheck size={22} /></div>
-          <p className="decision-guidance">先检查原图与热力图，再依据现场标准做出结论。数字键 1–5 可快速选择。</p>
+          <p className="decision-guidance">先看原图，再用叠加图定位可疑区域。请根据你实际看到的内容和现场标准选择结论；熟练后可用数字键 1–5。</p>
           <div className="decision-options" role="radiogroup" aria-label="质量结论">
             {decisions.map(({ value, label, icon: Icon, shortcut, copy }) => (
               <button key={value} role="radio" aria-checked={decision === value} className={decision === value ? `selected decision-${value.toLowerCase()}` : ''} onClick={() => chooseDecision(value)}>
@@ -190,7 +190,7 @@ export function ReviewWorkspacePage() {
             <div className="decision-fields">
               <label><span>决定理由 <b>*</b></span><select value={reasonCode} onChange={(event) => setReasonCode(event.target.value)}>{reasonOptions[decision].map((reason) => <option key={reason.value} value={reason.value}>{reason.label}</option>)}</select></label>
               <label><span>现场观察 {decision !== 'PASS' && <b>*</b>}</span><textarea rows={4} placeholder="描述你在原图中观察到的事实；不要把模型响应写成已确认根因。" value={note} onChange={(event) => setNote(event.target.value)} /></label>
-              <label><span>模型反馈</span><select value={modelFeedback} onChange={(event) => setModelFeedback(event.target.value as typeof modelFeedback)}><option value="NONE">不标记</option><option value="FALSE_POSITIVE">疑似模型误检</option><option value="POSSIBLE_MISS">疑似模型漏检</option></select><small>反馈只进入独立评测集，不会自动更新生产模型。</small></label>
+              <label><span>系统提示是否准确（可选）</span><select value={modelFeedback} onChange={(event) => setModelFeedback(event.target.value as typeof modelFeedback)}><option value="NONE">暂不评价</option><option value="FALSE_POSITIVE">系统提示了，但我没看到问题</option><option value="POSSIBLE_MISS">我看到了问题，但系统没有提示</option></select><small>这项反馈只用于以后评测，不会立即改变当前系统。</small></label>
             </div>
           )}
 
@@ -214,7 +214,7 @@ export function ReviewWorkspacePage() {
               <div><dt>影响批次</dt><dd>{inspection.context.batchNo}</dd></div>
               <div><dt>检测记录</dt><dd>{inspection.id}</dd></div>
               <div><dt>标准理由</dt><dd>{reasonOptions[decision].find((reason) => reason.value === reasonCode)?.label}</dd></div>
-              <div><dt>当前操作者</dt><dd>林知夏 / Inspector</dd></div>
+              <div><dt>当前操作者</dt><dd>林知夏 / 质检员</dd></div>
             </dl>
             <label className="impact-check"><input type="checkbox" checked={impactConfirmed} onChange={(event) => setImpactConfirmed(event.target.checked)} /><span><strong>我已核对影响对象与现场证据</strong><small>我理解异常分数不是缺陷确认，本决定基于人工检查与适用标准。</small></span></label>
             <div className="dialog-actions"><button className="secondary-button" onClick={() => setConfirmOpen(false)}>返回检查</button><button className="primary-button danger-button" disabled={!impactConfirmed || submitting} onClick={() => void submitDecision(true)}>{submitting ? '写入审计链…' : '确认并提交'}<ArrowRight size={16} /></button></div>

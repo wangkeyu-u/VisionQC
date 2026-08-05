@@ -41,25 +41,25 @@ export function GatewayDashboardPage() {
     <div className="page gateway-page">
       <div className="page-heading">
         <div>
-          <span className="page-kicker">Edge Gateway · 工位状态</span>
-          <h1>工位 / Gateway 运营监测</h1>
-          <p>查看现场网关心跳、目录采集积压与上传可靠性。队列项会保留在本地，网关异常不会默认放行图片。</p>
+          <span className="page-kicker">现场接入程序（Gateway）</span>
+          <h1>现场设备连接</h1>
+          <p>确认工位电脑是否在线、有没有图片等待上传。网络中断时图片会留在现场，恢复后自动继续上传。</p>
         </div>
         <button className="secondary-button" onClick={() => void load()}><RefreshCw size={14} />刷新状态</button>
       </div>
 
       <div className="gateway-summary">
-        <article className="panel"><span>已注册 Gateway</span><strong>{summary.gateways.toString().padStart(2, '0')}</strong><small>{context?.tenant.name ?? '当前租户'} · JWT scope</small></article>
-        <article className="panel"><span>在线工位</span><strong>{summary.online.toString().padStart(2, '0')}</strong><small>心跳在 {15} 秒内更新</small></article>
-        <article className={summary.backlog ? 'panel gateway-warning' : 'panel'}><span>本地待补传</span><strong>{summary.backlog.toString().padStart(2, '0')}</strong><small>待上传 / 重试 / 失败</small></article>
-        <article className={summary.failures ? 'panel gateway-danger' : 'panel'}><span>累计上传失败</span><strong>{summary.failures.toString().padStart(2, '0')}</strong><small>错误保留在网关审计队列</small></article>
+        <article className="panel"><span>已经接入的工位</span><strong>{summary.gateways.toString().padStart(2, '0')}</strong><small>{context?.tenant.name ?? '当前工厂'}的现场接入程序</small></article>
+        <article className="panel"><span>目前在线</span><strong>{summary.online.toString().padStart(2, '0')}</strong><small>最近 15 秒内报告过状态</small></article>
+        <article className={summary.backlog ? 'panel gateway-warning' : 'panel'}><span>等待补传的图片</span><strong>{summary.backlog.toString().padStart(2, '0')}</strong><small>网络恢复后会自动继续</small></article>
+        <article className={summary.failures ? 'panel gateway-danger' : 'panel'}><span>上传失败次数</span><strong>{summary.failures.toString().padStart(2, '0')}</strong><small>失败原因会保留，图片不会丢失</small></article>
       </div>
 
       {error ? <ErrorState error={error} onRetry={load} /> : !gateways ? <LoadingState label="正在读取工位网关状态…" /> : gateways.length === 0 ? (
-        <div className="state-panel"><Server size={25} /><div><strong>当前租户还没有心跳记录</strong><span>启动对应 Deployment Pack 的 edge-gateway 后，状态会自动出现在这里。</span></div></div>
+        <div className="state-panel"><Server size={25} /><div><strong>还没有连接任何现场工位</strong><span>手动上传仍然可以使用。现场接入程序启动后，设备会自动出现在这里。</span></div></div>
       ) : (
         <div className="gateway-table panel">
-          <div className="gateway-table-head"><span>工位 / Gateway</span><span>运行状态</span><span>本地队列</span><span>上传统计</span><span>最近心跳</span></div>
+          <div className="gateway-table-head"><span>工位 / 接入程序</span><span>现在是否可用</span><span>等待上传</span><span>上传记录</span><span>最近联系时间</span></div>
           {gateways.map((gateway) => (
             <article key={gateway.gatewayId}>
               <div className="gateway-identity"><div className="gateway-icon"><Server size={18} /></div><span><strong>{gateway.stationCode}</strong><small>{gateway.gatewayId} · v{gateway.gatewayVersion}</small><code>{gateway.deploymentPackKey ?? 'pack unavailable'}</code></span></div>

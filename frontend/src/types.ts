@@ -291,6 +291,11 @@ export interface GatewayStatus {
   metrics: Record<string, unknown>
 }
 
+export interface SystemHealth {
+  status: 'ok' | 'degraded'
+  checks: Record<string, boolean>
+}
+
 export interface OperationsSummary {
   tenantId: string
   generatedAt: string

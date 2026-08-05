@@ -16,6 +16,7 @@ import type {
   IncidentSummary,
   ModelOpsStatus,
   OperationsSummary,
+  SystemHealth,
   TenantContext,
 } from '../types'
 
@@ -391,7 +392,7 @@ function normalizeTimeline(items: RawTimeline[]): TimelineEvent[] {
 }
 
 async function assetUrl(assetId?: string | null): Promise<string> {
-  if (!assetId) return '/mock/transistor-original.svg'
+  if (!assetId) return '/mock/transistor-demo-v2.png'
   const cached = assetUrlCache.get(assetId)
   if (cached) return cached
   const request = apiRequestBlob(`/assets/${assetId}`).catch((error) => {
@@ -491,6 +492,10 @@ function normalizeExternalAction(raw: RawExternalAction): ExternalAction {
 }
 
 export const visionQcApi = {
+  async getSystemHealth(): Promise<SystemHealth> {
+    return apiRequest<SystemHealth>('/health')
+  },
+
   async getTenantContext(): Promise<TenantContext> {
     return normalizeTenantContext(await apiRequest<RawTenantContext | TenantContext>('/tenant-context'))
   },

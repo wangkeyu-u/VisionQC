@@ -1,6 +1,6 @@
 import type { Inspection, QualityIncident, ReviewTask, TenantContext, DeploymentConnector } from '../types'
 
-const original = '/mock/transistor-original.svg'
+const original = '/mock/transistor-demo-v2.png'
 const normal = '/mock/transistor-normal.svg'
 const heatmap = '/mock/transistor-heatmap.svg'
 

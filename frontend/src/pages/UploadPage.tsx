@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'wouter'
 import {
   ArrowRight,
@@ -34,6 +34,7 @@ export function UploadPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [recent, setRecent] = useState<Inspection[] | null>(null)
+  const autoDemoLoaded = useRef(false)
   const [form, setForm] = useState({
     productCode: '',
     productRevision: '',
@@ -59,6 +60,12 @@ export function UploadPage() {
     visionQcApi.listRecentInspections().then(setRecent).catch(() => setRecent([]))
   }, [])
 
+  useEffect(() => {
+    if (!activeDeployment || autoDemoLoaded.current || new URLSearchParams(window.location.search).get('demo') !== '1') return
+    autoDemoLoaded.current = true
+    void loadDemo()
+  }, [activeDeployment?.packKey])
+
   useEffect(() => () => {
     if (preview?.startsWith('blob:')) URL.revokeObjectURL(preview)
   }, [preview])
@@ -77,10 +84,17 @@ export function UploadPage() {
   }
 
   async function loadDemo() {
-    const encoded = 'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAuUlEQVR4nO3aqw1CARAF0XkTOiF5dSBpgQaQVICkAiQN0AIOasDQDh4c30zgyBX3brJ2h8v5SJnESZzESZzESZzESZzESZzESZzESZzETT5fOZsvbianw/7htB+7wHK1fscSy7vY3XbzKxeQOImTOImTOImTOImTuMnnK8dx+sI0iZM4iZM4iZM4iZM4iZM4iZM4iZM4iZM4iRv+7zZfJnESJ3ESJ3ESJ3ESJ3ESJ3ESJ3ES57cXeNYV4wANFLwAsE0AAAAASUVORK5CYII='
-    const bytes = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0))
-    const demo = new File([bytes], 'TR_AX14_B240804_demo.png', { type: 'image/png' })
-    acceptFile(demo)
+    let blob: Blob
+    try {
+      const response = await fetch('/mock/transistor-demo-v2.png')
+      if (!response.ok) throw new Error('demo asset unavailable')
+      blob = await response.blob()
+    } catch {
+      const encoded = 'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAuUlEQVR4nO3aqw1CARAF0XkTOiF5dSBpgQaQVICkAiQN0AIOasDQDh4c30zgyBX3brJ2h8v5SJnESZzESZzESZzESZzESZzESZzESZzETT5fOZsvbianw/7htB+7wHK1fscSy7vY3XbzKxeQOImTOImTOImTOImTuMnnK8dx+sI0iZM4iZM4iZM4iZM4iZM4iZM4iZM4iZM4iRv+7zZfJnESJ3ESJ3ESJ3ESJ3ESJ3ESJ3ES57cXeNYV4wANFLwAsE0AAAAASUVORK5CYII='
+      blob = new Blob([Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0))], { type: 'image/png' })
+    }
+    const demo = new File([blob], 'transistor-demo-defect.png', { type: 'image/png' })
+    acceptFile(demo, '/mock/transistor-demo-v2.png')
     if (activeDeployment) {
       setForm((current) => ({
         ...current,
@@ -122,13 +136,19 @@ export function UploadPage() {
   return (
     <div className="page upload-page">
       <div className="page-heading">
-        <div><span className="page-kicker">检测接收 · Deployment Pack 感知</span><h1>接收新的检测样本</h1><p>提交原始证据与生产上下文。系统将异步完成异常检测，并按当前部署包的策略安全路由。</p></div>
-        <div className="shift-summary"><span>{tenantContext?.tenant.name ?? '部署上下文'}</span><strong>{activeDeployment?.packKey ?? '读取中…'}</strong><small>{activeDeployment?.inputMode === 'folder_watch' ? '文件夹监听接入' : 'API 手动接入'} · 当前策略生效</small></div>
+        <div><span className="page-kicker">新建检测</span><h1>上传一张产品图片</h1><p>选择图片并核对批次信息。系统会指出可疑区域，再把需要确认的图片交给人工复核。</p></div>
+        <div className="shift-summary"><span>{tenantContext?.tenant.name ?? '当前工厂'}</span><strong>{activeDeployment?.displayName ?? '正在读取产品配置…'}</strong><small>{activeDeployment?.inputMode === 'folder_watch' ? '现场文件夹已接入' : '网页上传已启用'} · 演示数据不会进入真实生产系统</small></div>
       </div>
+
+      <ol className="flow-stepper" aria-label="检测流程">
+        <li className="active"><span>1</span><strong>选择图片</strong><small>可使用内置演示样本</small></li>
+        <li><span>2</span><strong>系统分析</strong><small>生成分数和可疑区域</small></li>
+        <li><span>3</span><strong>人工确认</strong><small>决定合格或如何处置</small></li>
+      </ol>
 
       <div className="upload-layout">
         <form className="panel upload-panel" onSubmit={submit}>
-          <div className="panel-heading"><div><span>01</span><h2>原始图像</h2></div><button type="button" className="text-button" onClick={() => void loadDemo()}><RotateCw size={14} />载入演示样本</button></div>
+          <div className="panel-heading"><div><span>第 1 步</span><h2>选择产品图片</h2></div><button type="button" className="secondary-button compact-button" onClick={() => void loadDemo()}><RotateCw size={14} />使用演示图片</button></div>
           <div
             className={`drop-zone ${isDragging ? 'dragging' : ''} ${file ? 'has-file' : ''}`}
             onDragEnter={(event) => { event.preventDefault(); setIsDragging(true) }}
@@ -153,15 +173,15 @@ export function UploadPage() {
             ) : (
               <label>
                 <div className="drop-icon"><ImagePlus size={26} /></div>
-                <strong>拖入产品图像，或点击选择</strong>
-                <span>JPEG / PNG · 最大 20 MB · 单张图像</span>
+                <strong>把图片拖到这里，或点击选择文件</strong>
+                <span>支持 JPEG、PNG；每次一张，最大 20 MB</span>
                 <input type="file" accept="image/jpeg,image/png" onChange={(event) => { const selected = event.target.files?.[0]; if (selected) acceptFile(selected) }} />
               </label>
             )}
           </div>
           {fileError && <div className="inline-error" role="alert">{fileError}</div>}
 
-          <div className="panel-heading context-heading"><div><span>02</span><h2>生产上下文</h2></div><small><i />字段将写入不可覆盖的证据记录</small></div>
+          <div className="panel-heading context-heading"><div><span>第 2 步</span><h2>核对产品和批次信息</h2></div><small><i />提交后会保存为只读记录</small></div>
           <div className="form-grid">
             <label><span>{activeDeployment?.fieldLabels.product_code ?? '产品字段'} <b>*</b></span><select value={form.productCode} required disabled={!activeDeployment} onChange={(event) => setForm({ ...form, productCode: event.target.value })}>{activeDeployment?.products.map((product) => <option key={product.code} value={product.code}>{product.code} · {product.displayName}</option>) ?? <option value="">等待部署包…</option>}</select></label>
             <label><span>{activeDeployment?.fieldLabels.product_revision ?? '产品版本'} <b>*</b></span><input value={form.productRevision} required disabled={!activeDeployment} onChange={(event) => setForm({ ...form, productRevision: event.target.value })} /></label>
@@ -174,12 +194,12 @@ export function UploadPage() {
 
           <div className="submission-bar">
             <div><ShieldCheck size={18} /><span><strong>安全路由已启用</strong><small>模型或策略不可用时将进入人工处理，不会自动放行。</small></span></div>
-            <button className="primary-button" disabled={submitting || !activeDeployment}>{submitting ? <><UploadCloud className="pulse" size={17} />正在创建…</> : !activeDeployment ? <>等待部署包<ArrowRight size={17} /></> : <>创建检测任务<ArrowRight size={17} /></>}</button>
+            <button className="primary-button" disabled={submitting || !activeDeployment}>{submitting ? <><UploadCloud className="pulse" size={17} />正在上传并创建任务…</> : !activeDeployment ? <>正在读取产品配置<ArrowRight size={17} /></> : <>开始检测<ArrowRight size={17} /></>}</button>
           </div>
         </form>
 
         <aside className="panel recent-panel">
-          <div className="panel-heading"><div><span>最近记录</span><h2>最近检测</h2></div><small className="live-indicator"><i />实时</small></div>
+          <div className="panel-heading"><div><span>历史记录</span><h2>最近处理的图片</h2></div><small className="live-indicator"><i />自动更新</small></div>
           {!recent ? <LoadingState label="读取最近检测…" /> : (
             <div className="recent-list">
               {recent.map((inspection) => (
@@ -191,7 +211,7 @@ export function UploadPage() {
               ))}
             </div>
           )}
-          <div className="mock-disclosure"><Info size={16} /><p><strong>演示环境</strong> 当前图像、MES 与 QMS 均为模拟数据，不代表真实产线效果。</p></div>
+          <div className="mock-disclosure"><Info size={16} /><p><strong>这是演示环境</strong> 内置图片和外部系统均为模拟数据，只用于体验流程，不代表真实产线效果。</p></div>
           <div className="ingest-checks">
             <span><CheckCircle2 size={15} />格式与像素数校验</span>
             <span><CheckCircle2 size={15} />租户内幂等检查</span>

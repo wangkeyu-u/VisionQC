@@ -21,10 +21,12 @@ import { ErrorState, LoadingState } from '../components/Feedback'
 import { StatusBadge } from '../components/StatusBadge'
 import { Timeline } from '../components/Timeline'
 import type { QualityIncident } from '../types'
-import { formatDateTime } from '../utils'
+import { formatAuditActor, formatAuditDetail, formatDateTime } from '../utils'
 
 const incidentStatusLabels = { OPEN: '已创建', ACTION_PENDING: '处置待执行', ACTION_EXECUTING: '处置执行中', VERIFYING: '等待验证', CLOSED: '已关闭', ESCALATED: '已升级' }
 const dispositionLabels = { REWORK: '返工', SCRAP: '报废', INVESTIGATE: '调查' }
+const connectorActionLabels: Record<string, string> = { HOLD_BATCH: '暂扣批次', CREATE_TICKET: '创建质量工单' }
+const connectorSystemLabels: Record<string, string> = { 'Mock MES': '模拟 MES', 'Mock QMS': '模拟 QMS' }
 const transientIncidentStatuses = ['ACTION_PENDING', 'ACTION_EXECUTING']
 
 export function IncidentPage() {
@@ -52,7 +54,7 @@ export function IncidentPage() {
     <div className="page incident-page">
       <div className="breadcrumb"><Link href="/reviews"><ArrowLeft size={14} />复核队列</Link><span>/</span><strong>{incident.id}</strong></div>
       <div className="detail-heading incident-heading">
-        <div><span className="page-kicker">质量事件 · 处置闭环</span><div className="title-line"><h1>质量事件 {incident.id}</h1><StatusBadge status={incident.status} label={incidentStatusLabels[incident.status]} /></div><p>由人工确认结果创建 · Mock MES/QMS 闭环演示</p></div>
+        <div><span className="page-kicker">质量事件 · 处置闭环</span><div className="title-line"><h1>质量事件 {incident.id}</h1><StatusBadge status={incident.status} label={incidentStatusLabels[incident.status]} /></div><p>由人工确认结果创建 · 模拟 MES / QMS 闭环演示</p></div>
         <Link className="secondary-button" href={`/inspections/${incident.inspectionId}`}>查看原始证据<ExternalLink size={15} /></Link>
       </div>
 
@@ -71,7 +73,7 @@ export function IncidentPage() {
         <section className="panel closure-gate">
           <div className="section-title"><div><span>关闭门槛</span><h2>关闭门槛</h2></div><LockKeyhole size={19} /></div>
           <ul>
-            <li className="done"><Check size={15} /><span><strong>具名处置决定</strong><small>{incident.evidence.decisionActor} · {dispositionLabels[incident.disposition]}</small></span></li>
+            <li className="done"><Check size={15} /><span><strong>具名处置决定</strong><small>{formatAuditActor(incident.evidence.decisionActor)} · {dispositionLabels[incident.disposition]}</small></span></li>
             <li className="done"><Check size={15} /><span><strong>事件负责人</strong><small>{incident.owner}</small></span></li>
             <li className={hasOutcome ? 'done' : undefined}>{hasOutcome ? <Check size={15} /> : <CircleDashed size={15} />}<span><strong>调查结论</strong><small>{incident.outcome ?? '等待 QMS 更新'}</small></span></li>
             <li className={hasVerification ? 'done' : undefined}>{hasVerification ? <Check size={15} /> : <CircleDashed size={15} />}<span><strong>处置验证记录</strong><small>{incident.verificationRecord ?? '尚未提交'}</small></span></li>
@@ -82,9 +84,9 @@ export function IncidentPage() {
 
       <section className="panel decision-evidence-card">
         <div className="section-title"><div><span>人工决定证据</span><h2>人工决定与版本证据</h2></div><ShieldCheck size={20} /></div>
-        <blockquote>“{incident.evidence.decisionReason}”</blockquote>
+        <blockquote>“{formatAuditDetail(incident.evidence.decisionReason)}”</blockquote>
         <div className="decision-evidence-grid">
-          <span><small>操作者</small><strong>{incident.evidence.decisionActor}</strong></span>
+          <span><small>操作者</small><strong>{formatAuditActor(incident.evidence.decisionActor)}</strong></span>
           <span><small>异常分数</small><strong>{incident.evidence.score.toFixed(2)} <em>模型证据</em></strong></span>
           <span><small>模型版本</small><strong>{incident.evidence.modelVersion}</strong></span>
           <span><small>策略版本</small><strong>{incident.evidence.policyVersion}</strong></span>
@@ -92,19 +94,19 @@ export function IncidentPage() {
       </section>
 
       <section className="panel connector-section">
-        <div className="section-title"><div><span>幂等外部操作</span><h2>外部业务操作</h2></div><small><i />Mock MES / QMS</small></div>
+        <div className="section-title"><div><span>防止重复执行</span><h2>外部业务操作</h2></div><small><i />模拟 MES / QMS</small></div>
         <div className="connector-grid">
           {incident.externalActions.map((action) => (
             <article key={action.id}>
-              <div className="connector-head"><div className={action.system === 'Mock MES' ? 'mes' : 'qms'}>{action.system === 'Mock MES' ? <Boxes size={19} /> : <TicketCheck size={19} />}</div><span><strong>{action.system}</strong><small>{action.action}</small></span><StatusBadge status={action.status} size="sm" /></div>
+              <div className="connector-head"><div className={action.system === 'Mock MES' ? 'mes' : 'qms'}>{action.system === 'Mock MES' ? <Boxes size={19} /> : <TicketCheck size={19} />}</div><span><strong>{connectorSystemLabels[action.system] ?? action.system}</strong><small>{connectorActionLabels[action.action] ?? action.action}</small></span><StatusBadge status={action.status} size="sm" /></div>
               <p>{action.message}</p>
-              <dl><div><dt>尝试次数</dt><dd>{action.attempts}</dd></div><div><dt>外部编号</dt><dd>{action.externalRef ?? '—'}</dd></div><div className="wide"><dt>幂等键</dt><dd><code>{action.idempotencyKey}</code></dd></div><div className="wide"><dt>最后更新</dt><dd>{formatDateTime(action.updatedAt, true)}</dd></div></dl>
+              <dl><div><dt>尝试次数</dt><dd>{action.attempts}</dd></div><div><dt>外部编号</dt><dd>{action.externalRef ?? '—'}</dd></div><div className="wide"><dt>防重复编号</dt><dd><code>{action.idempotencyKey}</code></dd></div><div className="wide"><dt>最后更新</dt><dd>{formatDateTime(action.updatedAt, true)}</dd></div></dl>
               {action.status === 'FAILED' && <button className="secondary-button"><RotateCcw size={14} />授权重放</button>}
               {action.externalRef && <button className="text-button">查看模拟记录<ArrowUpRight size={14} /></button>}
             </article>
           ))}
         </div>
-        <div className="idempotency-note"><ShieldCheck size={17} /><span><strong>未发现重复副作用。</strong> QMS 首次超时后以相同幂等键重试并取回原工单，最终仅关联一个外部记录。</span></div>
+        <div className="idempotency-note"><ShieldCheck size={17} /><span><strong>没有重复建单或重复暂扣。</strong> 即使连接超时，系统也会用同一个防重复编号继续执行，最终只保留一条外部记录。</span></div>
       </section>
 
       <section className="panel incident-timeline-panel">

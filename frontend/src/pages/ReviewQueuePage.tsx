@@ -8,9 +8,9 @@ import type { ReviewTask } from '../types'
 import { formatDateTime, formatScore } from '../utils'
 
 const routeLabels = {
-  GREY_ZONE: '双阈值灰区',
-  HIGH_SCORE_HOLD: '高分暂扣',
-  SAFE_DEGRADE: '安全降级',
+  GREY_ZONE: '分数处于待确认区间',
+  HIGH_SCORE_HOLD: '分数较高，批次已暂扣',
+  SAFE_DEGRADE: '系统异常，转人工确认',
 }
 
 export function ReviewQueuePage() {
@@ -34,8 +34,8 @@ export function ReviewQueuePage() {
   return (
     <div className="page reviews-page">
       <div className="page-heading">
-        <div><span className="page-kicker">人工复核 · 风险队列</span><h1>人工复核队列</h1><p>按质量风险与 SLA 排序。模型结果用于提供证据，不替代你的现场质量判断。</p></div>
-        <div className="queue-metrics"><div><span>待处理</span><strong>{tasks?.length ?? '—'}</strong></div><div><span>已暂扣</span><strong>{tasks ? tasks.filter((task) => task.held).length : '—'}</strong></div><div><span>SLA 风险</span><strong>{tasks ? tasks.filter((task) => task.priority === 'CRITICAL').length : '—'}</strong></div></div>
+        <div><span className="page-kicker">人工确认</span><h1>等待我确认的图片</h1><p>从最需要关注的任务开始。系统会提供图片和可疑区域，最终判断由你根据现场标准作出。</p></div>
+        <div className="queue-metrics"><div><span>等待确认</span><strong>{tasks?.length ?? '—'}</strong></div><div><span>批次已暂扣</span><strong>{tasks ? tasks.filter((task) => task.held).length : '—'}</strong></div><div><span>即将超时</span><strong>{tasks ? tasks.filter((task) => task.priority === 'CRITICAL').length : '—'}</strong></div></div>
       </div>
 
       <div className="queue-toolbar panel">
@@ -46,12 +46,12 @@ export function ReviewQueuePage() {
             <button key={value} className={filter === value ? 'active' : ''} onClick={() => setFilter(value)}>{label}</button>
           ))}
         </div>
-        <span className="queue-sort">排序：风险优先 · SLA 升序</span>
+        <span className="queue-sort">排序：先看风险高、等待久的任务</span>
       </div>
 
       {error ? <ErrorState error={error} onRetry={load} /> : !tasks ? <LoadingState label="正在读取复核任务…" /> : (
         <div className="review-table panel">
-          <div className="review-table-head"><span>证据 / 任务</span><span>触发路径</span><span>风险与分数</span><span>责任 / SLA</span><span>操作</span></div>
+          <div className="review-table-head"><span>图片 / 批次</span><span>为什么需要确认</span><span>状态与分数</span><span>负责人 / 截止时间</span><span>操作</span></div>
           {visible.map((task) => (
             <article key={task.id} className={task.route === 'SAFE_DEGRADE' ? 'safe-degrade-row' : ''}>
               <div className="task-identity"><img src={task.thumbnailUrl} alt="" /><span><strong>{task.batchNo}</strong><small>{task.id}</small><code>{task.inspectionId}</code></span></div>

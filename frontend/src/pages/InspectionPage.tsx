@@ -19,7 +19,7 @@ import { EvidenceViewer } from '../components/EvidenceViewer'
 import { StatusBadge } from '../components/StatusBadge'
 import { Timeline } from '../components/Timeline'
 import type { Inspection } from '../types'
-import { formatDateTime, formatScore } from '../utils'
+import { formatDateTime, formatPolicyReason, formatScore, formatSource } from '../utils'
 
 const transientStatuses = ['RECEIVED', 'VALIDATED', 'INFERENCING', 'SCORED']
 
@@ -56,12 +56,12 @@ export function InspectionPage() {
       <div className="breadcrumb"><Link href="/"><ArrowLeft size={14} />检测任务</Link><span>/</span><strong>{inspection.id}</strong></div>
       <div className="detail-heading">
         <div>
-          <span className="page-kicker">检测证据 · {inspection.context.productCode}</span>
-          <div className="title-line"><h1>检测证据详情</h1><StatusBadge status={inspection.status} /></div>
-          <p>{inspection.context.batchNo} · {inspection.context.station} · 采集于 {formatDateTime(inspection.context.capturedAt, true)}</p>
+          <span className="page-kicker">图片检测结果 · {inspection.context.productCode}</span>
+          <div className="title-line"><h1>图片检测结果</h1><StatusBadge status={inspection.status} /></div>
+          <p>批次 {inspection.context.batchNo} · 工位 {inspection.context.station} · 拍摄于 {formatDateTime(inspection.context.capturedAt, true)}</p>
         </div>
         {inspection.reviewTaskId && (
-          <Link className="primary-button" href={`/reviews/${inspection.reviewTaskId}`}>进入人工复核<ArrowRight size={17} /></Link>
+          <Link className="primary-button" href={`/reviews/${inspection.reviewTaskId}`}>由我确认这张图片<ArrowRight size={17} /></Link>
         )}
       </div>
 
@@ -92,14 +92,14 @@ export function InspectionPage() {
               <div><dt><MapPin size={15} />工位</dt><dd>{inspection.context.station}</dd></div>
               <div><dt><Clock3 size={15} />采集时间</dt><dd>{formatDateTime(inspection.context.capturedAt, true)}</dd></div>
               <div className="wide"><dt><Fingerprint size={15} />原图 SHA-256</dt><dd><code>{inspection.image.sha256}</code></dd></div>
-              <div><dt>来源</dt><dd>{inspection.context.source}</dd></div>
+              <div><dt>图片来源</dt><dd>{formatSource(inspection.context.source)}</dd></div>
             </dl>
           </section>
         </div>
 
         <aside className="inspection-side">
           <section className="panel score-card">
-            <div className="section-title"><div><span>模型输出</span><h2>异常分数</h2></div><Gauge size={20} /></div>
+            <div className="section-title"><div><span>系统提示</span><h2>可疑程度</h2></div><Gauge size={20} /></div>
             <div className="score-readout"><strong>{formatScore(inference?.score)}</strong><span>/ 1.00</span></div>
             {inference && policy ? (
               <>
@@ -112,28 +112,30 @@ export function InspectionPage() {
                 <div className="threshold-labels"><span>自动放行区</span><span>人工复核区</span><span>暂扣复核区</span></div>
                 <div className="policy-result">
                   <AlertTriangle size={18} />
-                  <div><strong>{policy.decision === 'BATCH_HOLD_AND_REVIEW' ? '仅暂扣，等待人工结论' : policy.decision === 'AUTO_RELEASE' ? '命中自动放行策略' : '需要人工复核'}</strong><span>{policy.reason}</span></div>
+                  <div><strong>{policy.decision === 'BATCH_HOLD_AND_REVIEW' ? '批次已暂时停止，等待人工确认' : policy.decision === 'AUTO_RELEASE' ? '分数低于复核线，策略允许放行' : '这张图片需要人工确认'}</strong><span>{formatPolicyReason(policy.reason)}</span></div>
                 </div>
               </>
             ) : <p className="muted-copy">模型未返回有效结果，策略已执行安全降级。</p>}
           </section>
 
           <section className="panel model-card">
-            <div className="section-title"><div><span>版本追溯</span><h2>版本与追溯</h2></div><Cpu size={20} /></div>
-            <dl>
+            <details className="technical-details">
+              <summary><span><Cpu size={18} /><strong>技术追溯信息</strong><small>供技术人员和审核人员查看</small></span><span>展开</span></summary>
+              <dl>
               <div><dt>模型</dt><dd>{inference ? `${inference.modelId}@${inference.modelVersion}` : '未完成'}</dd></div>
               <div><dt>特征库</dt><dd>{inference?.featureBankVersion ?? '—'}</dd></div>
               <div><dt>策略</dt><dd>{policy?.version ?? '安全降级策略'}</dd></div>
               <div><dt>推理耗时</dt><dd>{inference ? `${inference.latencyMs} ms` : '—'}</dd></div>
               <div><dt>运行设备</dt><dd>{inference?.device ?? '—'}</dd></div>
               <div><dt>关联 ID</dt><dd><code>{inspection.correlationId}</code></dd></div>
-            </dl>
+              </dl>
+            </details>
           </section>
 
           <section className="semantic-boundary">
-            <span>01 · 语义边界</span>
-            <strong>异常响应不是缺陷确认</strong>
-            <p>PatchCore 只输出异常程度与区域。缺陷类别、根因和处置必须基于现场标准由人工确认。</p>
+            <span>理解这份结果</span>
+            <strong>“看起来可疑”不等于“已经确认有缺陷”</strong>
+            <p>系统只比较图片与正常样本的差异。缺陷是什么、为什么发生、该如何处置，仍需要人根据现场标准确认。</p>
           </section>
         </aside>
       </div>

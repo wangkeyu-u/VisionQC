@@ -71,6 +71,17 @@ MVTec AD `transistor` 使用 213 张正常训练图、50 张 validation 和 50 �
 
 ## 三分钟体验
 
+### 完全不懂代码：双击启动（macOS）
+
+1. 安装并启动 [Docker Desktop](https://www.docker.com/products/docker-desktop/)。
+2. 在项目文件夹中双击 `start-demo.command`。
+3. 浏览器打开后，点击首页的“使用演示图片开始”。
+4. 体验结束后双击 `stop-demo.command`。
+
+详细截图式说明、常见问题和术语解释见 [零基础使用指南](docs/BEGINNER-GUIDE.md)。
+
+### 熟悉终端：命令启动
+
 ```bash
 cd infra
 docker compose up --build

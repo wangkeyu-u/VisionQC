@@ -1,6 +1,6 @@
 import { Bot, Cable, Cpu, ShieldCheck, UserRoundCheck } from 'lucide-react'
 import type { TimelineEvent } from '../types'
-import { formatDateTime } from '../utils'
+import { formatAuditActor, formatAuditDetail, formatAuditTitle, formatDateTime } from '../utils'
 
 const iconMap = {
   model: Cpu,
@@ -20,11 +20,11 @@ export function Timeline({ events, compact = false }: { events: TimelineEvent[];
             <div className={`timeline-icon ${event.kind}`}><Icon size={16} /></div>
             <div className="timeline-copy">
               <div className="timeline-heading">
-                <strong>{event.title}</strong>
+                <strong>{formatAuditTitle(event.title)}</strong>
                 <time dateTime={event.occurredAt}>{formatDateTime(event.occurredAt, true)}</time>
               </div>
-              <p>{event.detail}</p>
-              <div className="timeline-meta"><span>{event.actor}</span><code>{event.correlationId}</code></div>
+              <p>{formatAuditDetail(event.detail)}</p>
+              <div className="timeline-meta"><span>{formatAuditActor(event.actor)}</span><details><summary>查看关联编号</summary><code>{event.correlationId}</code></details></div>
             </div>
           </li>
         )

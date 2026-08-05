@@ -13,9 +13,10 @@ describe('VisionQC quality workstation', () => {
   it('keeps the model boundary visible on the operations overview', async () => {
     renderAt('/')
 
-    expect(screen.getByText(/异常不等于已确认缺陷/)).toBeInTheDocument()
-    expect(await screen.findByRole('heading', { name: '今天的质量控制面' })).toBeInTheDocument()
-    expect(screen.getByText(/检测吞吐/)).toBeInTheDocument()
+    expect(screen.getByText(/不会代替人确认合格、不合格或故障原因/)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '质量工作台' })).toBeInTheDocument()
+    expect(screen.getByText(/今天收到的图片/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /使用演示图片开始/ })).toHaveAttribute('href', '/upload?demo=1')
     expect((await screen.findAllByText('B-240804-17')).length).toBeGreaterThan(0)
   })
 
@@ -29,12 +30,12 @@ describe('VisionQC quality workstation', () => {
     }, { status: 201 })))
     renderAt('/upload')
 
-    await user.click(screen.getByRole('button', { name: /载入演示样本/ }))
-    expect(screen.getByAltText('待上传图像预览')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /创建检测任务/ }))
+    await user.click(screen.getByRole('button', { name: /使用演示图片/ }))
+    expect(await screen.findByAltText('待上传图像预览')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /开始检测/ }))
 
-    expect(await screen.findByRole('heading', { name: '检测证据详情' })).toBeInTheDocument()
-    expect(screen.getByText('仅暂扣，等待人工结论')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '图片检测结果' })).toBeInTheDocument()
+    expect(screen.getByText('批次已暂时停止，等待人工确认')).toBeInTheDocument()
     expect(window.location.pathname).toBe('/inspections/insp-240804-0087')
   })
 
@@ -42,10 +43,11 @@ describe('VisionQC quality workstation', () => {
     const user = userEvent.setup()
     renderAt('/inspections/insp-240804-0087')
 
-    expect(await screen.findByRole('heading', { name: '检测证据详情' })).toBeInTheDocument()
-    expect(screen.getByText('异常响应不是缺陷确认')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '图片检测结果' })).toBeInTheDocument()
+    expect(screen.getByText(/看起来可疑.*已经确认有缺陷/)).toBeInTheDocument()
+    await user.click(screen.getByText('技术追溯信息'))
     expect(screen.getAllByText('patchcore-transistor@1.0.0').length).toBeGreaterThan(0)
-    expect(screen.getByText('仅暂扣，等待人工结论')).toBeInTheDocument()
+    expect(screen.getByText('批次已暂时停止，等待人工确认')).toBeInTheDocument()
 
     const opacity = screen.getByRole('slider', { name: '热力图透明度' })
     fireEvent.change(opacity, { target: { value: '25' } })
@@ -56,7 +58,7 @@ describe('VisionQC quality workstation', () => {
     const user = userEvent.setup()
     renderAt('/reviews/rev-240804-031')
 
-    expect(await screen.findByRole('heading', { name: '质量复核工作台' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '请确认这张图片' })).toBeInTheDocument()
     await user.click(screen.getByRole('radio', { name: /调查/ }))
     await user.type(screen.getByPlaceholderText(/描述你在原图中观察到的事实/), '引脚根部存在可见污染，需要进一步调查来源。')
     await user.click(screen.getByRole('button', { name: /提交“调查”/ }))
@@ -78,7 +80,7 @@ describe('VisionQC quality workstation', () => {
 
     expect(await screen.findByRole('heading', { name: '质量事件 qinc-240804-017' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '外部业务操作' })).toBeInTheDocument()
-    expect(screen.getByText(/未发现重复副作用/)).toBeInTheDocument()
+    expect(screen.getByText(/没有重复建单或重复暂扣/)).toBeInTheDocument()
     expect(screen.getByText('QMS-NCR-2026-1042')).toBeInTheDocument()
     await waitFor(() => expect(screen.getByText(/QMS 工单创建完成/)).toBeInTheDocument())
     expect(screen.getByRole('button', { name: /条件未满足，不能关闭/ })).toBeDisabled()
@@ -93,13 +95,13 @@ describe('VisionQC quality workstation', () => {
 
     await user.selectOptions(selector, 'factory-b')
 
-    await waitFor(() => expect(screen.getByRole('heading', { name: '今天的质量控制面' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('heading', { name: '质量工作台' })).toBeInTheDocument())
 
-    await user.click(screen.getByRole('link', { name: 'ModelOps' }))
+    await user.click(screen.getByRole('link', { name: '模型证据' }))
     expect(await screen.findByText('patchcore-bottle')).toBeInTheDocument()
     expect(screen.getAllByText('factory_b/bottle').length).toBeGreaterThan(0)
 
-    await user.click(screen.getAllByRole('link', { name: /手动上传/ })[0])
+    await user.click(screen.getAllByRole('link', { name: /上传图片/ })[0])
     expect((await screen.findAllByText('Factory B')).length).toBeGreaterThan(0)
     expect(screen.getByText('SKU')).toBeInTheDocument()
   })
@@ -107,9 +109,31 @@ describe('VisionQC quality workstation', () => {
   it('shows tenant-scoped edge gateway backlog and heartbeat status', async () => {
     renderAt('/operations')
 
-    expect(await screen.findByRole('heading', { name: '工位 / Gateway 运营监测' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '现场设备连接' })).toBeInTheDocument()
     expect(screen.getByText('factory-a-gw-st07 · v0.1.0')).toBeInTheDocument()
-    expect(screen.getByText('本地待补传')).toBeInTheDocument()
+    expect(screen.getByText('等待补传的图片')).toBeInTheDocument()
     expect(screen.getByText('心跳与后端连通正常')).toBeInTheDocument()
+  })
+
+  it('explains the product in plain language and offers a one-click demo path', async () => {
+    const user = userEvent.setup()
+    renderAt('/')
+
+    await user.click(screen.getByRole('button', { name: '使用帮助' }))
+    expect(screen.getByRole('dialog', { name: '第一次使用 VisionQC' })).toBeInTheDocument()
+    expect(screen.getByText(/不需要了解模型或编程/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /使用演示图片开始/ })).toHaveAttribute('href', '/upload?demo=1')
+    expect(screen.getByText(/Gateway（现场接入程序）/)).toBeInTheDocument()
+  })
+
+  it('shows actionable end-to-end connection readiness', async () => {
+    const user = userEvent.setup()
+    renderAt('/')
+
+    const status = await screen.findByRole('button', { name: /系统连接正常/ })
+    await user.click(status)
+    expect(screen.getByRole('dialog', { name: '系统连接检查' })).toBeInTheDocument()
+    expect(screen.getByText('手动演示已就绪')).toBeInTheDocument()
+    expect(screen.getByText(/即使现场设备离线，也可以使用网页中的演示图片/)).toBeInTheDocument()
   })
 })

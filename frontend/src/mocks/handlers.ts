@@ -23,6 +23,10 @@ function notFound(resource: string) {
 }
 
 export const handlers = [
+  http.get('/api/v1/health', async () => {
+    return HttpResponse.json({ status: 'ok', checks: { storage: true, model: true } })
+  }),
+
   http.get('/api/v1/tenant-context', async () => {
     return HttpResponse.json(structuredClone(tenantContexts[mockTenant]))
   }),
