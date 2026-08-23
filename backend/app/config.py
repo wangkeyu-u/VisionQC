@@ -33,6 +33,12 @@ class Settings(BaseSettings):
 
     max_upload_bytes: int = 20 * 1024 * 1024
     max_image_pixels: int = 40_000_000
+    image_quality_enabled: bool = True
+    image_quality_min_sharpness: float = Field(default=2.0, ge=0)
+    image_quality_dark_mean_threshold: float = Field(default=24.0, ge=0, le=255)
+    image_quality_overexposed_mean_threshold: float = Field(default=245.0, ge=0, le=255)
+    image_quality_overexposed_pixel_ratio: float = Field(default=0.35, ge=0, le=1)
+    image_quality_min_contrast: float = Field(default=5.0, ge=0, le=255)
     process_inline: bool = False
     worker_poll_seconds: float = 0.5
     connector_max_attempts: int = 3
@@ -52,8 +58,8 @@ class Settings(BaseSettings):
     bootstrap_review_threshold: float = Field(default=0.4, ge=0, le=1)
     bootstrap_hold_threshold: float = Field(default=0.8, ge=0, le=1)
     bootstrap_enabled: bool = True
-    bootstrap_tenant_ids: str = "factory-a,factory-b"
-    demo_switchable_tenant_ids: str = "factory-a,factory-b"
+    bootstrap_tenant_ids: str = "factory-a,factory-b,duerr-demo"
+    demo_switchable_tenant_ids: str = "factory-a,factory-b,duerr-demo"
     deployment_manifest_dir: Path | None = None
 
     @model_validator(mode="after")

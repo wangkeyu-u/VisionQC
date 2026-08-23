@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import statistics
 import tempfile
 import warnings
 from collections.abc import Mapping
@@ -126,6 +127,59 @@ class ValidatedImage:
     extension: str
     width: int
     height: int
+    quality_flags: list[str]
+
+
+def _quality_flags(image: Image.Image, settings: Settings) -> list[str]:
+    """Return abstain flags without rejecting a decodable customer image.
+
+    Security failures are rejected before this function.  Operational quality
+    failures are persisted and routed to human review so they can never become
+    an automatic release.
+    """
+    if not settings.image_quality_enabled:
+        return []
+    gray = image.convert("L")
+    if max(gray.size) > 256:
+        scale = 256 / max(gray.size)
+        gray = gray.resize(
+            (max(2, int(gray.width * scale)), max(2, int(gray.height * scale))),
+            Image.Resampling.BILINEAR,
+        )
+    # ``tobytes`` is both deterministic for mode ``L`` and understood by the
+    # Pillow type stubs; unlike ``getdata`` it does not rely on an untyped
+    # ImagingCore iterator.
+    values = list(gray.tobytes())
+    if not values:
+        return ["NO_TARGET_OR_EMPTY_FRAME"]
+    mean = statistics.fmean(values)
+    contrast = statistics.pstdev(values)
+    width, height = gray.size
+    horizontal = [
+        abs(values[(y * width) + x] - values[(y * width) + x + 1])
+        for y in range(height)
+        for x in range(width - 1)
+    ]
+    vertical = [
+        abs(values[(y * width) + x] - values[((y + 1) * width) + x])
+        for y in range(height - 1)
+        for x in range(width)
+    ]
+    sharpness = statistics.fmean(horizontal + vertical) if horizontal or vertical else 0.0
+    flags: list[str] = []
+    if mean <= settings.image_quality_dark_mean_threshold:
+        flags.append("TOO_DARK")
+    if (
+        mean >= settings.image_quality_overexposed_mean_threshold
+        or sum(value >= 250 for value in values) / len(values)
+        >= settings.image_quality_overexposed_pixel_ratio
+    ):
+        flags.append("OVEREXPOSED")
+    if sharpness < settings.image_quality_min_sharpness:
+        flags.append("BLURRY")
+    if contrast < settings.image_quality_min_contrast:
+        flags.append("LOW_CONTRAST_OR_NO_TARGET")
+    return flags
 
 
 def validate_image(data: bytes, content_type: str | None, settings: Settings) -> ValidatedImage:
@@ -136,6 +190,7 @@ def validate_image(data: bytes, content_type: str | None, settings: Settings) ->
     allowed = {"image/jpeg": ("JPEG", "jpg"), "image/png": ("PNG", "png")}
     if content_type not in allowed:
         raise InvalidInput("only JPEG and PNG images are accepted")
+    quality_flags: list[str]
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
@@ -143,6 +198,7 @@ def validate_image(data: bytes, content_type: str | None, settings: Settings) ->
                 image.load()
                 width, height = image.size
                 detected_format = image.format
+                quality_flags = _quality_flags(image, settings)
     except (UnidentifiedImageError, OSError, Image.DecompressionBombWarning) as exc:
         raise InvalidInput("image cannot be safely decoded") from exc
     expected_format, extension = allowed[content_type]
@@ -157,6 +213,7 @@ def validate_image(data: bytes, content_type: str | None, settings: Settings) ->
         extension=extension,
         width=width,
         height=height,
+        quality_flags=quality_flags,
     )
 
 
@@ -727,11 +784,16 @@ class VisionQCService:
             else "BLOCKED_CUSTOMER_PROVENANCE_INCOMPLETE"
         )
         risk_labels = list(dataset.risk_labels) if dataset else ["DEMO_ONLY", "NO_EFFECT_CLAIM"]
+        report_scope = {
+            "factory-a": "Factory A",
+            "factory-b": "Factory B",
+            "duerr-demo": "Duerr Demo",
+        }.get(tenant_id, tenant_id)
         report_dir = (
             Path(__file__).resolve().parents[2]
             / "reports"
             / "pilot-qualification"
-            / ("Factory A" if tenant_id == "factory-a" else "Factory B")
+            / report_scope
             / product.code
         )
         qualification_status = (
@@ -802,6 +864,50 @@ class VisionQCService:
         gate_values_are_safe = bool(gate_checks) and all(
             item.get("status") in {"PASS", "NOT_APPLICABLE"} for item in gate_checks.values()
         )
+        pilot_gate_contract = {
+            "version": "visionqc-pilot-gates.v3",
+            "threshold_selection": {
+                "allowed_source_split": "validation",
+                "holdout_used_for_tuning": False,
+                "holdout_usage": "one frozen final report only",
+            },
+            "checks": {
+                "abnormal_auto_release_rate": {
+                    "operator": "<=",
+                    "threshold": 0.0,
+                    "gate_class": "HARD_GATE",
+                    "label": "异常样本自动放行必须为 0",
+                },
+                "review_hold_abnormal_recall": {
+                    "operator": ">=",
+                    "threshold": 0.95,
+                    "gate_class": "HARD_GATE",
+                    "label": "Review + Hold 异常召回率",
+                },
+                "hold_abnormal_recall": {
+                    "operator": ">=",
+                    "threshold": 0.80,
+                    "gate_class": "HARD_GATE",
+                    "label": "Hold 异常召回率",
+                },
+                "normal_manual_review_rate": {
+                    "operator": "<=",
+                    "threshold": 0.35,
+                    "gate_class": "OPERATIONAL_TARGET",
+                    "label": "正常样本进入人工复核目标",
+                },
+            },
+            "safe_degrade": {
+                "ood": "REVIEW_OR_HOLD",
+                "image_quality_failure": "REVIEW_OR_HOLD",
+                "abstain": "NEVER_AUTO_RELEASE",
+            },
+            "evaluation_status": (
+                "PASS" if gate_values_are_safe else "NOT_EVALUATED" if not gate_checks else "FAIL"
+            ),
+        }
+        gate_results = dict(gates) if isinstance(gates, dict) else {}
+        gate_results["pilot_gate_contract"] = pilot_gate_contract
         # The endpoint reports the conservative release boundary.  A demo Pack
         # can remain ACTIVE for workflow smoke while the model is not qualified.
         return ModelOpsStatusResponse(
@@ -849,7 +955,7 @@ class VisionQCService:
             if manifest.model.package_sha256
             else None,
             evidence_package_sha256=evidence_package_sha256,
-            gate_results=gates,
+            gate_results=gate_results,
             activation_allowed=bool(
                 qualification
                 and qualification.status == "APPROVED"
@@ -1325,6 +1431,7 @@ class VisionQCService:
             station_code=read_field("station_code") or "",
             captured_at=read_field("captured_at") or "",
             source=read_field("source", optional=True) or "api",
+            metadata=self._context_metadata(fields),
         )
         if manifest.resolve_product(context.product_code) is None:
             raise InvalidInput(
@@ -1343,6 +1450,26 @@ class VisionQCService:
                 },
             )
         return context
+
+    @staticmethod
+    def _context_metadata(fields: Mapping[str, Any]) -> dict[str, Any]:
+        raw = fields.get("context_metadata_json")
+        if raw is None or raw == "":
+            return {}
+        if not isinstance(raw, str):
+            raise InvalidInput("context metadata must be a JSON object")
+        try:
+            value = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise InvalidInput("context metadata is not valid JSON") from exc
+        if not isinstance(value, dict):
+            raise InvalidInput("context metadata must be a JSON object")
+        # The metadata envelope is intentionally bounded and JSON-only.  It is
+        # evidence context, not an unvalidated command channel.
+        encoded = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+        if len(encoded.encode("utf-8")) > 16_384:
+            raise InvalidInput("context metadata is too large")
+        return value
 
     def _record_security_rejection(
         self,
@@ -1430,6 +1557,8 @@ class VisionQCService:
             station_code=context.station_code,
             captured_at=context.captured_at,
             source=context.source,
+            context_metadata=context.metadata,
+            quality_flags=image.quality_flags,
         )
         session.add(inspection)
         try:
@@ -1576,6 +1705,7 @@ class VisionQCService:
                 station_code=inspection.station_code,
                 captured_at=inspection.captured_at,
                 source=inspection.source,
+                metadata=inspection.context_metadata,
             ),
             images=[
                 ImageEvidence(
@@ -1616,6 +1746,7 @@ class VisionQCService:
             review_task_id=review.id if review else None,
             incident_id=incident.id if incident else None,
             failure_reason=inspection.failure_reason,
+            quality_flags=list(inspection.quality_flags or []),
             idempotent_replay=idempotent_replay,
             created_at=inspection.created_at,
             updated_at=inspection.updated_at,
@@ -1637,6 +1768,31 @@ class VisionQCService:
             actor="system:model-worker",
             reason="model invocation started",
         )
+        if inspection.quality_flags:
+            inspection.failure_reason = (
+                "safe-degrade: image quality gate failed ("
+                + ", ".join(inspection.quality_flags)
+                + ")"
+            )
+            self._transition_inspection(
+                session,
+                inspection,
+                InspectionStatus.INFERENCE_FAILED,
+                actor="system:quality-gate",
+                reason=inspection.failure_reason,
+            )
+            self._transition_inspection(
+                session,
+                inspection,
+                InspectionStatus.REVIEW_REQUIRED,
+                actor="system:policy",
+                reason="image quality is insufficient; human review required",
+            )
+            self._ensure_review_task(session, inspection)
+            self._mark_inference_outbox_processed(
+                session, inspection.id, tenant_id=inspection.tenant_id
+            )
+            return
         original = session.scalar(
             select(ImageAsset).where(
                 ImageAsset.inspection_id == inspection.id,
@@ -1674,6 +1830,30 @@ class VisionQCService:
                 InspectionStatus.REVIEW_REQUIRED,
                 actor="system:policy",
                 reason="fail-safe routing; automatic release prohibited",
+            )
+            self._ensure_review_task(session, inspection)
+            self._mark_inference_outbox_processed(
+                session, inspection.id, tenant_id=inspection.tenant_id
+            )
+            return
+
+        if output.ood:
+            inspection.failure_reason = (
+                "safe-degrade: model marked this image as out-of-distribution"
+            )
+            self._transition_inspection(
+                session,
+                inspection,
+                InspectionStatus.INFERENCE_FAILED,
+                actor="system:model-worker",
+                reason=inspection.failure_reason,
+            )
+            self._transition_inspection(
+                session,
+                inspection,
+                InspectionStatus.REVIEW_REQUIRED,
+                actor="system:policy",
+                reason="out-of-distribution evidence requires human review",
             )
             self._ensure_review_task(session, inspection)
             self._mark_inference_outbox_processed(
@@ -2120,12 +2300,97 @@ class VisionQCService:
             payload=qms_payload,
             correlation_id=correlation_id,
         )
+        if manifest is not None and manifest.connectors.dxq_mock is not None:
+            dxq_payload = self._dxq_quality_record_payload(
+                session,
+                inspection=inspection,
+                incident=incident,
+                disposition=disposition,
+                reason=reason,
+            )
+            self._new_external_action(
+                session,
+                incident=incident,
+                connector="DXQ_MOCK",
+                operation="PUBLISH_QUALITY_EVENT",
+                idempotency_key=f"{incident.id}:dxq_mock:publish",
+                payload=manifest.connector_payload("DXQ_MOCK", dxq_payload),
+                correlation_id=correlation_id,
+            )
         if self.settings.process_inline:
             session.flush()
             self.process_pending_external_actions(
                 session, incident_id=incident.id, tenant_id=incident.tenant_id
             )
         return incident
+
+    def _dxq_quality_record_payload(
+        self,
+        session: Session,
+        *,
+        inspection: Inspection,
+        incident: QualityIncident,
+        disposition: str,
+        reason: str,
+    ) -> dict[str, Any]:
+        """Build the generic simulated digital quality record boundary.
+
+        The payload contains references and reviewed context, never the raw
+        image bytes.  Defaults are explicit so an incomplete pilot context is
+        visible to the simulated contract instead of being silently guessed.
+        """
+
+        metadata = inspection.context_metadata or {}
+        inference = session.scalar(
+            select(InferenceResult)
+            .where(
+                InferenceResult.inspection_id == inspection.id,
+                InferenceResult.tenant_id == inspection.tenant_id,
+            )
+            .order_by(InferenceResult.attempt.desc())
+        )
+
+        def text_value(key: str, fallback: str) -> str:
+            value = metadata.get(key)
+            return str(value).strip() if value is not None and str(value).strip() else fallback
+
+        return {
+            "body_id": text_value("body_id", inspection.batch_no),
+            "workpiece_id": text_value("workpiece_id", inspection.id),
+            "paint_shop": text_value("paint_shop", "PAINT_SHOP_DEMO"),
+            "booth_station": text_value("booth_station", inspection.station_code),
+            "line": text_value("line", "LINE_UNSPECIFIED"),
+            "model_variant": text_value("model_variant", "MODEL_UNSPECIFIED"),
+            "color_code": text_value("color_code", "COLOR_UNSPECIFIED"),
+            "paint_recipe": text_value("paint_recipe", "RECIPE_UNSPECIFIED"),
+            "shift": text_value("shift", "SHIFT_UNSPECIFIED"),
+            "timestamp": inspection.captured_at.isoformat(),
+            "visual_defect_type": text_value("visual_defect_type", "UNCONFIRMED_ANOMALY"),
+            "severity": incident.severity,
+            "mask_or_heatmap": (
+                {"heatmap_uri": inference.heatmap_uri}
+                if inference is not None and inference.heatmap_uri
+                else {"heatmap_uri": None, "quality_flags": inspection.quality_flags or []}
+            ),
+            "operator_decision": disposition,
+            "equipment_alarm_refs": self._metadata_list(metadata, "equipment_alarm_refs"),
+            "process_parameter_refs": self._metadata_list(metadata, "process_parameter_refs"),
+            "root_cause_candidates": self._metadata_list(
+                metadata, "root_cause_candidates", fallback=["PENDING_INVESTIGATION"]
+            ),
+            "disposition": disposition,
+            "quality_case_id": incident.id,
+            "review_reason": reason,
+        }
+
+    @staticmethod
+    def _metadata_list(
+        metadata: Mapping[str, Any], key: str, fallback: list[str] | None = None
+    ) -> list[Any]:
+        value = metadata.get(key)
+        if isinstance(value, list):
+            return value
+        return list(fallback or [])
 
     def request_incident_action(
         self,

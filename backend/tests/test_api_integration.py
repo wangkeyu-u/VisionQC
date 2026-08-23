@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from app.audit import record_audit
+from app.model_adapter import ModelOutput
 from app.models import AuditEvent
 
 
@@ -61,6 +62,45 @@ def test_invalid_file_is_rejected_before_model_call(app, client, auth_headers) -
         )
         assert rejection is not None
         assert rejection.correlation_id == response.json()["correlation_id"]
+
+
+@pytest.mark.integration
+def test_image_quality_failure_is_safe_review_and_never_auto_releases(
+    app, upload_inspection
+) -> None:
+    app.state.settings.image_quality_enabled = True
+    response = upload_inspection(0, idempotency_key="quality-gate-dark")
+    assert response.status_code == 202
+    body = response.json()
+    assert body["status"] == "REVIEW_REQUIRED"
+    assert body["review_task_id"]
+    assert body["model"] is None
+    assert "TOO_DARK" in body["quality_flags"]
+    assert "safe-degrade" in body["failure_reason"]
+    assert app.state.service.model_adapter.calls == 0
+
+
+@pytest.mark.integration
+def test_model_ood_signal_is_safe_review(monkeypatch, app, upload_inspection) -> None:
+    def ood_output(_image: bytes) -> ModelOutput:
+        return ModelOutput(
+            score=0.1,
+            heatmap_png=b"not-used-because-ood",
+            model_id="ood-test",
+            model_version="test",
+            feature_bank_version="test",
+            runtime_device="cpu",
+            latency_ms=1,
+            ood=True,
+        )
+
+    monkeypatch.setattr(app.state.service.model_adapter, "infer", ood_output)
+    response = upload_inspection(255, idempotency_key="quality-gate-ood")
+    assert response.status_code == 202
+    body = response.json()
+    assert body["status"] == "REVIEW_REQUIRED"
+    assert body["model"] is None
+    assert "out-of-distribution" in body["failure_reason"]
 
 
 @pytest.mark.integration

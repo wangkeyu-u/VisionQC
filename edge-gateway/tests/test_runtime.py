@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from io import BytesIO
 from pathlib import Path
 
 from pydantic import SecretStr
 
+from edge_gateway.camera import CameraCaptureError
 from edge_gateway.config import GatewaySettings
 from edge_gateway.runtime import GatewayRuntime
 from edge_gateway.uploader import UploadError, UploadResult
@@ -48,6 +50,40 @@ class RecoveringHeartbeatUploader(FakeUploader):
     def heartbeat(self, payload):
         self.heartbeats.append(payload)
         return next(self.heartbeat_results)
+
+
+class FakeCamera:
+    def __init__(self, data: bytes):
+        self.data = data
+        self.calls = 0
+
+    def capture_jpeg(self) -> bytes:
+        self.calls += 1
+        return self.data
+
+
+class MissingCamera:
+    def capture_jpeg(self) -> bytes:
+        raise CameraCaptureError(
+            "CAMERA_NOT_FOUND", "没有找到 USB 相机（测试模拟）。"
+        )
+
+
+def camera_jpeg(luminance: int = 130) -> bytes:
+    from PIL import Image, ImageDraw
+
+    output = BytesIO()
+    image = Image.new("RGB", (128, 96), (luminance, luminance, luminance))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle(
+        (12, 12, 116, 84),
+        fill=(min(255, luminance + 30),) * 3,
+        outline=(min(255, luminance + 90),) * 3,
+        width=4,
+    )
+    draw.line((20, 48, 108, 48), fill=(max(0, luminance - 70),) * 3, width=7)
+    image.save(output, format="JPEG")
+    return output.getvalue()
 
 
 def write_a_sample(root: Path, *, sequence: str = "000001") -> Path:
@@ -122,6 +158,8 @@ def test_runtime_parses_factory_b_path_and_context(pack_b, tmp_path: Path) -> No
         min_height=16,
         min_sharpness=2.0,
         stable_for_seconds=0,
+        upload_enabled=True,
+        data_consent=True,
     )
     fake = FakeUploader()
     runtime = GatewayRuntime(settings, pack_b, uploader=fake)  # type: ignore[arg-type]
@@ -224,3 +262,87 @@ def test_watcher_rearms_when_a_file_changes_after_stability(runtime: GatewayRunt
     source.write_bytes(source.read_bytes() + b"\n")
     assert runtime.watcher.stable_files() == []
     assert runtime.watcher.stable_files()
+
+
+def test_usb_camera_uses_same_queue_and_default_local_only(
+    gateway_settings, pack_a, tmp_path: Path
+) -> None:
+    settings = gateway_settings.model_copy(
+        update={
+            "camera_enabled": True,
+            "camera_product_code": "transistor",
+            "camera_batch_no": "USB-BATCH-001",
+            "camera_station_code": "ST-07",
+            "upload_enabled": False,
+            "data_consent": False,
+            "data_dir": tmp_path / "camera-state",
+            "watch_root": tmp_path / "camera-incoming",
+            "database_path": tmp_path / "camera-state" / "gateway.sqlite3",
+        }
+    )
+    fake = FakeUploader()
+    camera = FakeCamera(camera_jpeg())
+    runtime = GatewayRuntime(settings, pack_a, uploader=fake, camera_source=camera)  # type: ignore[arg-type]
+    item = runtime.capture_camera_once()
+    assert item is not None
+    assert item.context["source"] == "usb-camera"
+    assert "USB_CAMERA" in item.context["context_metadata_json"]
+    local_only = runtime.upload_once()
+    assert local_only is not None and local_only.status == "LOCAL_ONLY"
+    assert fake.uploads == []
+    assert runtime.status_payload()["local_processing_default"] is True
+    runtime.close()
+
+
+def test_usb_camera_missing_hardware_is_human_readable(gateway_settings, pack_a) -> None:
+    settings = gateway_settings.model_copy(update={"camera_enabled": True})
+    runtime = GatewayRuntime(
+        settings,
+        pack_a,
+        uploader=FakeUploader(),  # type: ignore[arg-type]
+        camera_source=MissingCamera(),
+    )
+    assert runtime.capture_camera_once() is None
+    error = runtime.status_payload()["recent_error"]
+    assert error["code"] == "CAMERA_NOT_FOUND"
+    assert "USB 相机" in error["message"]
+    runtime.close()
+
+
+def test_usb_camera_quality_failure_can_enter_safe_review(gateway_settings, pack_a) -> None:
+    settings = gateway_settings.model_copy(
+        update={"camera_enabled": True, "quality_failure_mode": "SAFE_REVIEW"}
+    )
+    runtime = GatewayRuntime(
+        settings,
+        pack_a,
+        uploader=FakeUploader(),  # type: ignore[arg-type]
+        camera_source=FakeCamera(camera_jpeg(0)),
+    )
+    item = runtime.capture_camera_once()
+    assert item is not None
+    assert "TOO_DARK" in item.context["context_metadata_json"]
+    assert runtime.upload_once() is not None
+    runtime.close()
+
+
+def test_explicit_delete_after_upload_removes_spool_but_keeps_audit_row(
+    gateway_settings, pack_a
+) -> None:
+    settings = gateway_settings.model_copy(update={"delete_after_upload": True})
+    fake = FakeUploader()
+    runtime = GatewayRuntime(settings, pack_a, uploader=fake)  # type: ignore[arg-type]
+    write_a_sample(runtime.watcher.root, sequence="000012")
+    runtime.scan_once()
+    accepted = runtime.scan_once()
+    assert len(accepted) == 1
+    original_spool = accepted[0].spool_path
+    assert original_spool is not None and Path(original_spool).exists()
+
+    uploaded = runtime.upload_once()
+
+    assert uploaded is not None and uploaded.status == "UPLOADED"
+    assert uploaded.spool_path is None
+    assert not Path(original_spool).exists()
+    assert runtime.queue.get(uploaded.id) is not None
+    runtime.close()

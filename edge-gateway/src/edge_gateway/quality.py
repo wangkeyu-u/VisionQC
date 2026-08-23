@@ -31,6 +31,7 @@ class QualityAssessment:
     width: int
     height: int
     metrics: dict[str, float]
+    quality_flags: tuple[str, ...] = ()
 
 
 def _sample_grayscale(image: Image.Image) -> list[int]:
@@ -76,6 +77,7 @@ def _image_metrics(image: Image.Image) -> dict[str, float]:
         "overexposed_pixel_ratio": round(
             sum(value >= 250 for value in pixels) / max(1, len(pixels)), 6
         ),
+        "contrast_range": round(float(max(pixels) - min(pixels)) if pixels else 0.0, 4),
         # Edge energy is deliberately simple and dependency-free.  It is a
         # gate, not a model feature, and is logged so an operator can tune it.
         "sharpness": round(fmean(edges) if edges else 0.0, 4),
@@ -154,27 +156,46 @@ def assess_image(data: bytes, filename: str, settings: GatewaySettings) -> Quali
                 "min_height": settings.min_height,
             },
         )
+    quality_flags: list[str] = []
     if metrics["mean_luminance"] <= settings.dark_mean_threshold:
-        raise QualityReject(
-            "TOO_DARK",
-            "图像整体过暗，无法可靠进行视觉检测。",
-            metrics,
-        )
+        if settings.quality_failure_mode == "SAFE_REVIEW":
+            quality_flags.append("TOO_DARK")
+        else:
+            raise QualityReject(
+                "TOO_DARK",
+                "图像整体过暗，无法可靠进行视觉检测。",
+                metrics,
+            )
     if (
         metrics["mean_luminance"] >= settings.overexposed_mean_threshold
         or metrics["overexposed_pixel_ratio"] >= settings.overexposed_pixel_ratio
     ):
-        raise QualityReject(
-            "OVEREXPOSED",
-            "图像存在过曝或大面积饱和区域，无法可靠进行视觉检测。",
-            metrics,
-        )
+        if settings.quality_failure_mode == "SAFE_REVIEW":
+            quality_flags.append("OVEREXPOSED")
+        else:
+            raise QualityReject(
+                "OVEREXPOSED",
+                "图像存在过曝或大面积饱和区域，无法可靠进行视觉检测。",
+                metrics,
+            )
     if metrics["sharpness"] < settings.min_sharpness:
-        raise QualityReject(
-            "BLURRY",
-            "图像清晰度低于工位门禁阈值，已隔离等待复查。",
-            metrics,
-        )
+        if settings.quality_failure_mode == "SAFE_REVIEW":
+            quality_flags.append("BLURRY")
+        else:
+            raise QualityReject(
+                "BLURRY",
+                "图像清晰度低于工位门禁阈值，已隔离等待复查。",
+                metrics,
+            )
+    if metrics["contrast_range"] <= settings.min_contrast:
+        if settings.quality_failure_mode == "SAFE_REVIEW":
+            quality_flags.append("LOW_CONTRAST_OR_NO_TARGET")
+        else:
+            raise QualityReject(
+                "LOW_CONTRAST_OR_NO_TARGET",
+                "图像缺少足够对比度，可能没有拍到目标面板或视角不正确。",
+                metrics,
+            )
 
     return QualityAssessment(
         data=data,
@@ -184,4 +205,5 @@ def assess_image(data: bytes, filename: str, settings: GatewaySettings) -> Quali
         width=width,
         height=height,
         metrics=metrics,
+        quality_flags=tuple(quality_flags),
     )

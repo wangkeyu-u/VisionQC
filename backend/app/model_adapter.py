@@ -24,6 +24,8 @@ class ModelOutput:
     feature_bank_version: str
     runtime_device: str
     latency_ms: int
+    ood: bool = False
+    warnings: tuple[str, ...] = ()
 
 
 class ModelAdapter(ABC):

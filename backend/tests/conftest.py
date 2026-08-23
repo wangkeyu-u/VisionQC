@@ -26,8 +26,11 @@ def settings(tmp_path: Path) -> Settings:
         local_storage_path=tmp_path / "assets",
         storage_backend="local",
         process_inline=True,
+        image_quality_enabled=False,
         connector_backoff_seconds=0,
         bootstrap_enabled=True,
+        bootstrap_tenant_ids="factory-a,factory-b,duerr-demo",
+        demo_switchable_tenant_ids="factory-a,factory-b,duerr-demo",
     )
 
 
@@ -105,6 +108,21 @@ def upload_inspection(client: TestClient, auth_headers, png_bytes):
                 "source_system": "pytest",
             }
             if tenant_id == "factory-b"
+            else {
+                "product_code": "painted_body_panel",
+                "product_revision": "PILOT-0.1",
+                "batch_no": "BODY-DUERR-001",
+                "station_code": "PAINT-QC-01",
+                "captured_at": "2026-08-04T10:00:00Z",
+                "source": "pytest/duerr-demo",
+                "context_metadata_json": (
+                    '{"body_id":"BODY-DUERR-001","workpiece_id":"BODY-DUERR-001",'
+                    '"paint_shop":"PAINT_SHOP_DEMO","booth_station":"PAINT-QC-01",'
+                    '"line":"LINE-01","model_variant":"SUV-DEMO","color_code":"C101",'
+                    '"paint_recipe":"R-01","shift":"A"}'
+                ),
+            }
+            if tenant_id == "duerr-demo"
             else {
                 "product_code": "transistor",
                 "product_revision": "REV-C",

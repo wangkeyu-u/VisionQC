@@ -41,6 +41,8 @@ def gateway_settings(tmp_path: Path, pack_a: GatewayDeploymentPack) -> GatewaySe
         min_sharpness=2.0,
         stable_for_seconds=0,
         heartbeat_interval_seconds=0.1,
+        upload_enabled=True,
+        data_consent=True,
     )
 
 

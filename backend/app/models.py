@@ -222,6 +222,15 @@ class Inspection(Base, TimestampMixin):
     station_code: Mapped[str] = mapped_column(String(128), nullable=False)
     captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     source: Mapped[str] = mapped_column(String(64), default="api", nullable=False)
+    # Optional site-specific context stays generic and tenant-scoped.  It is
+    # deliberately not promoted to customer-specific columns so Factory A/B
+    # and future Deployment Packs keep the same workflow contract.
+    context_metadata: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict, server_default=text("'{}'")
+    )
+    quality_flags: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, default=list, server_default=text("'[]'")
+    )
     failure_reason: Mapped[str | None] = mapped_column(Text)
 
     image_assets: Mapped[list[ImageAsset]] = relationship(back_populates="inspection")

@@ -135,6 +135,9 @@ class ConnectorDefinition(DeploymentContract):
 class ConnectorSet(DeploymentContract):
     mes: ConnectorDefinition
     qms: ConnectorDefinition
+    # Optional, explicitly simulated digital-quality contract.  Existing
+    # Factory A/B packs remain valid and continue to use only MES/QMS.
+    dxq_mock: ConnectorDefinition | None = None
 
 
 class DeploymentManifest(DeploymentContract):

@@ -36,6 +36,31 @@ class GatewaySettings(BaseSettings):
     status_port: int = Field(default=8090, ge=1, le=65535)
     status_token: SecretStr | None = None
 
+    # Privacy boundary: a laptop gateway is local-only unless an operator
+    # explicitly enables transfer and records consent for this purpose.
+    upload_enabled: bool = False
+    data_consent: bool = False
+    data_purpose: str = "本地涂装质量检测与人工复核"
+    retention_days: int = Field(default=30, ge=1, le=3650)
+    delete_after_upload: bool = False
+    quality_failure_mode: Literal["REJECT", "SAFE_REVIEW"] = "REJECT"
+
+    # Optional USB camera capture.  OpenCV is lazy/optional; the folder
+    # watcher remains usable when the dependency or hardware is missing.
+    camera_enabled: bool = False
+    camera_index: int = Field(default=0, ge=0, le=32)
+    camera_output_dir: Path | None = None
+    camera_product_code: str | None = None
+    camera_batch_no: str | None = None
+    camera_station_code: str | None = None
+    camera_captured_at_format: str = "%Y%m%dT%H%M%S"
+    camera_paint_shop: str = "PAINT_SHOP_UNSPECIFIED"
+    camera_line: str = "LINE_UNSPECIFIED"
+    camera_model_variant: str = "MODEL_UNSPECIFIED"
+    camera_color_code: str = "COLOR_UNSPECIFIED"
+    camera_paint_recipe: str = "RECIPE_UNSPECIFIED"
+    camera_shift: str = "SHIFT_UNSPECIFIED"
+
     # A production gateway must receive a token minted by the customer's IdP
     # or secret provider.  The shared secret is only used to mint a short-lived
     # demo token when ``mode=demo``.
@@ -52,6 +77,7 @@ class GatewaySettings(BaseSettings):
     overexposed_mean_threshold: float = Field(default=245.0, ge=0, le=255)
     overexposed_pixel_ratio: float = Field(default=0.35, ge=0, le=1)
     min_sharpness: float = Field(default=2.0, ge=0)
+    min_contrast: float = Field(default=5.0, ge=0, le=255)
 
     @property
     def resolved_database_path(self) -> Path:
@@ -65,6 +91,10 @@ class GatewaySettings(BaseSettings):
             raise ValueError("production edge gateway requires VQC_GATEWAY_AUTH_TOKEN")
         if self.mode == "production" and self.status_token is None:
             raise ValueError("production edge gateway requires VQC_GATEWAY_STATUS_TOKEN")
+        if self.upload_enabled and not self.data_consent:
+            raise ValueError(
+                "上传客户原图前必须显式设置 VQC_GATEWAY_DATA_CONSENT=true；默认保持本地处理。"
+            )
 
 
 @lru_cache

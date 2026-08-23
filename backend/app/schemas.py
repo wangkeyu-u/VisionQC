@@ -29,6 +29,10 @@ class InspectionContext(APIModel):
     station_code: str = Field(min_length=1, max_length=128)
     captured_at: datetime
     source: str = Field(default="api", min_length=1, max_length=64)
+    # Canonical workflow fields stay stable; site-specific values (for
+    # example paint recipe or equipment alarm references) travel in this
+    # auditable, tenant-scoped envelope.
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class ModelEvidence(APIModel):
@@ -71,6 +75,7 @@ class InspectionResponse(APIModel):
     review_task_id: str | None = None
     incident_id: str | None = None
     failure_reason: str | None = None
+    quality_flags: list[str] = Field(default_factory=list)
     idempotent_replay: bool = False
     created_at: datetime
     updated_at: datetime
@@ -140,13 +145,17 @@ class ReviewDecisionResponse(APIModel):
 
 
 class IncidentActionRequest(APIModel):
-    connector: Literal["MES", "QMS"]
+    connector: Literal["MES", "QMS", "DXQ_MOCK"]
     operation: Literal[
         "HOLD_BATCH",
         "RELEASE_BATCH",
         "CREATE_TICKET",
         "UPDATE_TICKET",
         "CLOSE_TICKET",
+        "PUBLISH_QUALITY_EVENT",
+        "LINK_PROCESS_CONTEXT",
+        "ANALYZE_ROOT_CAUSE",
+        "CLOSE_QUALITY_CASE",
     ]
     reason: str = Field(min_length=1, max_length=4000)
     payload: dict[str, Any] = Field(default_factory=dict)

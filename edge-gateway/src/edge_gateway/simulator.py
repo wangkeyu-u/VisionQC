@@ -92,6 +92,15 @@ def generate_samples(
             "date": datetime.now(UTC).astimezone().strftime("%Y/%m/%d"),
             "sequence": f"{number:06d}",
             "extension": definition.extension.removeprefix("."),
+            # Paint-quality packs can use richer filenames without requiring
+            # the generic simulator to know customer-specific business code.
+            "body_id": batch,
+            "booth": definition.station,
+            "line": "LINE-01",
+            "model_variant": "SUV-DEMO",
+            "color_code": "C101",
+            "paint_recipe": "R-01",
+            "shift": "A",
         }
         if kind == "duplicate":
             if last_normal is None:

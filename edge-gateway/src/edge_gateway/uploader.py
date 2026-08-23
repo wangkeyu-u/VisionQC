@@ -125,6 +125,8 @@ class BackendUploader:
                 "source",
             }
         }
+        if item.context.get("context_metadata_json"):
+            form["context_metadata_json"] = item.context["context_metadata_json"]
         try:
             response = self.client.post(
                 "/inspections",

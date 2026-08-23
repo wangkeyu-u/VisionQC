@@ -401,6 +401,35 @@ class QueueStore:
                 connection.execute("SELECT * FROM queue_items WHERE id = ?", (item_id,)).fetchone()
             )  # type: ignore[return-value]
 
+    def clear_spool(self, item_id: int) -> QueueItem:
+        """Remove the local spool reference after an explicit retention decision."""
+        now = iso_now()
+        with self._connect() as connection:
+            connection.execute(
+                "UPDATE queue_items SET spool_path = NULL, updated_at = ? WHERE id = ?",
+                (now, item_id),
+            )
+            return self._row(
+                connection.execute("SELECT * FROM queue_items WHERE id = ?", (item_id,)).fetchone()
+            )  # type: ignore[return-value]
+
+    def mark_local_only(self, item_id: int) -> QueueItem:
+        """Close a local-only item without sending its original bytes anywhere."""
+        now = iso_now()
+        with self._connect() as connection:
+            connection.execute(
+                """
+                UPDATE queue_items
+                SET status = 'LOCAL_ONLY', retryable = 0, next_attempt_at = NULL,
+                    updated_at = ?, last_error = NULL, error_code = NULL
+                WHERE id = ?
+                """,
+                (now, item_id),
+            )
+            return self._row(
+                connection.execute("SELECT * FROM queue_items WHERE id = ?", (item_id,)).fetchone()
+            )  # type: ignore[return-value]
+
     def mark_failed(
         self,
         item_id: int,
@@ -454,6 +483,39 @@ class QueueStore:
             if row is None:
                 raise KeyError(f"queue item {item_id} not found")
             return self._row(row)  # type: ignore[return-value]
+
+    def purge_expired_spools(self, retention_days: int, *, include_uploaded: bool = False) -> int:
+        """Delete expired local image spools while retaining audit metadata.
+
+        ``LOCAL_ONLY`` items are eligible by default. Uploaded items are only
+        included when the caller has explicitly enabled that retention policy.
+        The queue row, hashes, status and decision history remain auditable.
+        """
+        cutoff = (utc_now() - timedelta(days=max(1, retention_days))).isoformat()
+        statuses = ("LOCAL_ONLY", "UPLOADED") if include_uploaded else ("LOCAL_ONLY",)
+        placeholders = ",".join("?" for _ in statuses)
+        with self._connect() as connection:
+            rows = connection.execute(
+                f"""
+                SELECT id, spool_path FROM queue_items
+                WHERE status IN ({placeholders}) AND updated_at < ? AND spool_path IS NOT NULL
+                """,
+                (*statuses, cutoff),
+            ).fetchall()
+            purged = 0
+            for row in rows:
+                spool_path = row["spool_path"]
+                if spool_path:
+                    try:
+                        Path(str(spool_path)).unlink(missing_ok=True)
+                    except OSError:
+                        continue
+                connection.execute(
+                    "UPDATE queue_items SET spool_path = NULL, updated_at = ? WHERE id = ?",
+                    (iso_now(), int(row["id"])),
+                )
+                purged += 1
+            return purged
 
     def list_items(self, limit: int = 100) -> list[QueueItem]:
         with self._connect() as connection:

@@ -126,6 +126,12 @@ def test_operations_incidents_and_modelops_contract_is_tenant_scoped(
     assert modelops_body["synthetic_smoke"] is True
     assert modelops_body["mvtec_metrics_available"] is False
     assert modelops_body["calibration_constraints_satisfied"] is False
+    contract = modelops_body["gate_results"]["pilot_gate_contract"]
+    assert contract["version"] == "visionqc-pilot-gates.v3"
+    assert contract["threshold_selection"]["allowed_source_split"] == "validation"
+    assert contract["threshold_selection"]["holdout_used_for_tuning"] is False
+    assert contract["checks"]["abnormal_auto_release_rate"]["threshold"] == 0.0
+    assert contract["checks"]["abnormal_auto_release_rate"]["gate_class"] == "HARD_GATE"
 
     factory_b_headers = auth_headers(
         actor_id="operator-b", tenant_id="factory-b", roles=[Role.QUALITY_MANAGER]
