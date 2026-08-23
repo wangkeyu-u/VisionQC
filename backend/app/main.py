@@ -19,6 +19,7 @@ from app.bootstrap import bootstrap_defaults
 from app.config import Settings, get_settings
 from app.connectors import Connector, HttpConnector, InMemoryConnector
 from app.database import build_engine, build_session_factory
+from app.dxq_mock import DxqMockConnector
 from app.model_adapter import build_model_adapter
 from app.schemas import ErrorBody
 from app.services import ServiceError, VisionQCService
@@ -41,11 +42,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         connectors: dict[str, Connector] = {
             "MES": InMemoryConnector("mes"),
             "QMS": InMemoryConnector("qms"),
+            "DXQ_MOCK": DxqMockConnector(),
         }
     else:
         connectors = {
             "MES": HttpConnector("mes", resolved.mes_base_url),
             "QMS": HttpConnector("qms", resolved.qms_base_url),
+            # This is intentionally always a local in-process simulation.  A
+            # manifest must opt into it; it is never a private DXQ client.
+            "DXQ_MOCK": DxqMockConnector(),
         }
     service = VisionQCService(
         settings=resolved,

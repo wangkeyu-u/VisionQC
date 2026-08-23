@@ -1,0 +1,193 @@
+{
+  "schema_version": "visionqc.deployment-pack.v1",
+  "pack_key": "duerr_demo/paint_quality",
+  "version": "0.1.0",
+  "display_name": "Dürr 场景 · 汽车涂装质量边缘试点 / Automotive Paint Quality Edge Pilot",
+  "tenant": {"id": "duerr-demo", "name": "Dürr Demo Paint Quality"},
+  "input_mode": "folder_watch",
+  "products": [{
+    "code": "painted_body_panel",
+    "display_name": "涂装车身面板 / Painted body panel",
+    "revision": "PILOT-0.1",
+    "aliases": ["BODY-PANEL-DEMO", "PAINT-SAMPLE"]
+  }],
+  "stations": [
+    {
+      "code": "PAINT-QC-01",
+      "display_name": "涂装检查站 01 / Paint QC booth 01",
+      "description": "汽车涂装表面异常的边缘视觉证据采集与人工复核",
+      "camera_profile": "paint-panel-multi-angle-demo"
+    },
+    {
+      "code": "PAINT-QC-02",
+      "display_name": "涂装检查站 02 / Paint QC booth 02",
+      "description": "第二个示例检查站，用于验证租户与工位隔离",
+      "camera_profile": "paint-panel-multi-angle-demo"
+    }
+  ],
+  "field_mapping": {
+    "product_code": "product_code",
+    "product_revision": "product_revision",
+    "batch_no": "batch_no",
+    "station_code": "station_code",
+    "captured_at": "captured_at",
+    "source": "source"
+  },
+  "field_labels": {
+    "product_code": "工件类型 / Workpiece",
+    "product_revision": "试片版本 / Revision",
+    "batch_no": "车身或工件号 / Body ID",
+    "station_code": "涂装检查站 / Booth",
+    "captured_at": "采集时间 / Timestamp",
+    "source": "采集来源 / Source"
+  },
+  "model": {
+    "id": "patchcore-paint-quality-demo",
+    "version": "0.1.0-draft",
+    "feature_bank_version": "not-qualified",
+    "adapter": "stub-or-verified-patchcore",
+    "runtime": "local-edge-runtime",
+    "device": "CPU fallback / optional GPU",
+    "package_uri": "models/paint-quality-demo/not-qualified",
+    "package_sha256": "demo-paint-quality-package-not-qualified",
+    "score_semantics": "异常证据分数；不是缺陷语义、根因或生产放行结论",
+    "limitations": [
+      "DEMO_SYNTHETIC images are workflow evidence only, not production accuracy.",
+      "MVTec or real pilot results must be qualified separately with frozen holdout evidence.",
+      "Automatic release is prohibited for abnormal samples; uncertainty requires human review."
+    ]
+  },
+  "policy": {
+    "version": "duerr-paint-quality-policy-draft-0.1.0",
+    "default": {"review_threshold": 0.4, "hold_threshold": 0.8}
+  },
+  "connectors": {
+    "mes": {
+      "display_name": "Simulated MES quality hold",
+      "driver": "mock_http",
+      "contract_version": "mes-batch-v1-simulated",
+      "endpoint": "http://mock-external:8081/mes",
+      "payload_mapping": {
+        "batch_no": "body_id",
+        "product_code": "workpiece_type",
+        "station_code": "booth_station",
+        "disposition": "disposition",
+        "reason": "containment_reason"
+      },
+      "fixed_fields": {
+        "source_system": "VisionQC simulated MES; not a production connector",
+        "portfolio_boundary": "independent portfolio concept"
+      },
+      "operations": ["HOLD_BATCH", "RELEASE_BATCH"]
+    },
+    "qms": {
+      "display_name": "Simulated QMS quality case",
+      "driver": "mock_http",
+      "contract_version": "qms-quality-case-v1-simulated",
+      "endpoint": "http://mock-external:8081/qms",
+      "payload_mapping": {
+        "inspection_id": "inspection_ref",
+        "batch_no": "body_id",
+        "product_code": "workpiece_type",
+        "station_code": "booth_station",
+        "disposition": "disposition",
+        "reason": "review_reason",
+        "root_cause": "root_cause_status"
+      },
+      "fixed_fields": {
+        "source_system": "VisionQC simulated QMS; not a production connector",
+        "priority": "P1"
+      },
+      "operations": ["CREATE_TICKET", "UPDATE_TICKET", "CLOSE_TICKET"]
+    },
+    "dxq_mock": {
+      "display_name": "Simulated DXQ quality-loop record (mock only)",
+      "driver": "dxq_mock",
+      "contract_version": "simulated-dxq-quality-loop.v1",
+      "endpoint": "mock://dxq-quality-loop",
+      "payload_mapping": {
+        "body_id": "body_id",
+        "workpiece_id": "workpiece_id",
+        "paint_shop": "paint_shop",
+        "booth_station": "booth_station",
+        "line": "line",
+        "model_variant": "model_variant",
+        "color_code": "color_code",
+        "paint_recipe": "paint_recipe",
+        "shift": "shift",
+        "timestamp": "timestamp",
+        "visual_defect_type": "visual_defect_type",
+        "severity": "severity",
+        "mask_or_heatmap": "mask_or_heatmap",
+        "operator_decision": "operator_decision",
+        "equipment_alarm_refs": "equipment_alarm_refs",
+        "process_parameter_refs": "process_parameter_refs",
+        "root_cause_candidates": "root_cause_candidates",
+        "disposition": "disposition",
+        "quality_case_id": "quality_case_id"
+      },
+      "fixed_fields": {
+        "simulated": true,
+        "not_official_dxq_api": true,
+        "source_system": "VisionQC dxq_mock"
+      },
+      "operations": [
+        "PUBLISH_QUALITY_EVENT",
+        "LINK_PROCESS_CONTEXT",
+        "ANALYZE_ROOT_CAUSE",
+        "CLOSE_QUALITY_CASE"
+      ]
+    }
+  },
+  "metadata": {
+    "customer_name": "Dürr",
+    "customer_segment": "automotive-paint-shop",
+    "portfolio_disclaimer": "面向 Dürr 业务场景设计的独立作品集概念方案 / Independent portfolio concept; not commissioned or endorsed by Dürr.",
+    "source_boundary": "公开资料理解业务；不使用私有 API、Dürr logo 或受保护视觉资产",
+    "dxq_boundary": "dxq_mock is a simulated concept adapter, not an official DXQ API",
+    "quality_record_fields": [
+      "body_id", "workpiece_id", "paint_shop", "booth_station", "line",
+      "model_variant", "color_code", "paint_recipe", "shift", "timestamp",
+      "visual_defect_type", "severity", "mask_or_heatmap", "operator_decision",
+      "equipment_alarm_refs", "process_parameter_refs", "root_cause_candidates",
+      "disposition", "quality_case_id"
+    ],
+    "input_options": ["示例图 / example", "监控文件夹 / folder", "USB 相机 / USB camera"],
+    "privacy_default": "local_processing_only",
+    "evidence_retention_days": 30
+  },
+  "edge_gateway": {
+    "gateway_id": "duerr-demo-gw-paint-qc",
+    "target_tenant_id": "duerr-demo",
+    "watch": {
+      "root": "/var/lib/visionqc-gateway/incoming",
+      "relative_path_regex": "^paint-shop/(?P<booth>PAINT-QC-0[12])/line/(?P<line>[A-Z0-9-]+)$",
+      "filename_regex": "^(?P<body_id>BODY-[A-Z0-9-]+)__model=(?P<model_variant>[A-Z0-9-]+)__color=(?P<color_code>[A-Z0-9-]+)__recipe=(?P<paint_recipe>[A-Z0-9-]+)__shift=(?P<shift>[A-Z0-9-]+)__captured=(?P<captured_at>\\d{8}T\\d{6})__seq=(?P<sequence>\\d{6})\\.(?P<extension>png|jpe?g)$",
+      "capture_map": {
+        "batch_no": "body_id",
+        "station_code": "booth",
+        "captured_at": "captured_at"
+      },
+      "defaults": {
+        "product_code": "painted_body_panel",
+        "product_revision": "PILOT-0.1"
+      },
+      "source": "edge-camera/duerr-demo/paint-qc",
+      "allowed_extensions": [".png", ".jpg", ".jpeg"],
+      "timestamp_formats": ["%Y%m%dT%H%M%S"],
+      "timezone_offset": "+08:00",
+      "stable_for_seconds": 1.0,
+      "archive_subdir": ".archive",
+      "quarantine_subdir": ".quarantine"
+    },
+    "simulator": {
+      "relative_dir_template": "paint-shop/PAINT-QC-01/line/LINE-01",
+      "filename_template": "{body_id}__model={model_variant}__color={color_code}__recipe={paint_recipe}__shift={shift}__captured={captured_at}__seq={sequence}.{extension}",
+      "product": "BODY-PANEL-DEMO",
+      "station": "PAINT-QC-01",
+      "product_revision": "PILOT-0.1",
+      "batch_prefix": "BODY-DUERR-DEMO",
+      "extension": ".png"
+    }
+  }
+}

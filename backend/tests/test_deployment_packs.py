@@ -17,7 +17,11 @@ def test_checked_in_deployment_manifests_are_distinct_and_valid() -> None:
     manifests = load_manifests(Path(__file__).parents[1] / "deployment-packs" / "manifests")
     by_key = {manifest.pack_key: manifest for manifest in manifests}
 
-    assert set(by_key) == {"factory_a/transistor", "factory_b/bottle"}
+    assert set(by_key) == {
+        "factory_a/transistor",
+        "factory_b/bottle",
+        "duerr_demo/paint_quality",
+    }
     factory_a = by_key["factory_a/transistor"]
     factory_b = by_key["factory_b/bottle"]
     assert factory_a.field_mapping.product_code == "product_code"
@@ -25,6 +29,11 @@ def test_checked_in_deployment_manifests_are_distinct_and_valid() -> None:
     assert factory_a.model.id != factory_b.model.id
     assert factory_a.policy.default.hold_threshold != factory_b.policy.default.hold_threshold
     assert factory_a.connectors.qms.contract_version != factory_b.connectors.qms.contract_version
+    duerr = by_key["duerr_demo/paint_quality"]
+    assert duerr.tenant.id == "duerr-demo"
+    assert duerr.connectors.dxq_mock is not None
+    assert duerr.metadata["privacy_default"] == "local_processing_only"
+    assert "not commissioned or endorsed by Dürr" in duerr.metadata["portfolio_disclaimer"]
 
 
 @pytest.mark.integration
@@ -40,6 +49,7 @@ def test_tenant_context_uses_jwt_claim_and_switch_issues_scoped_token(
     assert {tenant["id"] for tenant in a_context["available_tenants"]} == {
         "factory-a",
         "factory-b",
+        "duerr-demo",
     }
 
     # This header is deliberately not a tenant selector.  The signed JWT
