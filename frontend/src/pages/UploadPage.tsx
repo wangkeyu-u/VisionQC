@@ -30,6 +30,7 @@ export function UploadPage() {
   const activeDeployment = tenantContext?.currentDeployment
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
+  const [isBlenderDemo, setIsBlenderDemo] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -77,24 +78,25 @@ export function UploadPage() {
     return null
   }, [file])
 
-  function acceptFile(nextFile: File, demoPreview?: string) {
+  function acceptFile(nextFile: File, demoPreview?: string, blenderDemo = false) {
     setError(null)
     setFile(nextFile)
     setPreview(demoPreview ?? URL.createObjectURL(nextFile))
+    setIsBlenderDemo(blenderDemo)
   }
 
   async function loadDemo() {
     let blob: Blob
     try {
-      const response = await fetch('/mock/transistor-demo-v2.png')
+      const response = await fetch('/mock/blender/transistor-bent-lead.png')
       if (!response.ok) throw new Error('demo asset unavailable')
       blob = await response.blob()
     } catch {
       const encoded = 'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAuUlEQVR4nO3aqw1CARAF0XkTOiF5dSBpgQaQVICkAiQN0AIOasDQDh4c30zgyBX3brJ2h8v5SJnESZzESZzESZzESZzESZzESZzESZzETT5fOZsvbianw/7htB+7wHK1fscSy7vY3XbzKxeQOImTOImTOImTOImTuMnnK8dx+sI0iZM4iZM4iZM4iZM4iZM4iZM4iZM4iZM4iRv+7zZfJnESJ3ESJ3ESJ3ESJ3ESJ3ESJ3ES57cXeNYV4wANFLwAsE0AAAAASUVORK5CYII='
       blob = new Blob([Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0))], { type: 'image/png' })
     }
-    const demo = new File([blob], 'transistor-demo-defect.png', { type: 'image/png' })
-    acceptFile(demo, '/mock/transistor-demo-v2.png')
+    const demo = new File([blob], 'blender-transistor-bent-lead.png', { type: 'image/png' })
+    acceptFile(demo, '/mock/blender/transistor-bent-lead.png', true)
     if (activeDeployment) {
       setForm((current) => ({
         ...current,
@@ -122,7 +124,7 @@ export function UploadPage() {
         capturedAt: new Date(form.capturedAt).toISOString(),
         idempotencyKey: makeIdempotencyKey(),
         fieldMapping: activeDeployment?.fieldMapping,
-        source: 'Web manual upload',
+        source: isBlenderDemo ? 'Blender synthetic demo' : 'Web manual upload',
       })
       navigate(`/inspections/${result.inspectionId}`)
     } catch (caught) {
@@ -148,7 +150,7 @@ export function UploadPage() {
 
       <div className="upload-layout">
         <form className="panel upload-panel" onSubmit={submit}>
-          <div className="panel-heading"><div><span>第 1 步</span><h2>选择产品图片</h2></div><button type="button" className="secondary-button compact-button" onClick={() => void loadDemo()}><RotateCw size={14} />使用演示图片</button></div>
+          <div className="panel-heading"><div><span>第 1 步</span><h2>选择产品图片</h2></div><button type="button" className="secondary-button compact-button" onClick={() => void loadDemo()}><RotateCw size={14} />使用演示图片（Blender）</button></div>
           <div
             className={`drop-zone ${isDragging ? 'dragging' : ''} ${file ? 'has-file' : ''}`}
             onDragEnter={(event) => { event.preventDefault(); setIsDragging(true) }}
@@ -166,8 +168,8 @@ export function UploadPage() {
                 <img src={preview} alt="待上传图像预览" />
                 <div className="file-ticket">
                   <FileImage size={20} />
-                  <span><strong>{file.name}</strong><small>{Math.max(file.size / 1024, 0.1).toFixed(1)} KB · {file.type || '未知类型'}</small></span>
-                  <button type="button" aria-label="移除图片" onClick={() => { setFile(null); setPreview(null) }}><X size={16} /></button>
+                  <span><strong>{file.name}</strong><small>{Math.max(file.size / 1024, 0.1).toFixed(1)} KB · {file.type || '未知类型'}{isBlenderDemo ? ' · Blender 合成样本' : ''}</small></span>
+                  <button type="button" aria-label="移除图片" onClick={() => { setFile(null); setPreview(null); setIsBlenderDemo(false) }}><X size={16} /></button>
                 </div>
               </>
             ) : (
@@ -211,7 +213,11 @@ export function UploadPage() {
               ))}
             </div>
           )}
-          <div className="mock-disclosure"><Info size={16} /><p><strong>这是演示环境</strong> 内置图片和外部系统均为模拟数据，只用于体验流程，不代表真实产线效果。</p></div>
+          <div className="synthetic-source-card">
+            <img src="/mock/blender/station-overview.png" alt="Blender 生成的工业视觉检测工位" />
+            <div><strong>Blender 合成样本</strong><p>模型、工位、灯光、弯折引脚和像素掩码都可由项目脚本重新生成。</p><small>只验证系统流程，不计入模型效果，也不代表真实产线。</small></div>
+          </div>
+          <div className="mock-disclosure"><Info size={16} /><p><strong>这是演示环境</strong> MES、QMS 和内置图片均为模拟数据，不会修改真实工厂系统。</p></div>
           <div className="ingest-checks">
             <span><CheckCircle2 size={15} />格式与像素数校验</span>
             <span><CheckCircle2 size={15} />租户内幂等检查</span>

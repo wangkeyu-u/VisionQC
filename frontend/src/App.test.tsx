@@ -32,6 +32,7 @@ describe('VisionQC quality workstation', () => {
 
     await user.click(screen.getByRole('button', { name: /使用演示图片/ }))
     expect(await screen.findByAltText('待上传图像预览')).toBeInTheDocument()
+    expect(screen.getAllByText(/Blender 合成样本/).length).toBeGreaterThan(0)
     await user.click(screen.getByRole('button', { name: /开始检测/ }))
 
     expect(await screen.findByRole('heading', { name: '图片检测结果' })).toBeInTheDocument()

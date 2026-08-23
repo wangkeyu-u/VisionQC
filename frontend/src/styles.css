@@ -450,6 +450,9 @@ h2 { color: var(--ink); font-size: 16px; line-height: 1.25; letter-spacing: -.02
 .overview-context-line details[open] code { margin-left: 8px; }
 .starter-intro { display: flex; align-items: flex-start; gap: 11px; }
 .starter-mark { display: grid; place-items: center; width: 42px; height: 42px; flex: none; color: var(--accent-deep); background: var(--accent-soft); border-radius: 6px; }
+.starter-render { position: relative; width: 88px; height: 62px; flex: none; margin: 0; overflow: hidden; background: var(--surface-muted); border: 1px solid var(--line); border-radius: 6px; }
+.starter-render img { width: 100%; height: 100%; object-fit: cover; }
+.starter-render figcaption { position: absolute; right: 3px; bottom: 3px; left: 3px; padding: 2px 4px; overflow: hidden; color: #fff; background: rgba(8, 18, 27, .78); border-radius: 2px; font-size: 8px; line-height: 1.2; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .starter-intro strong { display: block; font-size: 15px; }
 .starter-intro p { margin: 4px 0 0; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
 .starter-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; padding: 0; list-style: none; }
@@ -484,6 +487,11 @@ h2 { color: var(--ink); font-size: 16px; line-height: 1.25; letter-spacing: -.02
 .technical-details summary small { color: var(--ink-faint); font-size: 11px !important; }
 .technical-details summary > span:last-child { color: var(--accent-deep); font-size: 12px; }
 .technical-details[open] summary { border-bottom: 1px solid var(--line); }
+.synthetic-source-card { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 12px; margin: 14px; padding: 10px; background: #f3f7fa; border: 1px solid #cbd8df; border-radius: 6px; }
+.synthetic-source-card img { width: 112px; height: 78px; object-fit: cover; background: var(--ink); border-radius: 4px; }
+.synthetic-source-card strong { display: block; color: var(--ink); font-size: 12px; }
+.synthetic-source-card p { margin: 4px 0 0; color: var(--ink-soft); font-size: 11px; line-height: 1.45; }
+.synthetic-source-card small { display: block; margin-top: 5px; color: var(--warning); font-size: 10px !important; line-height: 1.4; }
 
 /* Keep the evidence ledger readable for people who are not used to dense admin tools. */
 .app-shell small { font-size: 11px; line-height: 1.45; }
@@ -577,6 +585,8 @@ p { text-wrap: pretty; }
   .flow-stepper li:last-child { border-bottom: 0; }
   .upload-panel .panel-heading { align-items: flex-start; flex-direction: column; padding-top: 12px; padding-bottom: 12px; }
   .upload-panel .panel-heading .secondary-button { width: 100%; }
+  .synthetic-source-card { grid-template-columns: 1fr; }
+  .synthetic-source-card img { width: 100%; height: 140px; }
   .form-grid, .metadata-grid, .incident-facts, .confirm-dialog dl, .review-receipt dl { grid-template-columns: 1fr; }
   .metadata-grid > div.wide { grid-column: auto; }
   .viewer-toolbar, .viewer-caption { align-items: flex-start; flex-direction: column; }

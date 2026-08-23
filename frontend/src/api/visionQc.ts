@@ -392,7 +392,7 @@ function normalizeTimeline(items: RawTimeline[]): TimelineEvent[] {
 }
 
 async function assetUrl(assetId?: string | null): Promise<string> {
-  if (!assetId) return '/mock/transistor-demo-v2.png'
+  if (!assetId) return '/mock/blender/transistor-bent-lead.png'
   const cached = assetUrlCache.get(assetId)
   if (cached) return cached
   const request = apiRequestBlob(`/assets/${assetId}`).catch((error) => {

@@ -1,7 +1,7 @@
 import type { Inspection, QualityIncident, ReviewTask, TenantContext, DeploymentConnector } from '../types'
 
-const original = '/mock/transistor-demo-v2.png'
-const normal = '/mock/transistor-normal.svg'
+const original = '/mock/blender/transistor-bent-lead.png'
+const normal = '/mock/blender/transistor-normal.png'
 const heatmap = '/mock/transistor-heatmap.svg'
 
 const sharedContext = {

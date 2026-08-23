@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "generator": "Blender",
+  "generator_version": "1.0.0",
+  "blender_version": "5.2.0 LTS",
+  "generated_at": "2026-08-23T12:54:12.670240+00:00",
+  "seed": 20260823,
+  "source_type": "DEMO_SYNTHETIC",
+  "product": "TO-220-style transistor",
+  "defect": {
+    "name": "bent_lead",
+    "description": "Right lead is bent outward and has a visible surface gouge.",
+    "normalized_bbox": [
+      0.58,
+      0.53,
+      0.74,
+      0.94
+    ],
+    "mask": "transistor-bent-lead-mask.png",
+    "mask_statistics": {
+      "foreground_pixels": 6165,
+      "background_pixels": 780267
+    }
+  },
+  "camera": {
+    "sample_projection": "orthographic",
+    "sample_resolution": [
+      1024,
+      768
+    ],
+    "overview_resolution": [
+      1400,
+      900
+    ]
+  },
+  "usage_boundary": "Synthetic demonstration data only; not factory evidence or production model validation.",
+  "files": [
+    {
+      "name": "transistor-normal.png",
+      "sha256": "4bc101d9fda8530cc0f1c9c936ebb105d1eefe8709e5f30cc8f6c2187caec3d8",
+      "bytes": 746635
+    },
+    {
+      "name": "transistor-bent-lead.png",
+      "sha256": "f6fa3be017523ac68c079dfcdba94e752a31e8730e1793fde658853875ab40fc",
+      "bytes": 758828
+    },
+    {
+      "name": "transistor-bent-lead-mask.png",
+      "sha256": "eba1c6bffbc1a476c1e12a2eb4b63595b425cdfc1255e4cc960720fccc27f62b",
+      "bytes": 17036
+    },
+    {
+      "name": "station-overview.png",
+      "sha256": "a7531697e0f9b5b2b2305d87eb82d58ebc1b09483d6f2c5b9b0f7b7e25cf1f91",
+      "bytes": 1392176
+    }
+  ]
+}

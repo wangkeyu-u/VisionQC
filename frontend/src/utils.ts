@@ -137,6 +137,7 @@ export function formatPolicyReason(value?: string) {
 export function formatSource(value: string) {
   const labels: Record<string, string> = {
     'Web manual upload': '网页手动上传',
+    'Blender synthetic demo': 'Blender 合成演示样本',
     'Edge Gateway': '现场接入程序',
   }
   return labels[value] ?? value

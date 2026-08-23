@@ -64,7 +64,7 @@ function HelpDrawer({ onClose }: { onClose: () => void }) {
         </div>
 
         <ol className="quick-start-list">
-          <li><span>1</span><div><strong>准备一张图片</strong><p>没有工厂图片也没关系，点击“使用演示图片”即可自动填好示例。</p></div></li>
+          <li><span>1</span><div><strong>准备一张图片</strong><p>没有工厂图片也没关系，点击“使用演示图片”即可载入 Blender 生成的可追溯示例。</p></div></li>
           <li><span>2</span><div><strong>查看系统指出的可疑区域</strong><p>分数和热力图只是提醒，不会直接把产品判成不合格。</p></div></li>
           <li><span>3</span><div><strong>由人做最终决定</strong><p>在“待我复核”中选择合格、返工、报废或继续调查，并留下原因。</p></div></li>
         </ol>

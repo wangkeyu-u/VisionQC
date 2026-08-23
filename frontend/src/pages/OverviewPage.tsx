@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Activity, ArrowRight, ClipboardCheck, Eye, FileWarning, ImagePlus, RefreshCw, Server, ShieldAlert, UploadCloud, UserRoundCheck } from 'lucide-react'
+import { Activity, ArrowRight, ClipboardCheck, Eye, FileWarning, RefreshCw, Server, ShieldAlert, UploadCloud, UserRoundCheck } from 'lucide-react'
 import { Link, useLocation } from 'wouter'
 import { visionQcApi } from '../api/visionQc'
 import { ErrorState, LoadingState } from '../components/Feedback'
@@ -84,11 +84,11 @@ export function OverviewPage() {
 
       <section className="starter-panel" aria-labelledby="starter-title">
         <div className="starter-intro">
-          <span className="starter-mark"><ImagePlus size={23} /></span>
-          <div><strong id="starter-title">第一次使用？三分钟完成一次演示</strong><p>没有真实工厂图片也可以开始。系统会自动准备演示图片和必填信息。</p></div>
+          <figure className="starter-render"><img src="/mock/blender/station-overview.png" alt="Blender 生成的工业视觉检测工位" /><figcaption>Blender 合成工位</figcaption></figure>
+          <div><strong id="starter-title">第一次使用？三分钟完成一次演示</strong><p>没有真实工厂图片也可以开始。系统会载入可复现的 Blender 合成样本并填好必填信息。</p></div>
         </div>
         <ol className="starter-steps">
-          <li><span>1</span><div><strong>载入图片</strong><small>使用内置工业演示样本</small></div></li>
+          <li><span>1</span><div><strong>载入图片</strong><small>使用 Blender 合成样本</small></div></li>
           <li><span>2</span><div><strong>查看可疑区域</strong><small>对照原图、热力图和分数</small></div></li>
           <li><span>3</span><div><strong>人工确认</strong><small>留下结论和可追溯原因</small></div></li>
         </ol>

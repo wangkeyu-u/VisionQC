@@ -66,7 +66,7 @@ MVTec AD `transistor` 使用 213 张正常训练图、50 张 validation 和 50 �
 | Backend | 37 passed + Ruff + MyPy |
 | ML | 36 passed + Ruff + MyPy |
 | Edge Gateway | 17 passed + Ruff |
-| Frontend | 7 passed + TypeScript + production build |
+| Frontend | 9 passed + TypeScript + production build |
 | 双客户闭环 | Factory A/B 全链路与跨租户隔离通过 |
 
 ## 三分钟体验
@@ -114,11 +114,26 @@ docker compose down
 
 | 来源 | 用途 | 可产生的最高状态 |
 | --- | --- | --- |
-| `DEMO_SYNTHETIC` | 默认业务演示 | `DEMO_ONLY` |
+| `DEMO_SYNTHETIC` | Blender 可复现合成样本与默认业务演示 | `DEMO_ONLY` |
 | `OFFICIAL_BENCHMARK` | 实验室基准验证 | `READY_FOR_CUSTOMER_DATA` |
 | `CUSTOMER_PILOT` | 客户现场 Pilot | 完整 provenance 与 Gate 通过后才可审批 |
 
 受控上传会检查许可证确认、扩展名、压缩包路径穿越、特殊文件、文件数量、压缩/解压大小、压缩比和内容哈希。原始数据进入租户隔离对象存储，不进入 Git 或前端静态目录。服务端挂载导入在生产环境还必须配置 `VQC_DATASET_IMPORT_ROOTS`。
+
+### Blender 合成演示
+
+内置晶体管样本不是不可追溯的占位图，而是由
+[`tools/blender/generate_transistor_demo.py`](tools/blender/generate_transistor_demo.py)
+参数化生成。脚本会输出正常样本、弯折引脚缺陷、像素掩码、检测工位全景、SHA-256 清单和可编辑 `.blend` 场景。
+
+```bash
+/Applications/Blender.app/Contents/MacOS/Blender --background \
+  --python tools/blender/generate_transistor_demo.py -- \
+  --output-dir frontend/public/mock/blender \
+  --blend-file artifacts/blender/visionqc-inspection-station.blend
+```
+
+Blender 合成数据只用于新手演示、接口联调和流程测试，不能替代 MVTec Benchmark，更不能证明客户现场效果。完整边界见 [Blender 合成数据说明](docs/07-blender-synthetic-data.md)。
 
 ## 仓库结构
 
@@ -130,6 +145,7 @@ ml/            PatchCore、数据 manifest、校准、评测、模型包、Regis
 infra/         Docker Compose 与 Mock 外部系统
 docs/          架构、部署、验收、案例与演示材料
 reports/       可公开的 Benchmark 与模型评测摘要
+tools/blender/ 可复现的工业工位、产品、缺陷和掩码生成器
 ```
 
 ## 安全与声明边界
