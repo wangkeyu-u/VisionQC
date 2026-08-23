@@ -26,7 +26,7 @@ import { formatAuditActor, formatAuditDetail, formatDateTime } from '../utils'
 const incidentStatusLabels = { OPEN: '已创建', ACTION_PENDING: '处置待执行', ACTION_EXECUTING: '处置执行中', VERIFYING: '等待验证', CLOSED: '已关闭', ESCALATED: '已升级' }
 const dispositionLabels = { REWORK: '返工', SCRAP: '报废', INVESTIGATE: '调查' }
 const connectorActionLabels: Record<string, string> = { HOLD_BATCH: '暂扣批次', CREATE_TICKET: '创建质量工单' }
-const connectorSystemLabels: Record<string, string> = { 'Mock MES': '模拟 MES', 'Mock QMS': '模拟 QMS' }
+const connectorSystemLabels: Record<string, string> = { 'Mock MES': '模拟 MES', 'Mock QMS': '模拟 QMS', 'Simulated DXQ': '模拟 DXQ 质量记录' }
 const transientIncidentStatuses = ['ACTION_PENDING', 'ACTION_EXECUTING']
 
 export function IncidentPage() {
@@ -94,7 +94,7 @@ export function IncidentPage() {
       </section>
 
       <section className="panel connector-section">
-        <div className="section-title"><div><span>防止重复执行</span><h2>外部业务操作</h2></div><small><i />模拟 MES / QMS</small></div>
+        <div className="section-title"><div><span>防止重复执行</span><h2>外部业务操作</h2></div><small><i />模拟 MES / QMS / dxq_mock</small></div>
         <div className="connector-grid">
           {incident.externalActions.map((action) => (
             <article key={action.id}>

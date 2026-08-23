@@ -137,4 +137,15 @@ describe('VisionQC quality workstation', () => {
     expect(screen.getByText('手动演示已就绪')).toBeInTheDocument()
     expect(screen.getByText(/即使现场设备离线，也可以使用网页中的演示图片/)).toBeInTheDocument()
   })
+
+  it('guides a novice through Duerr inputs and keeps customer images local by default', async () => {
+    const user = userEvent.setup()
+    renderAt('/start')
+
+    expect(await screen.findByRole('heading', { name: '从一张图开始检测' })).toBeInTheDocument()
+    expect(screen.getByText(/Independent portfolio concept; not commissioned or endorsed by Dürr/, { selector: '.onboarding-disclaimer' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /USB 相机/ }))
+    expect(screen.getByText(/默认本地处理，不上传客户原图/)).toBeInTheDocument()
+    expect(screen.getByText(/未勾选同意时不会从网页上传客户原图/)).toBeInTheDocument()
+  })
 })

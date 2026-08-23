@@ -80,12 +80,18 @@ export function InspectionPage() {
         </div>
       )}
 
+      {inspection.qualityFlags && inspection.qualityFlags.length > 0 && (
+        <div className="quality-flag-banner" role="status">
+          <ShieldAlert size={18} /><span><strong>采集质量门禁已触发：</strong>{inspection.qualityFlags.join('、')}。系统没有把这张图自动放行，已转人工复核。</span>
+        </div>
+      )}
+
       <div className="inspection-grid">
         <div className="inspection-main">
           <EvidenceViewer inspection={inspection} />
 
           <section className="panel evidence-metadata">
-            <div className="section-title"><div><span>样本上下文</span><h2>样本与生产上下文</h2></div><small>接收后只读</small></div>
+            <div className="section-title"><div><span>车身数字质量档案 · Digital quality record</span><h2>样本与生产上下文</h2></div><small>接收后只读</small></div>
             <dl className="metadata-grid">
               <div><dt><Boxes size={15} />产品 / 版本</dt><dd>{inspection.context.productCode} · {inspection.context.productRevision}</dd></div>
               <div><dt><Fingerprint size={15} />批次号</dt><dd>{inspection.context.batchNo}</dd></div>
@@ -93,6 +99,7 @@ export function InspectionPage() {
               <div><dt><Clock3 size={15} />采集时间</dt><dd>{formatDateTime(inspection.context.capturedAt, true)}</dd></div>
               <div className="wide"><dt><Fingerprint size={15} />原图 SHA-256</dt><dd><code>{inspection.image.sha256}</code></dd></div>
               <div><dt>图片来源</dt><dd>{formatSource(inspection.context.source)}</dd></div>
+              {Object.entries(inspection.context.metadata ?? {}).filter(([key]) => key !== 'quality_flags').slice(0, 12).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{typeof value === 'object' ? JSON.stringify(value) : String(value)}</dd></div>)}
             </dl>
           </section>
         </div>

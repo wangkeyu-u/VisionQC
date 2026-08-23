@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Activity, AlertTriangle, CheckCircle2, Database, RefreshCw, Server, UploadCloud, WifiOff } from 'lucide-react'
+import { Activity, AlertTriangle, CheckCircle2, Database, RefreshCw, Server, ShieldCheck, UploadCloud, WifiOff } from 'lucide-react'
 import { visionQcApi } from '../api/visionQc'
 import { ErrorState, LoadingState } from '../components/Feedback'
 import { StatusBadge } from '../components/StatusBadge'
@@ -66,7 +66,7 @@ export function GatewayDashboardPage() {
               <div className="gateway-status"><StatusBadge status={gateway.status} /><small>{gateway.lastError ?? (gateway.status === 'ONLINE' ? '心跳与后端连通正常' : '请检查边缘节点与网络')}</small></div>
               <div className="gateway-queue"><strong>{gateway.queueDepth}</strong><span>待补传</span>{gateway.queueDepth > 0 ? <AlertTriangle size={15} /> : <CheckCircle2 size={15} />}</div>
               <div className="gateway-counters"><span><UploadCloud size={13} />成功 {gateway.uploadSuccessCount}</span><span className={gateway.uploadFailureCount ? 'danger-text' : ''}><WifiOff size={13} />失败 {gateway.uploadFailureCount}</span></div>
-              <div className="gateway-heartbeat"><strong>{formatDateTime(gateway.lastHeartbeatAt, true)}</strong><small>{gateway.lastUploadSucceededAt ? `最近上传 ${formatDateTime(gateway.lastUploadSucceededAt)}` : '尚无成功上传时间'}</small></div>
+              <div className="gateway-heartbeat"><strong>{formatDateTime(gateway.lastHeartbeatAt, true)}</strong><small>{gateway.lastUploadSucceededAt ? `最近上传 ${formatDateTime(gateway.lastUploadSucceededAt)}` : '尚无成功上传时间'}</small><small>{gateway.localProcessingDefault ? `默认本地处理 · ${gateway.retentionDays ?? 30} 天保留` : gateway.dataConsent ? '已同意发送原图' : '未同意发送原图'}</small></div>
             </article>
           ))}
         </div>
@@ -75,6 +75,7 @@ export function GatewayDashboardPage() {
       <div className="gateway-notes">
         <div><Database size={17} /><span><strong>本地持久化队列</strong>图片上传失败时不会从 spool 删除；恢复网络后按指数退避继续补传。</span></div>
         <div><Activity size={17} /><span><strong>质量门禁与模型边界</strong>过暗、过曝、模糊或损坏文件在网关审计中标为输入拒绝；模型异常仍显示为异常证据，不改写为语义缺陷。</span></div>
+        <div><ShieldCheck size={17} /><span><strong>隐私与同意</strong>默认本地处理、不上传客户原图；当前状态会显示用途、保留天数和相机能力。只有操作者明确同意，网页演示才会发送原图。</span></div>
       </div>
     </div>
   )

@@ -1,19 +1,21 @@
 # VisionQC Industrial Edge Gateway 部署与运维手册
 
+本手册也覆盖 `duerr-demo/paint_quality`：这是面向 Dürr 汽车涂装场景的独立作品集概念方案，不代表 Dürr 委托、授权或背书。`dxq_mock` 是明确标记的模拟连接器，不是真实 DXQ API。
+
 本手册定义 VisionQC 第一版目录型工业边缘采集链路。范围是“相机/目录产生图片 → Gateway 稳定性检查与质量门禁 → 本地持久化队列 → 幂等上传 → VisionQC 推理与策略 → 人工复核 → MES/QMS → 关闭”。第一版不引入 Kafka、Kubernetes 或真实 RTSP；目录监听是现场相机落盘或文件交换目录的适配层。
 
 ## 1. 组件与信任边界
 
 ```mermaid
 flowchart LR
-  C[工业相机或文件投递器] --> D[客户目录结构]
+  C[USB 相机或文件投递器] --> D[客户目录结构]
   D --> G[Edge Gateway]
   G --> Q[(SQLite WAL + spool)]
   G -->|JWT tenant claim + Idempotency-Key| A[VisionQC API]
   A --> M[模型异常证据]
   M --> P[双阈值策略]
   P --> R[人工复核]
-  R --> X[MES/QMS + 审计]
+  R --> X[MES/QMS + dxq_mock + 审计]
 ```
 
 - Gateway 只绑定一个 Deployment Pack、一个 `target_tenant_id` 和一个 `gateway_id`。
@@ -51,6 +53,8 @@ flowchart LR
 ```
 
 Factory A 使用 `ST-07-final/<product>__<batch>__<timestamp>__<sequence>.png`；Factory B 使用 `cell/<CELL>/date/YYYY/MM/DD/<sku>__lot=<lot>__captured=<timestamp>__seq=<sequence>.jpg`。差异全部在 manifest 的正则、capture map、defaults 和 field mapping 中，Gateway 代码没有客户 ID 分支。
+
+Dürr demo 使用 `paint-shop/<PAINT_SHOP>/<LINE>/<BOOTH>/<YYYY>/<MM>/<DD>/<body_id>__model=<model_variant>__color=<color_code>__recipe=<paint_recipe>__shift=<shift>__captured=<timestamp>.jpg`。它把车身/工件字段写入数字质量档案，并可在复核后触发 simulated MES/QMS 与 `dxq_mock` 质量事件；代码不连接私有 DXQ 协议。
 
 接入或修改客户时：
 
@@ -101,6 +105,7 @@ docker compose up --build
 
 - Factory A：`http://localhost:8091/status`
 - Factory B：`http://localhost:8092/status`
+- Dürr demo：`http://localhost:8093/status`
 - 本地队列：`/queue?limit=100`
 - 失败项人工放回重试：`POST /queue/{id}/retry`
 - 强制运行一轮扫描/上传/心跳：`POST /cycle`
@@ -136,7 +141,7 @@ uv run --directory backend python ../scripts/edge_gateway_smoke.py
 1. 文件先经过 unchanged size/mtime 稳定窗口，再读取并做一次前后 stat 比对；仍在写入的文件进入下一轮，不会读取半张图。
 2. 接受的原图先原子复制到 `data_dir/spool`，然后才写 SQLite `QUEUED`。spool 是断网缓存和上传重启恢复的事实来源。
 3. SQLite 开启 WAL；`UPLOADING` 在进程启动时会恢复为 `FAILED + retryable`。网络、超时、429 和 5xx 按指数退避；永久 4xx、身份错误、坏 spool 保留为不可自动重试失败项，等待人工处理。
-4. 成功上传行保留 `inspection_id`、内容哈希、上下文和幂等键，不立即删除。这样可以审计“本地样本 → 后端检测”的对应关系。
+4. 成功上传行保留 `inspection_id`、内容哈希、上下文和幂等键；默认不立即删除。若管理员显式启用 `VQC_GATEWAY_DELETE_AFTER_UPLOAD=true`，只删除已成功上传的本地 spool，SQLite 审计行仍保留。也可调用运行时保留策略清理过期的 `LOCAL_ONLY` spool，不能直接删数据库。
 5. 后端已有 `(tenant_id, idempotency_key)` 唯一约束；Gateway key 是租户、pack 版本、内容 SHA-256 和 canonical context 的确定性 SHA-256。重复请求得到原检测，不重复推理或建单。
 
 故障恢复演练：
@@ -148,7 +153,7 @@ curl -X POST http://localhost:8091/cycle
 curl http://localhost:8091/queue?limit=20
 ```
 
-不得手工删除 `gateway.sqlite3` 或 `spool/` 来“清空积压”；这会破坏审计和未上传证据。需要清理时先导出/备份队列，再按保留策略处理。
+不得手工删除 `gateway.sqlite3` 或 `spool/` 来“清空积压”；这会破坏审计和未上传证据。需要清理时先导出/备份队列，再按 `retention_days` 与显式删除策略处理。
 
 ## 6. 图片质量门禁与审计
 
@@ -164,7 +169,7 @@ curl http://localhost:8091/queue?limit=20
 | 饱和 | 均值或饱和像素比例不能超过门槛 | `OVEREXPOSED` |
 | 上下文 | 路径/文件名能映射产品、批次、工位、时间 | `CONTEXT_INCOMPLETE` 等 |
 
-每个拒绝在 SQLite 保存时间、源路径、文件名、pack、拒绝码、中文原因和可调指标；文件移动到 `.quarantine`。这些是采集质量事件，不是缺陷标签。Gateway 的 `/status` 返回最近错误，后端看板返回最近心跳和上传失败计数。
+每个拒绝在 SQLite 保存时间、源路径、文件名、pack、拒绝码、中文原因和可调指标；文件移动到 `.quarantine`。这些是采集质量事件，不是缺陷标签。Gateway 的 `/status` 返回最近错误、相机状态、同意状态、用途、保留期限和删除策略，后端看板返回最近心跳和上传失败计数。默认本地处理，不偷偷上传或遥测客户原图。
 
 ## 7. 后端与前端运行状态
 

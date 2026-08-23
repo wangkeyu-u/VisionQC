@@ -32,24 +32,37 @@ export const handlers = [
   }),
 
   http.get('/api/v1/gateways/status', async () => {
+    const gateway = mockTenant === 'factory-a'
+      ? { gatewayId: 'factory-a-gw-st07', station: 'ST-07 / 终检', pack: 'factory_a/transistor', version: '1.0.0', queue: 0, success: 128 }
+      : mockTenant === 'factory-b'
+        ? { gatewayId: 'factory-b-gw-cell12', station: 'CELL-12', pack: 'factory_b/bottle', version: '2.1.0', queue: 1, success: 64 }
+        : { gatewayId: 'duerr-demo-gw-paint-qc', station: 'PAINT-QC-01', pack: 'duerr_demo/paint_quality', version: '0.1.0', queue: 0, success: 12 }
     return HttpResponse.json([
       {
         tenant_id: mockTenant,
-        gateway_id: mockTenant === 'factory-a' ? 'factory-a-gw-st07' : 'factory-b-gw-cell12',
+        gateway_id: gateway.gatewayId,
         gateway_version: '0.1.0',
-        station_code: mockTenant === 'factory-a' ? 'ST-07 / 终检' : 'CELL-12',
+        station_code: gateway.station,
         status: 'ONLINE',
         reported_status: 'ONLINE',
-        queue_depth: mockTenant === 'factory-a' ? 0 : 1,
+        queue_depth: gateway.queue,
         last_error: null,
         last_heartbeat_at: '2026-08-04T10:42:18+08:00',
         last_upload_succeeded_at: '2026-08-04T10:41:55+08:00',
         last_upload_failed_at: null,
-        upload_success_count: mockTenant === 'factory-a' ? 128 : 64,
+        upload_success_count: gateway.success,
         upload_failure_count: 1,
-        deployment_pack_key: mockTenant === 'factory-a' ? 'factory_a/transistor' : 'factory_b/bottle',
-        deployment_pack_version: mockTenant === 'factory-a' ? '1.0.0' : '2.1.0',
-        metrics: { queue_counts: { UPLOADED: mockTenant === 'factory-a' ? 128 : 64 } },
+        deployment_pack_key: gateway.pack,
+        deployment_pack_version: gateway.version,
+        upload_enabled: false,
+        data_consent: false,
+        data_purpose: '本地涂装质量检测与人工复核',
+        retention_days: 30,
+        delete_after_upload: false,
+        local_processing_default: true,
+        camera_enabled: false,
+        camera_index: 0,
+        metrics: { queue_counts: { UPLOADED: gateway.success } },
       },
     ])
   }),
@@ -63,7 +76,9 @@ export const handlers = [
     const incidents = mockTenant === 'factory-a' ? [incidentFixture] : []
     const gateways = mockTenant === 'factory-a'
       ? { total: 1, online: 1, queue: 0, success: 128, failure: 1 }
-      : { total: 1, online: 1, queue: 1, success: 64, failure: 1 }
+      : mockTenant === 'factory-b'
+        ? { total: 1, online: 1, queue: 1, success: 64, failure: 1 }
+        : { total: 1, online: 1, queue: 0, success: 12, failure: 0 }
     const routeCounts = inspections.reduce<Record<string, number>>((counts, inspection) => {
       const route = inspection.policy?.decision ?? (inspection.failure ? 'SAFE_REVIEW' : 'PENDING')
       counts[route] = (counts[route] ?? 0) + 1

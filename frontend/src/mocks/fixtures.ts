@@ -332,6 +332,7 @@ export const tenantContexts: Record<string, TenantContext> = {
     availableTenants: [
       { id: 'factory-a', name: 'Factory A', status: 'ACTIVE' },
       { id: 'factory-b', name: 'Factory B', status: 'ACTIVE' },
+      { id: 'duerr-demo', name: 'Dürr Demo Paint Quality', status: 'ACTIVE' },
     ],
     currentDeployment: {
       id: 'dep_factory_a_1_0_0',
@@ -356,6 +357,7 @@ export const tenantContexts: Record<string, TenantContext> = {
     availableTenants: [
       { id: 'factory-a', name: 'Factory A', status: 'ACTIVE' },
       { id: 'factory-b', name: 'Factory B', status: 'ACTIVE' },
+      { id: 'duerr-demo', name: 'Dürr Demo Paint Quality', status: 'ACTIVE' },
     ],
     currentDeployment: {
       id: 'dep_factory_b_2_1_0',
@@ -373,6 +375,34 @@ export const tenantContexts: Record<string, TenantContext> = {
       policy: { version: 'factory-b-bottle-policy-2.1.0', default: { reviewThreshold: 0.28, holdThreshold: 0.68 }, overrides: [{ stationCode: 'CELL-12', reviewThreshold: 0.25, holdThreshold: 0.62 }] },
       connectors: { mes: connector('Factory B FlowMES', 'flowmes-lot-v2'), qms: connector('Factory B QualityHub', 'qualityhub-ncr-v3') },
       metadata: { customerSegment: 'glass-packaging', ingestContract: 'folder-watch-v1' },
+    },
+  },
+  'duerr-demo': {
+    tenant: { id: 'duerr-demo', name: 'Dürr Demo Paint Quality', status: 'ACTIVE' },
+    availableTenants: [
+      { id: 'factory-a', name: 'Factory A', status: 'ACTIVE' },
+      { id: 'factory-b', name: 'Factory B', status: 'ACTIVE' },
+      { id: 'duerr-demo', name: 'Dürr Demo Paint Quality', status: 'ACTIVE' },
+    ],
+    currentDeployment: {
+      id: 'dep_duerr_demo_0_1_0',
+      tenantId: 'duerr-demo',
+      version: '0.1.0',
+      status: 'ACTIVE',
+      packKey: 'duerr_demo/paint_quality',
+      displayName: 'Dürr 场景 · 汽车涂装质量边缘试点',
+      inputMode: 'folder_watch',
+      products: [{ code: 'painted_body_panel', displayName: '涂装车身面板', revision: 'PILOT-0.1', aliases: ['BODY-PANEL-DEMO'] }],
+      stations: [
+        { code: 'PAINT-QC-01', displayName: '涂装检查站 01', description: '汽车涂装表面边缘视觉证据与人工复核', cameraProfile: 'paint-panel-multi-angle-demo' },
+        { code: 'PAINT-QC-02', displayName: '涂装检查站 02', description: '租户隔离回归工位', cameraProfile: 'paint-panel-multi-angle-demo' },
+      ],
+      fieldMapping: { productCode: 'product_code', productRevision: 'product_revision', batchNo: 'batch_no', stationCode: 'station_code', capturedAt: 'captured_at', source: 'source' },
+      fieldLabels: { product_code: '工件类型 / Workpiece', product_revision: '试片版本 / Revision', batch_no: '车身或工件号 / Body ID', station_code: '涂装检查站 / Booth', captured_at: '采集时间 / Timestamp' },
+      model: { id: 'patchcore-paint-quality-demo', version: '0.1.0-draft', featureBankVersion: 'not-qualified', adapter: 'stub-or-verified-patchcore', runtime: 'local-edge-runtime', device: 'CPU fallback / optional GPU', packageUri: 'models/paint-quality-demo/not-qualified', packageSha256: 'demo-paint-quality-package-not-qualified', scoreSemantics: '异常证据分数；不是缺陷语义、根因或生产放行结论', limitations: ['DEMO_SYNTHETIC 只验证流程，不代表生产效果。'] },
+      policy: { version: 'duerr-paint-quality-policy-draft-0.1.0', default: { reviewThreshold: 0.4, holdThreshold: 0.8 }, overrides: [] },
+      connectors: { mes: connector('Simulated MES quality hold', 'mes-batch-v1-simulated'), qms: connector('Simulated QMS quality case', 'qms-quality-case-v1-simulated'), dxqMock: connector('Simulated DXQ quality-loop record (mock only)', 'simulated-dxq-quality-loop.v1') },
+      metadata: { customerName: 'Dürr', portfolioDisclaimer: '面向 Dürr 业务场景设计的独立作品集概念方案 / Independent portfolio concept; not commissioned or endorsed by Dürr.', privacyDefault: 'local_processing_only', dxqBoundary: 'dxq_mock is a simulated concept adapter, not an official DXQ API' },
     },
   },
 }

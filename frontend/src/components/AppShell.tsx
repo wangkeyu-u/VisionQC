@@ -40,6 +40,7 @@ export function useDeploymentContext(): DeploymentContextValue {
 
 const navItems = [
   { to: '/', label: '工作首页', icon: Activity, end: true },
+  { to: '/start', label: '开始检测', icon: ScanLine },
   { to: '/reviews', label: '待我复核', icon: ClipboardCheck },
   { to: '/incidents', label: '质量事件', icon: FileWarning },
   { to: '/operations', label: '设备连接', icon: Server },
@@ -243,7 +244,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         {error && <div className="global-error" role="status"><ShieldAlert size={16} />{error}<button className="text-button" onClick={() => void refresh()}>重新检查</button></div>}
 
-        <div className="boundary-strip"><ShieldCheck size={16} aria-hidden="true" /><span><strong>请注意</strong> 系统只指出“哪里看起来可疑”，不会代替人确认合格、不合格或故障原因。</span></div>
+        <div className="boundary-strip"><ShieldCheck size={16} aria-hidden="true" /><span><strong>请注意</strong> 系统只指出“哪里看起来可疑”，不会代替人确认合格、不合格或故障原因。<em>面向 Dürr 业务场景设计的独立作品集概念方案 / Independent portfolio concept; not commissioned or endorsed by Dürr.</em></span></div>
         <main className="workspace">{children}</main>
 
         {helpOpen && <HelpDrawer onClose={() => setHelpOpen(false)} />}

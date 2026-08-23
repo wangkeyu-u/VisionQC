@@ -1,5 +1,7 @@
 # VisionQC 客户流程案例与 48 小时接入方案
 
+> 本文的 Dürr 部分是面向 Dürr 业务场景设计的独立作品集概念方案 / Independent portfolio concept; not commissioned or endorsed by Dürr。现有 Factory A/B 内容继续作为多租户回归夹具。
+
 ## 1. 场景
 
 假设电子装配工厂希望对晶体管外观进行自动异常筛查。当前质检依靠抽检、纸面 SOP 和人工录入 QMS；异常图片、处置理由和批次动作分散在不同系统。
@@ -108,3 +110,20 @@ flowchart LR
 
 尚未证明：真实客户相机、现场光照、产品漂移、真实 MES/QMS 和生产节拍下的业务效果。进入客户 Pilot 后必须重新采集、校准和验收。
 
+## 7. Dürr 汽车涂装扩展概念
+
+把同一平台映射到汽车涂装检查站时，产品不是“给 Dürr 做一个专用分类器”，而是为 DXQ 数字化栈补充边缘证据和人工闭环编排：
+
+```mermaid
+flowchart LR
+  A[涂装检查站 USB 相机/文件夹] --> B[本地 Edge Gateway]
+  B --> C[车身数字质量档案]
+  C --> D[异常证据 + 质量门禁]
+  D --> E[人工复核]
+  E --> F[模拟 MES/QMS/dxq_mock]
+  F --> G[质量案例关闭与审计]
+```
+
+`duerr-demo` Deployment Pack 由 manifest 定义涂装车间、喷房/工位、产线、车型、颜色、配方和班次字段；它不在核心业务中写 `if tenant == duerr`。`dxq_mock` 仅模拟公开概念层质量记录和事件流，所有外部引用都带幂等键和审计时间线，不宣称真实 DXQ API。
+
+中国 pilot 的作品集假设是本地部署、中文操作、数据默认不出厂、可配置连接器和低改造接入。实际 pilot 仍需要客户正式授权、相机/灯光标定、真实数据 provenance、人工标签和现场 Go/No-Go；Blender `DEMO_SYNTHETIC` 样本不能替代这些证据。

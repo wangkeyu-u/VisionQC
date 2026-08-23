@@ -43,6 +43,7 @@ export interface InspectionContext {
   station: string
   capturedAt: string
   source: string
+  metadata?: Record<string, unknown>
 }
 
 export interface ImageAsset {
@@ -90,6 +91,7 @@ export interface Inspection {
     message: string
     nextStep: string
   }
+  qualityFlags?: string[]
   timeline: TimelineEvent[]
 }
 
@@ -131,7 +133,7 @@ export interface ReviewReceipt {
 
 export interface ExternalAction {
   id: string
-  system: 'Mock MES' | 'Mock QMS'
+  system: 'Mock MES' | 'Mock QMS' | 'Simulated DXQ'
   action: string
   status: 'PENDING' | 'EXECUTING' | 'COMPLETED' | 'FAILED'
   attempts: number
@@ -256,6 +258,7 @@ export interface DeploymentPack {
   connectors: {
     mes: DeploymentConnector
     qms: DeploymentConnector
+    dxqMock?: DeploymentConnector
   }
   metadata: Record<string, unknown>
 }
@@ -289,6 +292,14 @@ export interface GatewayStatus {
   deploymentPackKey?: string
   deploymentPackVersion?: string
   metrics: Record<string, unknown>
+  uploadEnabled?: boolean
+  dataConsent?: boolean
+  dataPurpose?: string
+  retentionDays?: number
+  deleteAfterUpload?: boolean
+  localProcessingDefault?: boolean
+  cameraEnabled?: boolean
+  cameraIndex?: number
 }
 
 export interface SystemHealth {

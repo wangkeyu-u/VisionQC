@@ -77,6 +77,7 @@ export function ModelOpsPage() {
           {Object.entries(gateChecks).map(([name, gate]) => <span key={name}><b>{name}</b>{gate.status ?? 'INSUFFICIENT_EVIDENCE'}{gate.value !== undefined && gate.value !== null ? ` · ${String(gate.value)}` : ''}</span>)}
         </div>
         <div className="evidence-boundary"><AlertTriangle size={16} /><strong>重要边界：</strong><span>{status.datasetSourceType === 'DEMO_SYNTHETIC' ? '演示数据只证明系统及评测流程可以启动，不是效果证据。' : 'benchmark 结果只证明系统及评测流程可运行，不代表任何工厂现场效果；客户数据必须通过受控导入和 provenance gate。'}</span></div>
+        <div className="risk-gate-callout"><ShieldAlert size={17} /><div><strong>Pilot Gate Recovery · 风险约束</strong><span>异常样本自动放行必须为 0；Review + Hold 异常召回率 ≥ 95%；Hold 异常召回率 ≥ 80%；正常样本进入人工复核 ≤ 35% 只是运营目标。任何校准或 OOD/坏图失败都会保持 DRAFT。</span></div></div>
           <p className="source-line">证据来源：<code>{status.evidenceSource}</code>{status.evidencePackageSha256 ? <> · 证据摘要 <code>{status.evidencePackageSha256}</code></> : null}</p>
       </section>
 

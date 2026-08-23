@@ -9,6 +9,7 @@ import { UploadPage } from './pages/UploadPage'
 import { OverviewPage } from './pages/OverviewPage'
 import { ModelOpsPage } from './pages/ModelOpsPage'
 import { IncidentsPage } from './pages/IncidentsPage'
+import { OnboardingPage } from './pages/OnboardingPage'
 
 export function AppRoutes() {
   return (
@@ -16,6 +17,7 @@ export function AppRoutes() {
       <Switch>
         <Route path="/" component={OverviewPage} />
         <Route path="/upload" component={UploadPage} />
+        <Route path="/start" component={OnboardingPage} />
         <Route path="/inspections/:id" component={InspectionPage} />
         <Route path="/reviews" component={ReviewQueuePage} />
         <Route path="/reviews/:taskId" component={ReviewWorkspacePage} />

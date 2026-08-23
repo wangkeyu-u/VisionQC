@@ -33,6 +33,7 @@ export interface InspectionUpload {
   idempotencyKey: string
   fieldMapping?: DeploymentFieldMapping
   source?: string
+  metadata?: Record<string, unknown>
 }
 
 interface RawDeploymentPack {
@@ -88,6 +89,7 @@ function mapDeployment(raw: RawDeploymentPack): DeploymentPack {
   const connectors = manifest.connectors as {
     mes: Record<string, unknown>
     qms: Record<string, unknown>
+    dxq_mock?: Record<string, unknown>
   }
   const mapConnector = (value: Record<string, unknown>) => ({
     displayName: String(value.display_name ?? 'Connector'),
@@ -152,7 +154,11 @@ function mapDeployment(raw: RawDeploymentPack): DeploymentPack {
         holdThreshold: Number(override.hold_threshold),
       })),
     },
-    connectors: { mes: mapConnector(connectors.mes), qms: mapConnector(connectors.qms) },
+    connectors: {
+      mes: mapConnector(connectors.mes),
+      qms: mapConnector(connectors.qms),
+      dxqMock: connectors.dxq_mock ? mapConnector(connectors.dxq_mock) : undefined,
+    },
     metadata: manifest.metadata,
   }
 }
@@ -199,6 +205,7 @@ interface RawInspection {
     station_code: string
     captured_at: string
     source: string
+    metadata?: Record<string, unknown>
   }
   images: RawImage[]
   model?: {
@@ -219,6 +226,7 @@ interface RawInspection {
   review_task_id?: string | null
   incident_id?: string | null
   failure_reason?: string | null
+  quality_flags?: string[]
   idempotent_replay: boolean
   created_at: string
   updated_at: string
@@ -296,6 +304,14 @@ interface RawGatewayStatus {
   deployment_pack_key?: string | null
   deployment_pack_version?: string | null
   metrics: Record<string, unknown>
+  upload_enabled?: boolean
+  data_consent?: boolean
+  data_purpose?: string
+  retention_days?: number
+  delete_after_upload?: boolean
+  local_processing_default?: boolean
+  camera_enabled?: boolean
+  camera_index?: number
 }
 
 interface RawOperationsSummary {
@@ -437,6 +453,7 @@ async function normalizeInspection(raw: RawInspection, withTimeline = false): Pr
       station: raw.context.station_code,
       capturedAt: raw.context.captured_at,
       source: raw.context.source,
+      metadata: raw.context.metadata ?? {},
     },
     image: {
       filename: `${raw.inspection_id}.${original?.mime_type === 'image/jpeg' ? 'jpg' : 'png'}`,
@@ -470,6 +487,7 @@ async function normalizeInspection(raw: RawInspection, withTimeline = false): Pr
       message: raw.failure_reason,
       nextStep: '请由人工复核证据，确认模型与部署包状态。',
     } : undefined,
+    qualityFlags: raw.quality_flags ?? [],
     timeline: normalizeTimeline(timeline),
   }
 }
@@ -480,7 +498,9 @@ function normalizeExternalAction(raw: RawExternalAction): ExternalAction {
     : raw.status === 'MANUAL_REVIEW' ? 'FAILED' : raw.status as ExternalAction['status']
   return {
     id: raw.id,
-    system: raw.connector === 'MES' ? 'Mock MES' : 'Mock QMS',
+    system: raw.connector === 'MES'
+      ? 'Mock MES'
+      : raw.connector === 'QMS' ? 'Mock QMS' : 'Simulated DXQ',
     action: raw.operation,
     status,
     attempts: raw.attempts,
@@ -519,6 +539,14 @@ export const visionQcApi = {
       deploymentPackKey: row.deployment_pack_key ?? undefined,
       deploymentPackVersion: row.deployment_pack_version ?? undefined,
       metrics: row.metrics ?? {},
+      uploadEnabled: row.upload_enabled,
+      dataConsent: row.data_consent,
+      dataPurpose: row.data_purpose,
+      retentionDays: row.retention_days,
+      deleteAfterUpload: row.delete_after_upload,
+      localProcessingDefault: row.local_processing_default,
+      cameraEnabled: row.camera_enabled,
+      cameraIndex: row.camera_index,
     }))
   },
 
@@ -622,7 +650,8 @@ export const visionQcApi = {
     form.set(fieldMapping.batchNo, input.batchNo)
     form.set(fieldMapping.stationCode, input.station)
     form.set(fieldMapping.capturedAt, input.capturedAt)
-    form.set(fieldMapping.source, input.source ?? 'Web manual upload')
+  form.set(fieldMapping.source, input.source ?? 'Web manual upload')
+  if (input.metadata) form.set('context_metadata_json', JSON.stringify(input.metadata))
 
     const raw = await apiRequest<CreateInspectionResponse | RawInspection>('/inspections', {
       method: 'POST',
