@@ -1,187 +1,205 @@
 {
-  "schema_version": "visionqc.benchmark-qualification-run.v3",
-  "source_type": "OFFICIAL_BENCHMARK",
-  "report_status": "BENCHMARK_NO_GO",
-  "run_status": "COMPLETED_NO_GO",
-  "qualification_decision": "NO-GO",
-  "operational_go_no_go": "NO-GO",
-  "generated_at": "2026-08-05T03:32:12.882221+00:00",
   "branch": "codex/visionqc-pilot-gate-evidence",
-  "code_commit": "c438cc4",
-  "scope": "Benchmark Qualification / Pre-Pilot Lab Validation only",
-  "official_source": {
-    "dataset": "MVTec AD",
-    "source_page": "https://www.mvtec.com/research-teaching/datasets/mvtec-ad",
-    "license": "CC BY-NC-SA 4.0",
-    "license_acknowledged_by_operator": true,
-    "source_archive": "<USER_PROVIDED_MVTEC_ARCHIVE>",
-    "source_archive_sha256": "cf4313b13603bec67abb49ca959488f7eedce2a9f7795ec54446c649ac98cd3d",
-    "claim_boundary": "Official benchmark evidence can demonstrate that the system and evaluation flow run; it is not factory, customer Pilot, or production evidence."
-  },
-  "evidence_binding": {
-    "read_only_source": true,
-    "baseline_run": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real",
-    "model_package": "<REPOSITORY_ROOT>/ml/.artifacts/model-packages/patchcore-transistor/1.0.0-rc1",
-    "model_package_sha256": "c35fc1f3a38d0f488cf031767301315c8999df7db212b04954b0227c1746fa17",
-    "dataset_fingerprint": "508950233c88cbf52520899e22587fbbb8ecb1ab1b43d5184fa0599f44c59005",
-    "evidence_package": "reports/pilot-qualification/Factory A/transistor",
-    "evidence_package_sha256": "cb877bbc79dc6d9b066a0cfd4dc1dcfffbe388140b97166dbd24b76a4758f9aa"
-  },
-  "data_discovery": {
-    "user_provided_paths": [
-      {
-        "path": "<USER_PROVIDED_MVTEC_ARCHIVE>",
-        "exists": true,
-        "sha256": "cf4313b13603bec67abb49ca959488f7eedce2a9f7795ec54446c649ac98cd3d"
-      },
-      {
-        "path": "<REPOSITORY_ROOT>/ml/.data/mvtec-ad",
-        "exists": true,
-        "source_type": "OFFICIAL_BENCHMARK"
-      }
-    ],
-    "project_default_paths": [
-      {
-        "path": "ml/.data/mvtec-ad",
-        "exists": false
-      },
-      {
-        "path": "ml/.cache/downloads/mvtec_anomaly_detection.tar.xz",
-        "exists": false
-      }
-    ],
-    "validation": {
-      "transistor_exit_code": 0,
-      "bottle_exit_code": 2,
-      "reason": "The transistor receipt, manifest, model package, validation/test predictions, validation-only thresholds, test evaluation, performance probe, and gallery were cross-checked from the supplied read-only c014 artifacts. Bottle was not imported in this run."
-    }
-  },
-  "environment": {
-    "python": "3.12.13",
-    "torch": "2.6.0",
-    "anomalib": "2.0.0",
-    "platform": "macOS-26.5.2-arm64-arm-64bit",
-    "machine": "arm64",
-    "cuda_available": false,
-    "mps_available": true
-  },
-  "products": [
-    {
-      "context_name": "benchmark-transistor",
-      "category": "transistor",
-      "evidence_package": "reports/pilot-qualification/Factory A/transistor",
-      "evidence_package_sha256": "cb877bbc79dc6d9b066a0cfd4dc1dcfffbe388140b97166dbd24b76a4758f9aa",
-      "data_status": "OFFICIAL_BENCHMARK",
-      "qualification_run_status": "COMPLETED_NO_GO",
-      "qualification_status": "BENCHMARK_NO_GO",
-      "model_package_sha256": "c35fc1f3a38d0f488cf031767301315c8999df7db212b04954b0227c1746fa17",
-      "dataset_fingerprint": "508950233c88cbf52520899e22587fbbb8ecb1ab1b43d5184fa0599f44c59005",
-      "sample_counts": {
-        "train_good_images": 213,
-        "validation_images": 50,
-        "holdout_test_images": 50,
-        "test_good_images": 60,
-        "test_anomalous_images": 40,
-        "ground_truth_masks": 40
-      },
-      "metrics": {
-        "image_auroc": 1.0,
-        "pixel_auroc": 0.9721664724634458,
-        "aupro": 0.9411454515635378,
-        "defect_error_auto_release_rate": 0.3,
-        "review_hold_recall": 0.7,
-        "hold_recall": 0.5,
-        "warm_p95_ms": 96.5984909737017
-      },
-      "gate_thresholds": {
-        "defect_error_auto_release_rate_max": 0.05,
-        "review_hold_recall_min": 0.95,
-        "hold_recall_min": 0.8,
-        "warm_p95_ms_max": 500.0
-      },
-      "failed_gates": [
-        "defect_error_auto_release_rate",
-        "review_hold_recall",
-        "hold_recall"
-      ],
-      "registry_status": "DRAFT_ONLY",
-      "approval_status": "DRAFT_ONLY",
-      "activation_allowed": false
-    },
-    {
-      "context_name": "benchmark-bottle",
-      "category": "bottle",
-      "evidence_package": "reports/pilot-qualification/Factory B/bottle",
-      "evidence_package_sha256": "6bf0c90c25b8a96bb459c82382a1dd9667a6d2cd846d14d140c3614b560cf23e",
-      "data_status": "OFFICIAL_BENCHMARK",
-      "qualification_run_status": "BLOCKED",
-      "qualification_status": "BENCHMARK_INSUFFICIENT_EVIDENCE",
-      "model_package_sha256": null,
-      "sample_counts": {
-        "train_good_images": 0,
-        "validation_images": 0,
-        "holdout_test_images": 0,
-        "test_good_images": 0,
-        "test_anomalous_images": 0,
-        "ground_truth_masks": 0
-      },
-      "registry_status": "DRAFT_NOT_REGISTERED",
-      "activation_allowed": false
-    }
-  ],
-  "threshold_provenance": {
-    "source_split": "validation",
-    "threshold_selection_split": "validation",
-    "holdout_test_used_for_threshold_selection": false,
-    "strategy": "legacy",
-    "safety_margin": 0.0,
-    "review_threshold": 0.5056430101394653,
-    "hold_threshold": 0.5815433859825134,
-    "validation_predictions_sha256": "d18d10351bce4820bcbcb6ba17b49997f928e813e5618070aa814fbcfff2f08f"
-  },
-  "protocols": {
-    "A": {
-      "status": "PASS",
-      "reason": "Verified model package integrity, manifest binding, and baseline evaluation identity."
-    },
-    "B": {
-      "status": "PASS",
-      "reason": "Validation-only calibration was frozen before the 50-sample holdout; test labels were used only for final evaluation."
-    }
-  },
-  "release_gate": {
-    "failed_or_missing": [
-      "defect_error_auto_release_rate",
-      "review_hold_recall",
-      "hold_recall"
-    ],
-    "business_gate_decision": "NO-GO",
-    "production_activation": "NOT_ALLOWED_FOR_BENCHMARK",
-    "model_registry_decision": "DRAFT_ONLY",
-    "customer_data_gate": "BLOCKED_NO_CUSTOMER_DATA",
-    "role_separation_flow": "The candidate cannot be approved or activated; benchmark PASS, if achieved in a future run, would only be READY_FOR_CUSTOMER_DATA."
-  },
-  "commands": {
-    "qualification": "uv run visionqc-ml pilot --context benchmark-lab --source-type OFFICIAL_BENCHMARK --category transistor --baseline-run <read-only-run> --model-package <read-only-model-package> --dataset-root <read-only-dataset-root> --source configs/mvtec-ad-transistor.json --acknowledge-license",
-    "default_demo": "uv run visionqc-ml pilot --context demo --source-type DEMO_SYNTHETIC --category transistor --output-dir <output-dir>",
-    "customer_data": "Register CUSTOMER_PILOT only with complete tenant/site/line/camera/product/capture-window/label-source/approver/consent/retention provenance."
-  },
-  "verification": {
-    "ml_integrity_check": "PASS",
-    "backend_integrity_check": "PASS",
-    "source_hashes": "PASS",
-    "tamper_negative_check": "PASS",
-    "path_category_model_fingerprint_mismatch_checks": "PASS",
-    "registry_gate": {
-      "business_gate_failure": "REJECTED",
-      "lifecycle_status": "DRAFT",
-      "activation": "NOT_ALLOWED"
-    }
-  },
   "claims_not_made": [
     "No MVTec result is presented as customer, factory, or production performance.",
     "No benchmark result authorizes APPROVED or ACTIVE.",
     "No anomaly score is asserted to be a confirmed defect, defect type, root cause, scrap, or quality responsibility.",
     "No customer provenance or customer-data gate is claimed; no customer Pilot approval is possible."
-  ]
+  ],
+  "code_commit": "c438cc4",
+  "commands": {
+    "customer_data": "Register CUSTOMER_PILOT only with complete tenant/site/line/camera/product/capture-window/label-source/approver/consent/retention provenance.",
+    "default_demo": "uv run visionqc-ml pilot --context demo --source-type DEMO_SYNTHETIC --category transistor --output-dir <output-dir>",
+    "qualification": "uv run visionqc-ml pilot --context benchmark-lab --source-type OFFICIAL_BENCHMARK --category transistor --baseline-run <read-only-run> --model-package <read-only-model-package> --dataset-root <read-only-dataset-root> --source configs/mvtec-ad-transistor.json --acknowledge-license"
+  },
+  "data_discovery": {
+    "project_default_paths": [
+      {
+        "exists": false,
+        "path": "ml/.data/mvtec-ad"
+      },
+      {
+        "exists": false,
+        "path": "ml/.cache/downloads/mvtec_anomaly_detection.tar.xz"
+      }
+    ],
+    "user_provided_paths": [
+      {
+        "exists": true,
+        "path": "<USER_PROVIDED_MVTEC_ARCHIVE>",
+        "sha256": "cf4313b13603bec67abb49ca959488f7eedce2a9f7795ec54446c649ac98cd3d"
+      },
+      {
+        "exists": true,
+        "path": "<REPOSITORY_ROOT>/ml/.data/mvtec-ad",
+        "source_type": "OFFICIAL_BENCHMARK"
+      }
+    ],
+    "validation": {
+      "bottle_exit_code": 2,
+      "reason": "The transistor receipt, manifest, model package, validation/test predictions, validation-only thresholds, test evaluation, performance probe, and gallery were cross-checked from the supplied read-only c014 artifacts. Bottle was not imported in this run.",
+      "transistor_exit_code": 0
+    }
+  },
+  "environment": {
+    "anomalib": "2.0.0",
+    "cuda_available": false,
+    "machine": "arm64",
+    "mps_available": true,
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.12.13",
+    "torch": "2.6.0"
+  },
+  "evidence_binding": {
+    "baseline_run": "<REPOSITORY_ROOT>/ml/.artifacts/runs/patchcore-transistor-1.0.0-rc1-real",
+    "dataset_fingerprint": "508950233c88cbf52520899e22587fbbb8ecb1ab1b43d5184fa0599f44c59005",
+    "evidence_package": "reports/pilot-qualification/Factory A/transistor",
+    "evidence_package_sha256": "cb877bbc79dc6d9b066a0cfd4dc1dcfffbe388140b97166dbd24b76a4758f9aa",
+    "model_package": "<REPOSITORY_ROOT>/ml/.artifacts/model-packages/patchcore-transistor/1.0.0-rc1",
+    "model_package_sha256": "c35fc1f3a38d0f488cf031767301315c8999df7db212b04954b0227c1746fa17",
+    "read_only_source": true
+  },
+  "gate_version": "visionqc-pilot-gates.v3",
+  "generated_at": "2026-08-05T03:32:12.882221+00:00",
+  "official_source": {
+    "claim_boundary": "Official benchmark evidence can demonstrate that the system and evaluation flow run; it is not factory, customer Pilot, or production evidence.",
+    "dataset": "MVTec AD",
+    "license": "CC BY-NC-SA 4.0",
+    "license_acknowledged_by_operator": true,
+    "source_archive": "<USER_PROVIDED_MVTEC_ARCHIVE>",
+    "source_archive_sha256": "cf4313b13603bec67abb49ca959488f7eedce2a9f7795ec54446c649ac98cd3d",
+    "source_page": "https://www.mvtec.com/research-teaching/datasets/mvtec-ad"
+  },
+  "operational_go_no_go": "NO-GO",
+  "policy_reaudited_on": "2026-08-24",
+  "products": [
+    {
+      "activation_allowed": false,
+      "approval_status": "DRAFT_ONLY",
+      "category": "transistor",
+      "context_name": "benchmark-transistor",
+      "data_status": "OFFICIAL_BENCHMARK",
+      "dataset_fingerprint": "508950233c88cbf52520899e22587fbbb8ecb1ab1b43d5184fa0599f44c59005",
+      "evidence_package": "reports/pilot-qualification/Factory A/transistor",
+      "evidence_package_sha256": "659f5001429ca0fa521d9322a73e1e43c8242ccae4b3e376c7043c321e987a61",
+      "failed_gates": [
+        "defect_error_auto_release_rate",
+        "review_hold_recall",
+        "hold_recall"
+      ],
+      "gate_thresholds": {
+        "defect_error_auto_release_rate_max": 0.0,
+        "hold_recall_min": 0.8,
+        "normal_review_hold_rate_max": 0.35,
+        "review_hold_recall_min": 0.95,
+        "warm_p95_ms_max": 500.0
+      },
+      "gate_version": "visionqc-pilot-gates.v3",
+      "metrics": {
+        "aupro": 0.9411454515635378,
+        "defect_error_auto_release_rate": 0.3,
+        "hold_recall": 0.5,
+        "image_auroc": 1.0,
+        "pixel_auroc": 0.9721664724634458,
+        "review_hold_recall": 0.7,
+        "warm_p95_ms": 96.5984909737017
+      },
+      "model_package_sha256": "c35fc1f3a38d0f488cf031767301315c8999df7db212b04954b0227c1746fa17",
+      "qualification_run_status": "COMPLETED_NO_GO",
+      "qualification_status": "BENCHMARK_NO_GO",
+      "registry_status": "DRAFT_ONLY",
+      "sample_counts": {
+        "ground_truth_masks": 40,
+        "holdout_test_images": 50,
+        "test_anomalous_images": 40,
+        "test_good_images": 60,
+        "train_good_images": 213,
+        "validation_images": 50
+      },
+      "threshold_provenance": {
+        "holdout_records_consumed_for_selection": false,
+        "source_split": "validation"
+      }
+    },
+    {
+      "activation_allowed": false,
+      "category": "bottle",
+      "context_name": "benchmark-bottle",
+      "data_status": "OFFICIAL_BENCHMARK",
+      "evidence_package": "reports/pilot-qualification/Factory B/bottle",
+      "evidence_package_sha256": "63945860e77d5637c089d228a6a9cc7178836fc6a86c7beff7d4923df834a79b",
+      "gate_version": "visionqc-pilot-gates.v3",
+      "model_package_sha256": null,
+      "qualification_run_status": "BLOCKED",
+      "qualification_status": "BENCHMARK_INSUFFICIENT_EVIDENCE",
+      "registry_status": "DRAFT_NOT_REGISTERED",
+      "sample_counts": {
+        "ground_truth_masks": 0,
+        "holdout_test_images": 0,
+        "test_anomalous_images": 0,
+        "test_good_images": 0,
+        "train_good_images": 0,
+        "validation_images": 0
+      },
+      "threshold_provenance": {
+        "holdout_records_consumed_for_selection": false,
+        "source_split": "validation"
+      }
+    }
+  ],
+  "protocols": {
+    "A": {
+      "reason": "Verified model package integrity, manifest binding, and baseline evaluation identity.",
+      "status": "PASS"
+    },
+    "B": {
+      "reason": "Validation-only calibration was frozen before the 50-sample holdout; test labels were used only for final evaluation.",
+      "status": "PASS"
+    }
+  },
+  "qualification_decision": "NO-GO",
+  "release_gate": {
+    "business_gate_decision": "NO-GO",
+    "customer_data_gate": "BLOCKED_NO_CUSTOMER_DATA",
+    "failed_or_missing": [
+      "defect_error_auto_release_rate",
+      "review_hold_recall",
+      "hold_recall"
+    ],
+    "model_registry_decision": "DRAFT_ONLY",
+    "production_activation": "NOT_ALLOWED_FOR_BENCHMARK",
+    "role_separation_flow": "The candidate cannot be approved or activated; benchmark PASS, if achieved in a future run, would only be READY_FOR_CUSTOMER_DATA."
+  },
+  "report_status": "BENCHMARK_NO_GO",
+  "run_status": "COMPLETED_NO_GO",
+  "schema_version": "visionqc.benchmark-qualification-run.v3",
+  "scope": "Benchmark Qualification / Pre-Pilot Lab Validation only",
+  "source_type": "OFFICIAL_BENCHMARK",
+  "threshold_provenance": {
+    "hold_threshold": 0.5815433859825134,
+    "holdout_test_used_for_threshold_selection": false,
+    "review_threshold": 0.5056430101394653,
+    "safety_margin": 0.0,
+    "source_split": "validation",
+    "strategy": "max review threshold at zero abnormal auto-release, then max ordered hold threshold at target hold recall",
+    "threshold_selection_split": "validation",
+    "validation_predictions_sha256": "d18d10351bce4820bcbcb6ba17b49997f928e813e5618070aa814fbcfff2f08f"
+  },
+  "verification": {
+    "backend_integrity_check": "PASS",
+    "current_workspace_reverification": {
+      "backend_integrity_check": "PASS",
+      "ml_integrity_check": "BLOCKED_SOURCE_ARTIFACTS_UNAVAILABLE",
+      "note": "The historical source-evidence paths referenced by the package are not present in this workspace; no new benchmark score was claimed."
+    },
+    "ml_integrity_check": "PASS",
+    "path_category_model_fingerprint_mismatch_checks": "PASS",
+    "registry_gate": {
+      "activation": "NOT_ALLOWED",
+      "business_gate_failure": "REJECTED",
+      "lifecycle_status": "DRAFT"
+    },
+    "source_hashes": "PASS",
+    "tamper_negative_check": "PASS"
+  }
 }

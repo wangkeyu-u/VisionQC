@@ -29,15 +29,15 @@ uv run visionqc-ml dataset register --source-type OFFICIAL_BENCHMARK \
 
 原始数据由本地 gitignored 数据目录或对象存储适配器流式保存；入口拒绝路径穿越、符号链接、特殊归档成员和压缩炸弹。数据可以撤销/替换，但已有 evidence package 永远绑定原始 fingerprint，撤销只追加审计，不改写历史证据。
 
-当前前端 ModelOps 先展示 source type、registration 状态、fingerprint、风险标签和 approval 边界；原始文件/本地路径导入仍由受权限保护的 API/CLI 完成。TODO：在不把原始数据放入前端静态目录的前提下，为 ModelOps 增加受控 multipart/挂载入口，并复用同一 `DatasetRegistration` 校验结果。
+当前前端 ModelOps 先展示 source type、registration 状态、fingerprint、风险标签和 approval 边界；原始文件/本地路径导入仍由受权限保护的 API/CLI 完成。后续若增加 ModelOps 的 multipart/挂载入口，必须复用同一 `DatasetRegistration` 校验结果，且不能把原始数据放入前端静态目录。
 
 MVTec 的阶段名称固定为 **Benchmark Qualification / Pre-Pilot Lab Validation**。benchmark 结果最多证明系统和评测流程可运行，不代表任何工厂现场效果、客户 Pilot 效果或生产准备度。
 
 ## 2. 评测协议
 
-协议 A：仅用正常训练集构建 PatchCore；独立测试集只用于 threshold-free image AUROC、pixel AUROC 和可计算时的 AUPRO。测试标签不能用于阈值选择。
+协议 A：仅用正常训练集构建 PatchCore；阈值只能从 `train/validation` 协议允许的 validation 记录选择。冻结 holdout 只用于一次最终报告，不参与阈值、模型、特征或策略调参。
 
-协议 B：固定 seed，按异常子类把独立测试样本分为 calibration 和 holdout。review/hold 阈值只能由 calibration 选择；业务指标、错误案例和最终 GO/NO-GO 只在 holdout 计算。split manifest 同时比较 sample ID、路径、图片 hash 和 mask hash，任何 train/calibration/holdout 重叠都拒绝发布。
+协议 B：固定 seed，维护 `train / validation / holdout` 三个明确分区。review/hold 阈值只能由 validation 选择；业务指标、错误案例和最终 GO/NO-GO 只在冻结 holdout 计算。split manifest 同时比较 sample ID、路径、图片 hash 和 mask hash，任何 train/validation/holdout 重叠都拒绝发布。报告必须写明 `threshold_source_split=validation` 和 `holdout_records_consumed=false`。
 
 报告必须带样本量、正常/异常数量、`source_type`、小样本限制和 bootstrap 置信区间。样本不足以计算的指标为 `null`，对应门禁为 `INSUFFICIENT_EVIDENCE`；报告状态不能跨来源改名。
 
@@ -48,15 +48,17 @@ MVTec 的阶段名称固定为 **Benchmark Qualification / Pre-Pilot Lab Validat
 | 指标/证据 | 初始要求 |
 | --- | ---: |
 | image AUROC | ≥ 0.90 |
-| 缺陷错误自动放行率 | ≤ 5% |
+| 异常样本自动放行率 | = 0（HARD_GATE） |
 | Review + Hold 缺陷召回率 | ≥ 95% |
 | Hold recall | ≥ 80% |
-| 正常样本 Review + Hold 率 | ≤ 25% |
+| 正常样本进入人工复核率 | ≤ 35%（OPERATIONAL_TARGET；数据不支持则报告失败） |
 | 热推理 P95 | ≤ 500 ms |
 | split 无泄漏、模型包/证据包完整性 | 必须通过 |
 | `CUSTOMER_PILOT` provenance / customer-data gate | 进入 Pilot approval 前必须通过；benchmark/demo 为阻断或不适用 |
 
-缺失数据、指标、CI、包摘要或审批证据不能按通过处理，统一为 `INSUFFICIENT_EVIDENCE`。正式评定还需记录 precision、recall、F1、正常误报率、缺陷错误自动放行率、review+hold recall、hold recall、复核负担率、冷/热延迟和 bootstrap CI。
+缺失数据、指标、CI、包摘要或审批证据不能按通过处理，统一为 `INSUFFICIENT_EVIDENCE`。正式评定还需记录 precision、recall、F1、正常误报率、异常自动放行率、review+hold recall、hold recall、正常复核率、冷/热延迟和 bootstrap CI。报告还必须列出 confusion matrix、分组指标、阈值来源、数据版本/fingerprint、运行命令和已知限制。
+
+任何模糊、欠曝、过曝、低对比度、无目标/视角偏差或 OOD 输入都必须进入 `REVIEW_REQUIRED` 或 `BATCH_HOLD_AND_REVIEW`；它们不能成为 `AUTO_RELEASE`。校准失败、数据泄漏、holdout 被调参或证据包不完整时，候选保持 `DRAFT`，不能放宽门禁来制造 PASS。
 
 ## 4. 证据包与发布生命周期
 

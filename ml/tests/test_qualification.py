@@ -10,7 +10,7 @@ from PIL import Image
 
 from conftest import write_mask, write_rgb
 from visionqc_ml.calibration import ScoreRecord, calibrate_thresholds
-from visionqc_ml.dataset import generate_manifest, load_manifest
+from visionqc_ml.dataset import ManifestEntry, generate_manifest, load_manifest
 from visionqc_ml.dataset_source import DatasetSourceType
 from visionqc_ml.evaluation import evaluate_predictions
 from visionqc_ml.hashing import write_json
@@ -20,6 +20,7 @@ from visionqc_ml.qualification import (
     evaluate_pilot_gates,
     load_pilot_evidence,
     qualify_from_run,
+    split_manifest_for_protocol_b,
     validate_split_manifest,
     verify_evidence_package,
     write_qualification_package,
@@ -52,7 +53,7 @@ def test_benchmark_gate_pass_is_not_customer_approval() -> None:
     result = evaluate_pilot_gates(
         {
             "image_auroc": 0.99,
-            "defect_error_auto_release_rate": 0.01,
+            "defect_error_auto_release_rate": 0.0,
             "review_hold_recall": 0.99,
             "hold_recall": 0.9,
             "normal_review_hold_rate": 0.1,
@@ -66,6 +67,59 @@ def test_benchmark_gate_pass_is_not_customer_approval() -> None:
     assert result["decision"] == "GO"
     assert result["approval_eligible"] is False
     assert result["checks"]["customer_data_provenance"]["status"] == "NOT_APPLICABLE"
+
+
+def test_abnormal_auto_release_is_a_hard_zero_gate() -> None:
+    result = evaluate_pilot_gates(
+        {
+            "image_auroc": 0.99,
+            "defect_error_auto_release_rate": 0.001,
+            "review_hold_recall": 0.99,
+            "hold_recall": 0.9,
+            "normal_review_hold_rate": 0.1,
+            "warm_p95_ms": 100.0,
+        },
+        package_verified=True,
+        no_split_leakage=True,
+        evidence_complete=True,
+        source_type=DatasetSourceType.OFFICIAL_BENCHMARK,
+    )
+    assert result["decision"] == "NO-GO"
+    assert result["checks"]["defect_error_auto_release_rate"]["gate_class"] == "HARD_GATE"
+
+
+def test_non_validation_threshold_source_is_rejected() -> None:
+    result = evaluate_pilot_gates(
+        {
+            "image_auroc": 0.99,
+            "defect_error_auto_release_rate": 0.0,
+            "review_hold_recall": 0.99,
+            "hold_recall": 0.9,
+            "normal_review_hold_rate": 0.1,
+            "warm_p95_ms": 100.0,
+        },
+        package_verified=True,
+        no_split_leakage=True,
+        evidence_complete=True,
+        source_type=DatasetSourceType.OFFICIAL_BENCHMARK,
+        threshold_source_split="holdout",
+    )
+    assert result["decision"] == "NO-GO"
+    assert result["checks"]["threshold_source_split"]["status"] == "FAIL"
+
+
+def test_evidence_package_propagates_threshold_source_guard(tmp_path: Path) -> None:
+    output = tmp_path / "invalid-threshold-source"
+    write_qualification_package(
+        output,
+        factory="benchmark-context",
+        category="transistor",
+        source_type=DatasetSourceType.OFFICIAL_BENCHMARK,
+        thresholds={"source_split": "holdout"},
+        repository_root=tmp_path,
+    )
+    metrics = json.loads((output / "metrics.json").read_text(encoding="utf-8"))
+    assert metrics["gates"]["checks"]["threshold_source_split"]["status"] == "FAIL"
 
 
 def test_customer_missing_provenance_is_source_scoped_draft(tmp_path: Path) -> None:
@@ -117,6 +171,56 @@ def test_split_manifest_rejects_content_hash_overlap() -> None:
 def test_protocol_b_rejects_holdout_records_for_threshold_selection() -> None:
     with pytest.raises(ValueError, match="holdout is forbidden"):
         calibrate_protocol_b([_record("normal", 0, 0.1), _record("anomaly", 1, 0.9)])
+
+
+def test_protocol_b_manifest_uses_validation_and_frozen_holdout_without_test_tuning() -> None:
+    entries = [
+        ManifestEntry(
+            sample_id="sample_0000000000000001",
+            split="train",
+            source_split="train",
+            image_path="train.png",
+            image_sha256="a" * 64,
+            mask_path=None,
+            mask_sha256=None,
+            label=0,
+            anomaly_subtype="good",
+            width=32,
+            height=32,
+        ),
+        ManifestEntry(
+            sample_id="sample_0000000000000002",
+            split="validation",
+            source_split="test",
+            image_path="validation.png",
+            image_sha256="b" * 64,
+            mask_path="validation-mask.png",
+            mask_sha256="c" * 64,
+            label=1,
+            anomaly_subtype="scratch",
+            width=32,
+            height=32,
+        ),
+        ManifestEntry(
+            sample_id="sample_0000000000000003",
+            split="test",
+            source_split="test",
+            image_path="test.png",
+            image_sha256="d" * 64,
+            mask_path="test-mask.png",
+            mask_sha256="e" * 64,
+            label=1,
+            anomaly_subtype="scratch",
+            width=32,
+            height=32,
+        ),
+    ]
+    split = split_manifest_for_protocol_b(entries)
+    assert "calibration" not in split
+    assert [row["sample_id"] for row in split["validation"]] == ["sample_0000000000000002"]
+    assert [row["sample_id"] for row in split["holdout"]] == ["sample_0000000000000003"]
+    assert split["threshold_source_split"] == "validation"
+    assert split["holdout_records_consumed_for_selection"] is False
 
 
 def test_insufficient_evidence_package_is_complete_and_tamper_evident(tmp_path: Path) -> None:

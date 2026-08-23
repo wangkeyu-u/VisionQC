@@ -15,3 +15,5 @@ The model reports anomaly evidence and regions only. It does not confirm a defec
 - Offline routing metrics do not include actual human overrides or downstream quality outcomes.
 - MVTec AD is a non-commercial research benchmark and does not establish factory or customer Pilot performance.
 - Thresholds are selected from validation only; the held-out test split is used only after thresholds are frozen.
+
+Gate contract: `visionqc-pilot-gates.v3`; threshold source: `validation`; frozen holdout consumed for selection: `false`.

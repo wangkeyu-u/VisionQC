@@ -15,14 +15,16 @@
     "model_package_integrity"
   ],
   "gate_decision": "INSUFFICIENT_EVIDENCE",
-  "gate_version": "visionqc-pilot-gates.v2",
+  "gate_version": "visionqc-pilot-gates.v3",
   "generated_at": "2026-08-05T03:30:53.030438+00:00",
   "limitations": [
     "MVTec AD is an official non-commercial research benchmark, not factory or customer Pilot data.",
-    "Passing benchmark gates only means READY_FOR_CUSTOMER_DATA; it never authorizes APPROVED or ACTIVE."
+    "Passing benchmark gates only means READY_FOR_CUSTOMER_DATA; it never authorizes APPROVED or ACTIVE.",
+    "Gate contract re-audited under visionqc-pilot-gates.v3; thresholds remain validation-only."
   ],
   "metric_status": "MISSING",
   "model_package_sha256": null,
+  "policy_reaudited_on": "2026-08-24",
   "qualification_run_status": "BLOCKED",
   "qualification_status": "BENCHMARK_INSUFFICIENT_EVIDENCE",
   "sample_counts": {

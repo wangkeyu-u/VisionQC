@@ -1,4 +1,5 @@
 {
+  "gate_version": "visionqc-pilot-gates.v3",
   "gates": {
     "approval_eligible": false,
     "checks": {
@@ -10,12 +11,16 @@
         "value": null
       },
       "defect_error_auto_release_rate": {
+        "gate_class": "HARD_GATE",
+        "label": "abnormal_auto_release_zero",
         "operator": "<=",
         "status": "INSUFFICIENT_EVIDENCE",
-        "threshold": 0.05,
+        "threshold": 0.0,
         "value": null
       },
       "hold_recall": {
+        "gate_class": "HARD_GATE",
+        "label": "hold_abnormal_recall",
         "operator": ">=",
         "status": "INSUFFICIENT_EVIDENCE",
         "threshold": 0.8,
@@ -40,12 +45,16 @@
         "value": false
       },
       "normal_review_hold_rate": {
+        "gate_class": "OPERATIONAL_TARGET",
+        "label": "normal_manual_review_target",
         "operator": "<=",
         "status": "INSUFFICIENT_EVIDENCE",
-        "threshold": 0.25,
+        "threshold": 0.35,
         "value": null
       },
       "review_hold_recall": {
+        "gate_class": "HARD_GATE",
+        "label": "review_plus_hold_abnormal_recall",
         "operator": ">=",
         "status": "INSUFFICIENT_EVIDENCE",
         "threshold": 0.95,
@@ -60,20 +69,22 @@
     },
     "decision": "INSUFFICIENT_EVIDENCE",
     "failed": [
-      "no_split_leakage",
-      "model_package_integrity"
+      "model_package_integrity",
+      "no_split_leakage"
     ],
-    "gate_version": "visionqc-pilot-gates.v2",
+    "gate_version": "visionqc-pilot-gates.v3",
+    "holdout_records_consumed_for_selection": false,
     "missing": [
-      "image_auroc",
       "defect_error_auto_release_rate",
-      "review_hold_recall",
       "hold_recall",
+      "image_auroc",
       "normal_review_hold_rate",
+      "review_hold_recall",
       "warm_p95_ms"
     ],
     "report_status": "BENCHMARK_INSUFFICIENT_EVIDENCE",
-    "source_type": "OFFICIAL_BENCHMARK"
+    "source_type": "OFFICIAL_BENCHMARK",
+    "threshold_source_split": "validation"
   },
   "metric_notes": {
     "reason": "A verified Anomalib PatchCore model package is not available.; Protocol A/B split evidence is not available.; Prediction scores, heatmaps, and thresholded holdout metrics are not available.; OFFICIAL_BENCHMARK requires an immutable dataset fingerprint.; OFFICIAL_BENCHMARK requires a verified dataset receipt.",
@@ -108,5 +119,10 @@
     "train_good_images": 0
   },
   "schema_version": "visionqc.pilot-metrics.v1",
+  "threshold_provenance": {
+    "holdout_records_consumed_for_selection": false,
+    "selection_rule": "validation-only thresholds; frozen holdout is used once for the final report",
+    "source_split": "validation"
+  },
   "thresholds": null
 }

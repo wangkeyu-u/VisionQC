@@ -50,6 +50,11 @@ class CalibrationResult(StrictModel):
     strategy: CalibrationStrategy = "legacy"
     safety_margin: float = Field(default=0.0, ge=0.0, le=1.0)
     threshold_selection_split: Literal["validation"] = "validation"
+    holdout_records_consumed: Literal[False] = False
+    selection_rule: str = (
+        "maximize review threshold subject to zero abnormal auto-release; "
+        "maximize ordered hold threshold subject to hold-recall target"
+    )
 
 
 def load_score_records(path: Path, required_split: str | None = None) -> list[ScoreRecord]:
@@ -193,6 +198,7 @@ def calibrate_thresholds(
         warnings=warnings,
         strategy=strategy,
         safety_margin=safety_margin,
+        holdout_records_consumed=False,
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     write_json(output_dir / "thresholds.json", result.model_dump(mode="json"))

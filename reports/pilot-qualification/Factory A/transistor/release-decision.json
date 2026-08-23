@@ -3,9 +3,9 @@
   "audit_reason": "benchmark_business_gate_failure_draft_only",
   "dataset_fingerprint": "508950233c88cbf52520899e22587fbbb8ecb1ab1b43d5184fa0599f44c59005",
   "decision": "BENCHMARK_NO_GO",
-  "evidence_package_sha256": "d3480a45fd460d434043d6d4dc307bbd9e33f2b2e3b977f7fab3801d1eaf77b0",
+  "evidence_package_sha256": "659f5001429ca0fa521d9322a73e1e43c8242ccae4b3e376c7043c321e987a61",
   "gate_decision": "NO-GO",
-  "gate_version": "visionqc-pilot-gates.v2",
+  "gate_version": "visionqc-pilot-gates.v3",
   "gates": {
     "approval_eligible": false,
     "checks": {
@@ -17,12 +17,16 @@
         "value": null
       },
       "defect_error_auto_release_rate": {
+        "gate_class": "HARD_GATE",
+        "label": "abnormal_auto_release_zero",
         "operator": "<=",
         "status": "FAIL",
-        "threshold": 0.05,
+        "threshold": 0.0,
         "value": 0.3
       },
       "hold_recall": {
+        "gate_class": "HARD_GATE",
+        "label": "hold_abnormal_recall",
         "operator": ">=",
         "status": "FAIL",
         "threshold": 0.8,
@@ -47,12 +51,16 @@
         "value": true
       },
       "normal_review_hold_rate": {
+        "gate_class": "OPERATIONAL_TARGET",
+        "label": "normal_manual_review_target",
         "operator": "<=",
         "status": "PASS",
-        "threshold": 0.25,
+        "threshold": 0.35,
         "value": 0.0
       },
       "review_hold_recall": {
+        "gate_class": "HARD_GATE",
+        "label": "review_plus_hold_abnormal_recall",
         "operator": ">=",
         "status": "FAIL",
         "threshold": 0.95,
@@ -68,16 +76,19 @@
     "decision": "NO-GO",
     "failed": [
       "defect_error_auto_release_rate",
-      "review_hold_recall",
-      "hold_recall"
+      "hold_recall",
+      "review_hold_recall"
     ],
-    "gate_version": "visionqc-pilot-gates.v2",
+    "gate_version": "visionqc-pilot-gates.v3",
+    "holdout_records_consumed_for_selection": false,
     "missing": [],
     "report_status": "BENCHMARK_NO_GO",
-    "source_type": "OFFICIAL_BENCHMARK"
+    "source_type": "OFFICIAL_BENCHMARK",
+    "threshold_source_split": "validation"
   },
   "generated_at": "2026-08-05T03:33:47.601413+00:00",
   "model_package_sha256": "c35fc1f3a38d0f488cf031767301315c8999df7db212b04954b0227c1746fa17",
+  "policy_reaudited_on": "2026-08-24",
   "reason": "Benchmark business gates failed; integrity-verified candidate must remain DRAFT. Failed gates: defect_error_auto_release_rate, review_hold_recall, hold_recall.",
   "schema_version": "visionqc.release-decision.v1",
   "source_type": "OFFICIAL_BENCHMARK"

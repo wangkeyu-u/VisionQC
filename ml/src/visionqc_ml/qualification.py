@@ -7,6 +7,7 @@ scores when the official data or a verified model package is unavailable.
 
 from __future__ import annotations
 
+import json
 import platform
 import subprocess
 from collections.abc import Iterable
@@ -23,13 +24,39 @@ from .dataset_source import CustomerDataProvenance, DatasetSourceType, demo_data
 from .hashing import read_json, sha256_file, sha256_json, write_json
 from .package import verify_model_package
 
-PILOT_GATE_VERSION = "visionqc-pilot-gates.v2"
+PILOT_GATE_VERSION = "visionqc-pilot-gates.v3"
 PILOT_GATES: dict[str, dict[str, Any]] = {
     "image_auroc": {"operator": ">=", "threshold": 0.90},
-    "defect_error_auto_release_rate": {"operator": "<=", "threshold": 0.05},
-    "review_hold_recall": {"operator": ">=", "threshold": 0.95},
-    "hold_recall": {"operator": ">=", "threshold": 0.80},
-    "normal_review_hold_rate": {"operator": "<=", "threshold": 0.25},
+    # This is intentionally a hard zero.  A candidate that ever auto-releases
+    # a labelled abnormal sample is not safe to promote, even when its AUROC
+    # looks strong.
+    "defect_error_auto_release_rate": {
+        "operator": "<=",
+        "threshold": 0.0,
+        "gate_class": "HARD_GATE",
+        "label": "abnormal_auto_release_zero",
+    },
+    "review_hold_recall": {
+        "operator": ">=",
+        "threshold": 0.95,
+        "gate_class": "HARD_GATE",
+        "label": "review_plus_hold_abnormal_recall",
+    },
+    "hold_recall": {
+        "operator": ">=",
+        "threshold": 0.80,
+        "gate_class": "HARD_GATE",
+        "label": "hold_abnormal_recall",
+    },
+    # This is an explicit operational target.  It remains a report gate: if
+    # the data cannot support the measurement, the report is insufficient
+    # evidence; if it exceeds the target, the candidate stays DRAFT.
+    "normal_review_hold_rate": {
+        "operator": "<=",
+        "threshold": 0.35,
+        "gate_class": "OPERATIONAL_TARGET",
+        "label": "normal_manual_review_target",
+    },
     "warm_p95_ms": {"operator": "<=", "threshold": 500.0},
     "no_split_leakage": {"operator": "==", "threshold": True},
     "model_package_integrity": {"operator": "==", "threshold": True},
@@ -71,6 +98,7 @@ def _blocked_metrics(reason: str) -> dict[str, Any]:
         "f1": None,
         "normal_false_positive_rate": None,
         "defect_error_auto_release_rate": None,
+        "abnormal_auto_release_rate": None,
         "review_hold_recall": None,
         "hold_recall": None,
         "manual_review_burden_rate": None,
@@ -113,22 +141,16 @@ def _jsonl_records(path: Path, allowed: set[str] | None = None) -> list[ScoreRec
 
 
 def split_manifest_for_protocol_b(entries: Iterable[ManifestEntry], *, seed: int = 20260804) -> dict[str, Any]:
-    """Make a deterministic stratified calibration/holdout manifest.
+    """Make an explicit train/validation/frozen-holdout manifest.
 
-    Training samples are never placed in either branch.  Each image and mask
-    content hash is included so overlap can be detected even if paths change.
+    The dataset manifest already owns the split.  The old implementation
+    partitioned ``test`` into ``calibration`` and ``holdout``, which made it
+    too easy to tune on the eventual report set.  Protocol B now uses the
+    declared validation split for threshold selection and carries the source
+    ``test`` split forward as a frozen holdout.  ``seed`` remains in the
+    provenance contract for compatibility, but no record is re-ranked.
     """
-    candidates = [entry for entry in entries if entry.source_split == "test"]
-    groups: dict[str, list[ManifestEntry]] = {}
-    for entry in candidates:
-        groups.setdefault(entry.anomaly_subtype, []).append(entry)
-    calibration: list[ManifestEntry] = []
-    holdout: list[ManifestEntry] = []
-    for _subtype, items in sorted(groups.items()):
-        ranked = sorted(items, key=lambda item: sha256_json({"seed": seed, "sample_id": item.sample_id}))
-        cut = max(1, len(ranked) // 2) if len(ranked) > 1 else 1
-        calibration.extend(ranked[:cut])
-        holdout.extend(ranked[cut:] or ranked[:1])
+    entries = list(entries)
 
     def row(entry: ManifestEntry, split: str) -> dict[str, Any]:
         return {
@@ -143,17 +165,19 @@ def split_manifest_for_protocol_b(entries: Iterable[ManifestEntry], *, seed: int
         }
 
     result = {
-        "schema_version": "visionqc.protocol-b-split.v1",
+        "schema_version": "visionqc.protocol-b-split.v2",
         "protocol": "B",
         "seed": seed,
-        "rule": "source test only; deterministic SHA-256 stratification by anomaly_subtype",
-        "train": [row(entry, "train") for entry in entries if entry.source_split == "train"],
-        "calibration": [row(entry, "calibration") for entry in sorted(calibration, key=lambda item: item.sample_id)],
-        "holdout": [row(entry, "holdout") for entry in sorted(holdout, key=lambda item: item.sample_id)],
+        "rule": "source train/validation/test manifest; validation selects thresholds; test is frozen holdout",
+        "threshold_source_split": "validation",
+        "holdout_records_consumed_for_selection": False,
+        "train": [row(entry, "train") for entry in entries if entry.split == "train"],
+        "validation": [row(entry, "validation") for entry in entries if entry.split == "validation"],
+        "holdout": [row(entry, "holdout") for entry in entries if entry.split == "test"],
     }
     validate_split_manifest(result)
     result["split_sha256"] = {
-        key: sha256_json(value) for key, value in result.items() if key in {"train", "calibration", "holdout"}
+        key: sha256_json(value) for key, value in result.items() if key in {"train", "validation", "holdout"}
     }
     result["manifest_sha256"] = sha256_json(result)
     return result
@@ -161,7 +185,7 @@ def split_manifest_for_protocol_b(entries: Iterable[ManifestEntry], *, seed: int
 
 def validate_split_manifest(split_manifest: dict[str, Any]) -> dict[str, Any]:
     """Reject path, sample, image, or mask overlap across every declared split."""
-    split_names = ("train", "validation", "calibration", "holdout")
+    split_names = ("train", "validation", "calibration", "holdout", "test")
     buckets = {key: split_manifest.get(key, []) for key in split_names if key in split_manifest}
     seen: dict[str, tuple[str, str]] = {}
     overlaps: list[dict[str, str]] = []
@@ -247,13 +271,13 @@ def evaluate_protocol_a(records: list[ScoreRecord]) -> dict[str, Any]:
 
 
 def calibrate_protocol_b(
-    records: list[ScoreRecord], *, max_false_accept_rate: float = 0.05, target_hold_recall: float = 0.80
+    records: list[ScoreRecord], *, max_false_accept_rate: float = 0.0, target_hold_recall: float = 0.80
 ) -> dict[str, Any]:
-    """Select review/hold thresholds from calibration records only."""
+    """Select review/hold thresholds from validation records only."""
     if not records or {item.label for item in records} != {0, 1}:
         raise ValueError("Protocol B calibration requires normal and anomalous records")
-    if any(item.split not in {"validation", "calibration"} for item in records):
-        raise ValueError("Protocol B calibration accepts validation/calibration records only; holdout is forbidden")
+    if any(item.split != "validation" for item in records):
+        raise ValueError("Protocol B calibration accepts validation records only; holdout is forbidden")
     scores = np.asarray([item.score for item in records], dtype=np.float64)
     labels = np.asarray([item.label for item in records], dtype=np.int8)
     candidates = np.unique(np.concatenate(([0.0], scores, [1.0])))
@@ -271,31 +295,37 @@ def calibrate_protocol_b(
         raise ValueError("Protocol B calibration cannot produce ordered review/hold thresholds")
     return {
         "protocol": "B",
-        "source_split": "calibration",
+        "source_split": "validation",
         "review_threshold": review,
         "hold_threshold": hold,
         "constraints": {"max_false_accept_rate": max_false_accept_rate, "target_hold_recall": target_hold_recall},
         "achieved_on_calibration": _metric_values(records, review, hold),
         "sample_count": len(records),
+        "threshold_selection_guard": {
+            "source_split": "validation",
+            "holdout_records_consumed": False,
+            "selection_rule": "max review threshold at zero abnormal auto-release, then max ordered hold threshold at target hold recall",
+        },
     }
 
 
 def evaluate_protocol_b(
-    calibration: list[ScoreRecord], holdout: list[ScoreRecord], *, seed: int = 20260804
+    validation: list[ScoreRecord], holdout: list[ScoreRecord], *, seed: int = 20260804
 ) -> dict[str, Any]:
-    """Calibrate on one split and report business metrics only on holdout."""
-    thresholds = calibrate_protocol_b(calibration)
+    """Calibrate on validation and report business metrics only on holdout."""
+    thresholds = calibrate_protocol_b(validation)
     metrics = _metric_values(holdout, thresholds["review_threshold"], thresholds["hold_threshold"])
     return {
         "protocol": "B",
-        "threshold_source": "calibration only",
+        "threshold_source": "validation only",
         "thresholds": thresholds,
         "holdout_metrics": metrics,
         "confidence_intervals": bootstrap_confidence_intervals(
             holdout, thresholds["review_threshold"], thresholds["hold_threshold"], seed=seed
         ),
-        "calibration_sample_count": len(calibration),
+        "validation_sample_count": len(validation),
         "holdout_sample_count": len(holdout),
+        "holdout_records_consumed_for_selection": False,
     }
 
 
@@ -350,11 +380,25 @@ def evaluate_pilot_gates(
     evidence_complete: bool,
     source_type: DatasetSourceType = DatasetSourceType.OFFICIAL_BENCHMARK,
     customer_provenance_valid: bool | None = None,
+    threshold_source_split: str | None = "validation",
 ) -> dict[str, Any]:
     source_type = DatasetSourceType(source_type)
     checks: dict[str, dict[str, Any]] = {}
+    if threshold_source_split != "validation":
+        checks["threshold_source_split"] = {
+            "status": "FAIL",
+            "value": threshold_source_split,
+            "operator": "==",
+            "threshold": "validation",
+            "gate_class": "HARD_GATE",
+            "label": "validation_only_thresholds",
+        }
     for name, rule in PILOT_GATES.items():
-        value: Any = metrics.get(name)
+        value: Any = (
+            metrics.get("abnormal_auto_release_rate", metrics.get(name))
+            if name == "defect_error_auto_release_rate"
+            else metrics.get(name)
+        )
         if name == "model_package_integrity":
             value = package_verified
         elif name == "no_split_leakage":
@@ -389,6 +433,7 @@ def evaluate_pilot_gates(
         "checks": checks,
         "missing": missing,
         "failed": failed,
+        "threshold_source_split": threshold_source_split,
         "approval_eligible": (
             source_type == DatasetSourceType.CUSTOMER_PILOT
             and decision == "GO"
@@ -571,6 +616,7 @@ def _derived_holdout_metrics(
         "normal_false_positive_rate": float(np.mean(scores[normal] >= thresholds.review_threshold)),
         "normal_review_hold_rate": float(np.mean(scores[normal] >= thresholds.review_threshold)),
         "defect_error_auto_release_rate": float(np.mean(scores[anomalous] < thresholds.review_threshold)),
+        "abnormal_auto_release_rate": float(np.mean(scores[anomalous] < thresholds.review_threshold)),
         "review_hold_recall": float(np.mean(scores[anomalous] >= thresholds.review_threshold)),
         "hold_recall": float(np.mean(scores[anomalous] >= thresholds.hold_threshold)),
         "manual_review_burden_rate": float(business["manual_review_rate"]),
@@ -578,6 +624,11 @@ def _derived_holdout_metrics(
         "warm_inference_p50_ms": float(performance["warm_p50_ms"]),
         "warm_inference_p95_ms": float(performance["warm_p95_ms"]),
         "warm_p95_ms": float(performance["warm_p95_ms"]),
+        "confusion_matrix": {
+            "at_review_threshold": review["confusion_matrix"],
+            "at_hold_threshold": hold["confusion_matrix"],
+        },
+        "group_metrics": evaluation.get("metrics", {}).get("by_subtype", {}),
     }
 
 
@@ -660,6 +711,7 @@ def _source_inventory(
         "schema_version": "visionqc.pilot-source-evidence.v1",
         "run_dir": str(run_dir.resolve()),
         "model_package_dir": str(package_path.resolve()),
+        "dataset_fingerprint": read_json(manifest_meta_path).get("dataset_fingerprint"),
         "files": files,
     }
 
@@ -999,6 +1051,8 @@ def _pilot_evaluation_markdown(
     evaluation_report: dict[str, Any] | None,
     error_cases: dict[str, Any] | None,
     source_evidence: dict[str, Any],
+    run_command: str | None = None,
+    limitations: list[str] | None = None,
 ) -> str:
     source_type = DatasetSourceType(gate_result.get("source_type", DatasetSourceType.OFFICIAL_BENCHMARK))
     report_status = str(gate_result.get("report_status") or gate_result["decision"])
@@ -1032,7 +1086,10 @@ def _pilot_evaluation_markdown(
             "| Review + Hold recall | null |\n| Hold recall | null |\n"
             "| Manual review burden rate | null |\n| Cold start | null |\n"
             "| Warm inference P50 / P95 | null / null |\n\n"
+            "## Confusion matrices and grouped metrics\n\n"
+            "No confusion matrix or grouped metric is asserted without verified predictions.\n\n"
             "Unavailable values are explicit nulls because the baseline evidence contract was not satisfied.\n"
+            + ("\n## Known limitations\n\n" + "\n".join(f"- {item}" for item in (limitations or [])) + "\n" if limitations else "")
         )
 
     lines = [
@@ -1070,6 +1127,20 @@ def _pilot_evaluation_markdown(
     lines.extend(
         [
             "",
+            "## Confusion matrices and grouped metrics",
+            "",
+            "```json",
+            json.dumps(
+                {
+                    "confusion_matrix": metrics.get("confusion_matrix"),
+                    "group_metrics": metrics.get("group_metrics", {}),
+                },
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            ),
+            "```",
+            "",
             "## Threshold provenance",
             "",
             f"- Source split: `{(thresholds or {}).get('source_split', 'validation')}`.",
@@ -1106,6 +1177,17 @@ def _pilot_evaluation_markdown(
             f"- Source artifacts bound by SHA-256: `{len(source_evidence.get('files', {}))}`.",
             "- MVTec AD is an official non-commercial research benchmark; these results cannot be presented as factory, customer Pilot, or production evidence.",
             f"- Source type: `{source_type.value}`; report status: `{report_status}`.",
+            "",
+            "## Reproducibility",
+            "",
+            f"- Threshold source split: `{(thresholds or {}).get('source_split', 'validation')}`; holdout records consumed for selection: `{(thresholds or {}).get('holdout_records_consumed', False)}`.",
+            f"- Dataset fingerprint: `{source_evidence.get('dataset_fingerprint', 'see provenance.json')}`; source files are SHA-256 bound in `source-evidence.json`.",
+            f"- Run command: `{run_command or 'not recorded in baseline run manifest'}`.",
+            "- Holdout labels are used once for the final frozen report; thresholds are never changed to improve the holdout result.",
+            "",
+            "## Known limitations",
+            "",
+            *[f"- {item}" for item in (limitations or [])],
         ]
     )
     if evaluation_report:
@@ -1133,6 +1215,7 @@ def write_qualification_package(
     model_reference: dict[str, Any] | None = None,
     dataset_fingerprint: str | None = None,
     customer_provenance: CustomerDataProvenance | dict[str, Any] | None = None,
+    run_command: str | None = None,
 ) -> dict[str, Any]:
     """Write the complete, tamper-evident qualification evidence directory."""
     source_type = DatasetSourceType(source_type)
@@ -1209,6 +1292,7 @@ def write_qualification_package(
         ),
         source_type=source_type,
         customer_provenance_valid=customer_provenance_valid,
+        threshold_source_split=(thresholds or {}).get("source_split", "validation"),
     )
     report_status = qualification_report_status(source_type, gate_result["decision"])
     gate_result["report_status"] = report_status
@@ -1249,6 +1333,11 @@ def write_qualification_package(
             "machine": platform.machine(),
         },
         "generated_at": now,
+        "run_command": run_command,
+        "threshold_source_split": (thresholds or {}).get("source_split", "validation"),
+        "holdout_records_consumed_for_selection": bool(
+            (thresholds or {}).get("holdout_records_consumed", False)
+        ),
         "limitations": limitations,
         "source_evidence_schema": source_evidence.get("schema_version"),
         "audit_reason": (
@@ -1383,6 +1472,8 @@ def write_qualification_package(
             evaluation_report=evaluation_report,
             error_cases=error_cases,
             source_evidence=source_evidence,
+            run_command=run_command,
+            limitations=limitations,
         ),
         encoding="utf-8",
     )
@@ -1531,6 +1622,7 @@ def qualify_from_run(
         model_reference=evidence["model_reference"],
         dataset_fingerprint=evidence["manifest_meta"].get("dataset_fingerprint"),
         customer_provenance=customer_provenance,
+        run_command=evidence["run_metadata"].get("run_command"),
     )
 
 

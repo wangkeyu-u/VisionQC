@@ -1,4 +1,19 @@
 {
+  "confusion_matrix": {
+    "hold": {
+      "fn": 10,
+      "fp": 0,
+      "tn": 30,
+      "tp": 10
+    },
+    "review_or_hold": {
+      "fn": 6,
+      "fp": 0,
+      "tn": 30,
+      "tp": 14
+    }
+  },
+  "gate_version": "visionqc-pilot-gates.v3",
   "gates": {
     "approval_eligible": false,
     "checks": {
@@ -10,12 +25,16 @@
         "value": null
       },
       "defect_error_auto_release_rate": {
+        "gate_class": "HARD_GATE",
+        "label": "abnormal_auto_release_zero",
         "operator": "<=",
         "status": "FAIL",
-        "threshold": 0.05,
+        "threshold": 0.0,
         "value": 0.3
       },
       "hold_recall": {
+        "gate_class": "HARD_GATE",
+        "label": "hold_abnormal_recall",
         "operator": ">=",
         "status": "FAIL",
         "threshold": 0.8,
@@ -40,12 +59,16 @@
         "value": true
       },
       "normal_review_hold_rate": {
+        "gate_class": "OPERATIONAL_TARGET",
+        "label": "normal_manual_review_target",
         "operator": "<=",
         "status": "PASS",
-        "threshold": 0.25,
+        "threshold": 0.35,
         "value": 0.0
       },
       "review_hold_recall": {
+        "gate_class": "HARD_GATE",
+        "label": "review_plus_hold_abnormal_recall",
         "operator": ">=",
         "status": "FAIL",
         "threshold": 0.95,
@@ -61,13 +84,29 @@
     "decision": "NO-GO",
     "failed": [
       "defect_error_auto_release_rate",
-      "review_hold_recall",
-      "hold_recall"
+      "hold_recall",
+      "review_hold_recall"
     ],
-    "gate_version": "visionqc-pilot-gates.v2",
+    "gate_version": "visionqc-pilot-gates.v3",
+    "holdout_records_consumed_for_selection": false,
     "missing": [],
     "report_status": "BENCHMARK_NO_GO",
-    "source_type": "OFFICIAL_BENCHMARK"
+    "source_type": "OFFICIAL_BENCHMARK",
+    "threshold_source_split": "validation"
+  },
+  "group_metrics": {
+    "label": {
+      "abnormal": {
+        "auto_release_rate": 0.3,
+        "count": 20,
+        "hold_recall": 0.5,
+        "review_or_hold_recall": 0.7
+      },
+      "normal": {
+        "count": 30,
+        "review_or_hold_rate": 0.0
+      }
+    }
   },
   "metric_notes": {
     "reason": null,
@@ -103,6 +142,11 @@
     "train_good_images": 213
   },
   "schema_version": "visionqc.pilot-metrics.v1",
+  "threshold_provenance": {
+    "holdout_records_consumed_for_selection": false,
+    "selection_rule": "validation-only thresholds; frozen holdout is used once for the final report",
+    "source_split": "validation"
+  },
   "thresholds": {
     "achieved": {
       "false_accept_rate": 0.0,
@@ -118,8 +162,9 @@
     },
     "constraints_satisfied": true,
     "hold_threshold": 0.5815433859825134,
+    "holdout_records_consumed": false,
     "objective": "maximize review threshold subject to false-accept control; maximize hold threshold subject to hold-recall target",
-    "policy_version": "factory-a-transistor-policy-1.0.0",
+    "policy_version": "visionqc-pilot-gates.v3",
     "review_threshold": 0.5056430101394653,
     "safety_margin": 0.0,
     "sample_counts": {
@@ -130,7 +175,7 @@
     "schema_version": "visionqc.threshold-calibration.v1",
     "source_predictions_sha256": "d18d10351bce4820bcbcb6ba17b49997f928e813e5618070aa814fbcfff2f08f",
     "source_split": "validation",
-    "strategy": "legacy",
+    "strategy": "max review threshold at zero abnormal auto-release, then max ordered hold threshold at target hold recall",
     "threshold_selection_split": "validation",
     "warnings": []
   }

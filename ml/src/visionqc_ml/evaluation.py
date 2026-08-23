@@ -308,6 +308,13 @@ def evaluate_predictions(
         "evaluated_at": datetime.now(timezone.utc).isoformat(),
         "evaluation_split": "test",
         "test_set_usage": "thresholds were frozen from validation before this report",
+        "threshold_provenance": {
+            "source_split": calibration.source_split,
+            "selection_split": calibration.threshold_selection_split,
+            "holdout_records_consumed_for_selection": calibration.holdout_records_consumed,
+            "selection_rule": calibration.selection_rule,
+            "thresholds_sha256": sha256_file(thresholds_path),
+        },
         "model": model_reference,
         "dataset": {
             "name": "MVTec AD",
@@ -333,6 +340,10 @@ def evaluate_predictions(
                 "aupro_definition": "Mean per-region overlap integrated over pixel false-positive rate [0, 0.30].",
             },
             "business": business,
+            "confusion_matrix": {
+                "at_review_threshold": review_metrics["confusion_matrix"],
+                "at_hold_threshold": hold_metrics["confusion_matrix"],
+            },
             "by_subtype": _subtype_metrics(records, calibration.review_threshold),
             "performance": {
                 "warm_samples": int(latencies.size),
@@ -427,6 +438,29 @@ It does not confirm a semantic defect type, root cause, or production readiness.
 | Manual review or hold rate | {_fmt(business['manual_review_rate'])} |
 | Hold rate | {_fmt(business['hold_rate'])} |
 | Human override rate | n/a (requires business workflow feedback) |
+
+## Confusion matrices
+
+| Threshold | TN | FP | FN | TP |
+| --- | ---: | ---: | ---: | ---: |
+| Review | {metrics['confusion_matrix']['at_review_threshold']['tn']} | {metrics['confusion_matrix']['at_review_threshold']['fp']} | {metrics['confusion_matrix']['at_review_threshold']['fn']} | {metrics['confusion_matrix']['at_review_threshold']['tp']} |
+| Hold | {metrics['confusion_matrix']['at_hold_threshold']['tn']} | {metrics['confusion_matrix']['at_hold_threshold']['fp']} | {metrics['confusion_matrix']['at_hold_threshold']['fn']} | {metrics['confusion_matrix']['at_hold_threshold']['tp']} |
+
+## Grouped indicators
+
+| Benchmark group | Samples | Mean score | Review + hold rate |
+| --- | ---: | ---: | ---: |
+""" + "".join(
+        f"| `{name}` | {values['count']} | {_fmt(values['mean_score'])} | {_fmt(values['review_or_hold_rate'])} |\n"
+        for name, values in sorted(metrics.get("by_subtype", {}).items())
+    ) + f"""
+
+## Threshold provenance
+
+- Source split: `{report['threshold_provenance']['source_split']}`.
+- Holdout records consumed for selection: `{report['threshold_provenance']['holdout_records_consumed_for_selection']}`.
+- Selection rule: `{report['threshold_provenance']['selection_rule']}`.
+- Threshold artifact SHA-256: `{report['threshold_provenance']['thresholds_sha256']}`.
 
 ## Performance
 

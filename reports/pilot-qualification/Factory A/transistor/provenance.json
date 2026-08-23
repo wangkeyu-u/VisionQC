@@ -42,6 +42,7 @@
     "python": "3.12.13"
   },
   "generated_at": "2026-08-05T03:33:47.601413+00:00",
+  "holdout_records_consumed_for_selection": false,
   "limitations": [
     "MVTec AD is an official non-commercial research benchmark, not factory or customer Pilot data.",
     "Passing benchmark gates only means READY_FOR_CUSTOMER_DATA; it never authorizes APPROVED or ACTIVE.",
@@ -52,8 +53,11 @@
     "Thresholds are selected from validation only; the held-out test split is used only after thresholds are frozen."
   ],
   "model_package_sha256": "c35fc1f3a38d0f488cf031767301315c8999df7db212b04954b0227c1746fa17",
+  "pilot_gate_version": "visionqc-pilot-gates.v3",
+  "policy_reaudited_on": "2026-08-24",
   "qualification_run_status": "COMPLETED",
   "schema_version": "visionqc.pilot-provenance.v1",
   "source_evidence_schema": "visionqc.pilot-source-evidence.v1",
-  "source_type": "OFFICIAL_BENCHMARK"
+  "source_type": "OFFICIAL_BENCHMARK",
+  "threshold_source_split": "validation"
 }

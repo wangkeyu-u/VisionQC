@@ -14,3 +14,5 @@ The model reports anomaly evidence and regions only. It does not confirm a defec
 - OFFICIAL_BENCHMARK requires an immutable dataset fingerprint.
 - OFFICIAL_BENCHMARK requires a verified dataset receipt.
 - The baseline source-evidence hash inventory is not available.
+
+Gate contract: `visionqc-pilot-gates.v3`; threshold source: `validation`; frozen holdout consumed for selection: `false`.
