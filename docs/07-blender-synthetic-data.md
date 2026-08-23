@@ -35,6 +35,30 @@ Blender 资产可用于：
 
 当前场景不依赖第三方 3D 模型或商标素材。产品使用无品牌的 TO-220 风格外形，工位、相机、灯光和治具全部由脚本创建。
 
+汽车涂装场景使用 [`tools/blender/generate_paint_quality_dataset.py`](../tools/blender/generate_paint_quality_dataset.py)，是中性无品牌的 painted body panel / body test coupon。它通过固定 seed 改变涂装颜色、三点光照、曝光、相机距离/方位/仰角/焦距和背景，并输出以下四类视觉近似缺陷：
+
+| 类别 | 视觉近似 | 边界 |
+| --- | --- | --- |
+| `dust_nib` | 凸起颗粒 | 不是颗粒沉积物理仿真 |
+| `scratch` | 细长表面划痕 | 不是材料断裂/反射模型 |
+| `paint_run_sag` | 拉长的流挂形状 | 不是流变过程仿真 |
+| `orange_peel` | 微小起伏纹理 | 不是真实喷涂纹理统计 |
+
+每张图包含 RGB、二值 mask、annotation（类别、参数、seed、版本）和 `manifest.json` provenance。manifest 的 source type 固定为 `DEMO_SYNTHETIC`，不得拿这批图校准生产阈值或声称真实准确率。
+
+### 可复现 smoke 与校验
+
+```bash
+PAINT_OUT="$(mktemp -d /tmp/visionqc-paint-smoke.XXXXXX)"
+/Applications/Blender.app/Contents/MacOS/Blender --background \
+  --python tools/blender/generate_paint_quality_dataset.py -- \
+  --output-dir "$PAINT_OUT" --count 5 --seed 20260823 --width 160 --height 120 \
+  --blend-file "$PAINT_OUT/last.blend"
+python3 tools/blender/validate_paint_quality_manifest.py "$PAINT_OUT"
+```
+
+验证器会检查 schema、source type、四类缺陷声明、内容 fingerprint、文件 SHA-256、RGB/mask 尺寸、二值 mask、normal 空 mask 和缺陷非空 mask。重复使用同一 seed 后，应比较两个输出的 `manifest.json` 与 RGB/mask SHA-256；Blender 版本变化应作为 provenance 差异保留。
+
 ## 3. 可复现生成
 
 macOS 安装 Blender 后，在仓库根目录运行：
@@ -54,6 +78,16 @@ macOS 安装 Blender 后，在仓库根目录运行：
 3. 掩码只有黑色背景和白色缺陷区域；
 4. 界面仍显示“只验证流程，不代表真实产线”的边界；
 5. 生成文件全部小于仓库 10 MB 单文件限制。
+
+涂装数据生成命令：
+
+```bash
+/Applications/Blender.app/Contents/MacOS/Blender --background \
+  --python tools/blender/generate_paint_quality_dataset.py -- \
+  --output-dir artifacts/demo-synthetic/paint-quality \
+  --count 8 --seed 20260823 --blend-file artifacts/blender/paint-quality-last.blend
+python3 tools/blender/validate_paint_quality_manifest.py artifacts/demo-synthetic/paint-quality
+```
 
 ## 4. 扩展方式
 
