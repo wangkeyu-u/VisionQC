@@ -53,13 +53,15 @@ class Settings(BaseSettings):
     model_device: str = "auto"
     cors_origins: str = "http://localhost:3000,http://localhost:4173"
 
-    bootstrap_tenant_id: str = "factory-a"
-    bootstrap_tenant_name: str = "Factory A"
+    # Defaults are deliberately tenant-neutral.  Example tenants are enabled
+    # only by an explicit deployment/test setting.
+    bootstrap_tenant_id: str = "default-tenant"
+    bootstrap_tenant_name: str = "VisionQC Platform Tenant"
     bootstrap_review_threshold: float = Field(default=0.4, ge=0, le=1)
     bootstrap_hold_threshold: float = Field(default=0.8, ge=0, le=1)
     bootstrap_enabled: bool = True
-    bootstrap_tenant_ids: str = "factory-a,factory-b,duerr-demo"
-    demo_switchable_tenant_ids: str = "factory-a,factory-b,duerr-demo"
+    bootstrap_tenant_ids: str = ""
+    demo_switchable_tenant_ids: str = ""
     deployment_manifest_dir: Path | None = None
 
     @model_validator(mode="after")

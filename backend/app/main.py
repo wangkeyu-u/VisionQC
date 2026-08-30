@@ -121,11 +121,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def validation_error_handler(
         request: Request, exc: RequestValidationError
     ) -> JSONResponse:
+        # Pydantic's default error payload includes the rejected ``input``
+        # value.  Omitting it keeps malformed secrets and credentials out of
+        # API responses while retaining field locations and error types.
+        safe_errors = [
+            {key: value for key, value in error.items() if key != "input"}
+            for error in exc.errors()
+        ]
         body = ErrorBody(
             code="request_validation_error",
             message="request did not satisfy the API schema",
             correlation_id=request.state.correlation_id,
-            details={"errors": jsonable_encoder(exc.errors())},
+            details={"errors": jsonable_encoder(safe_errors)},
         )
         return JSONResponse(status_code=422, content=body.model_dump(mode="json"))
 

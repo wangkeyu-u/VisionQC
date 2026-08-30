@@ -33,6 +33,7 @@ from app.domain import (
     ReviewChoice,
     assert_inspection_transition,
 )
+from app.industry_extensions import build_simulated_quality_record
 from app.model_adapter import ModelAdapter, ModelUnavailable
 from app.models import (
     AuditEvent,
@@ -51,8 +52,22 @@ from app.models import (
     ReviewTask,
     StateTransition,
     Tenant,
+    TenantConfigurationVersion,
+    Workpiece,
 )
-from app.policy import PolicyConfig, evaluate_policy
+from app.platform_config import (
+    CONFIGURATION_LAYER_ORDER,
+    ConfigurationError,
+    ConfigurationLayers,
+    EffectiveConfiguration,
+    PlatformConfiguration,
+    layers_from_effective_configuration,
+    layers_from_legacy_manifest,
+    merge_configuration_layers,
+    redact_configuration,
+    validate_controlled_metadata,
+)
+from app.policy import PolicyConfig, ThresholdRule, evaluate_policy
 from app.qualification import verify_evidence_package
 from app.schemas import (
     CloseIncidentRequest,
@@ -241,6 +256,211 @@ class VisionQCService:
         self.connector_executor = RetryingConnectorExecutor(
             max_attempts=settings.connector_max_attempts,
             backoff_seconds=settings.connector_backoff_seconds,
+        )
+
+    @staticmethod
+    def _configuration_layers_for_manifest(manifest: DeploymentManifest) -> ConfigurationLayers:
+        if manifest.configuration_layers is not None:
+            return manifest.configuration_layers
+        if manifest.configuration is not None:
+            return layers_from_effective_configuration(manifest.configuration)
+        return layers_from_legacy_manifest(manifest)
+
+    def _configuration_versions(
+        self, session: Session, *, tenant_id: str, current_version: str | None = None
+    ) -> list[str]:
+        query = (
+            select(TenantConfigurationVersion.version)
+            .where(TenantConfigurationVersion.tenant_id == tenant_id)
+            .order_by(TenantConfigurationVersion.created_at.desc())
+        )
+        values = list(session.scalars(query))
+        if current_version is not None:
+            values = [value for value in values if value != current_version]
+        return values
+
+    def effective_configuration(
+        self, session: Session, deployment: DeploymentPack
+    ) -> EffectiveConfiguration:
+        """Return a validated config for a deployment, adapting old rows once."""
+
+        manifest = self.deployment_manifest(session, deployment)
+        if deployment.configuration_snapshot:
+            try:
+                config = PlatformConfiguration.model_validate(deployment.configuration_snapshot)
+            except ValueError as exc:
+                raise InvalidInput("stored deployment configuration is invalid") from exc
+            return EffectiveConfiguration(
+                tenant_id=deployment.tenant_id,
+                version=deployment.configuration_version or config.version,
+                config_hash=deployment.configuration_hash
+                or merge_configuration_layers(
+                    tenant_id=deployment.tenant_id,
+                    tenant_override=config.model_dump(mode="json"),
+                ).config_hash,
+                effective_config=config,
+                sources=dict(deployment.configuration_sources or {}),
+                validation_status=(
+                    deployment.configuration_validation_status
+                    if deployment.configuration_validation_status in {"VALID", "INVALID"}
+                    else "VALID"
+                ),
+                validation_errors=[],
+                audit={
+                    "created_at": deployment.created_at,
+                    "created_by": (deployment.configuration_audit or {}).get(
+                        "created_by", "system:legacy"
+                    ),
+                    "parent_version": (deployment.configuration_audit or {}).get(
+                        "parent_version"
+                    ),
+                    "source": (deployment.configuration_audit or {}).get(
+                        "source", "legacy-adapter"
+                    ),
+                },
+                rollback_versions=self._configuration_versions(
+                    session,
+                    tenant_id=deployment.tenant_id,
+                    current_version=deployment.configuration_version or config.version,
+                ),
+            )
+        try:
+            layers = self._configuration_layers_for_manifest(manifest)
+            return merge_configuration_layers(
+                layers.platform_defaults,
+                layers.industry_pack,
+                layers.tenant_override,
+                layers.runtime_site_override,
+                tenant_id=deployment.tenant_id,
+                version=manifest.version,
+                created_by=deployment.approved_by or "system:legacy-adapter",
+                source="legacy-manifest-adapter",
+                rollback_versions=self._configuration_versions(
+                    session, tenant_id=deployment.tenant_id, current_version=manifest.version
+                ),
+            )
+        except (ConfigurationError, ValueError) as exc:
+            raise InvalidInput("deployment configuration cannot be materialised") from exc
+
+    def configuration_preview(
+        self,
+        *,
+        tenant_id: str,
+        layers: ConfigurationLayers,
+        version: str | None = None,
+        created_by: str = "configuration-preflight",
+    ) -> EffectiveConfiguration:
+        try:
+            return merge_configuration_layers(
+                layers.platform_defaults,
+                layers.industry_pack,
+                layers.tenant_override,
+                layers.runtime_site_override,
+                tenant_id=tenant_id,
+                version=version,
+                created_by=created_by,
+                source="configuration-preflight",
+            )
+        except (ConfigurationError, ValueError) as exc:
+            raise InvalidInput(
+                "configuration preflight failed",
+                details={"errors": getattr(exc, "errors", [str(exc)])},
+            ) from exc
+
+    def list_configuration_versions(
+        self, session: Session, tenant_id: str
+    ) -> list[TenantConfigurationVersion]:
+        """List only the authenticated tenant's immutable config versions."""
+
+        return list(
+            session.scalars(
+                select(TenantConfigurationVersion)
+                .where(TenantConfigurationVersion.tenant_id == tenant_id)
+                .order_by(TenantConfigurationVersion.created_at.desc())
+            )
+        )
+
+    @staticmethod
+    def _configuration_layers_payload(layers: ConfigurationLayers) -> dict[str, Any]:
+        return cast(
+            dict[str, Any],
+            redact_configuration(layers.model_dump(mode="json", exclude_none=True)),
+        )
+
+    @staticmethod
+    def _configuration_audit_payload(config: EffectiveConfiguration) -> dict[str, Any]:
+        return cast(dict[str, Any], redact_configuration(config.audit.model_dump(mode="json")))
+
+    def _configuration_for_create(
+        self,
+        *,
+        tenant_id: str,
+        manifest: DeploymentManifest,
+        request: DeploymentCreateRequest,
+        actor_id: str,
+        parent_version: str | None = None,
+    ) -> tuple[EffectiveConfiguration, ConfigurationLayers]:
+        if request.configuration_layers is not None:
+            layers = request.configuration_layers
+        elif request.configuration is not None:
+            if isinstance(request.configuration, PlatformConfiguration):
+                layers = layers_from_effective_configuration(request.configuration)
+            else:
+                layers = ConfigurationLayers(tenant_override=request.configuration)
+        else:
+            layers = self._configuration_layers_for_manifest(manifest)
+        try:
+            config = merge_configuration_layers(
+                layers.platform_defaults,
+                layers.industry_pack,
+                layers.tenant_override,
+                layers.runtime_site_override,
+                tenant_id=tenant_id,
+                version=manifest.version,
+                created_by=actor_id,
+                source="deployment-create",
+                parent_version=parent_version,
+            )
+        except (ConfigurationError, ValueError) as exc:
+            raise InvalidInput(
+                "deployment configuration is invalid",
+                details={"errors": getattr(exc, "errors", [str(exc)])},
+            ) from exc
+        if config.effective_config.model_ref.model_id not in {
+            "unconfigured",
+            manifest.model.id,
+        } or config.effective_config.model_ref.model_version not in {
+            "unconfigured",
+            manifest.model.version,
+        }:
+            raise InvalidInput(
+                "configuration model_ref must match the deployment model evidence",
+                details={
+                    "configured_model": config.effective_config.model_ref.model_dump(mode="json"),
+                    "manifest_model": {
+                        "model_id": manifest.model.id,
+                        "model_version": manifest.model.version,
+                    },
+                },
+            )
+        return config, layers
+
+    @staticmethod
+    def _policy_for_configuration(
+        manifest: DeploymentManifest, config: EffectiveConfiguration
+    ) -> PolicyConfig:
+        """Use an inline calibrated threshold only when the config supplies it."""
+
+        reference = config.effective_config.threshold_ref
+        if reference.review_threshold is None or reference.hold_threshold is None:
+            return manifest.policy
+        return PolicyConfig(
+            version=reference.version,
+            default=ThresholdRule(
+                review_threshold=reference.review_threshold,
+                hold_threshold=reference.hold_threshold,
+            ),
+            overrides=list(reference.overrides),
         )
 
     def active_deployment(self, session: Session, tenant_id: str) -> DeploymentPack:
@@ -784,11 +1004,9 @@ class VisionQCService:
             else "BLOCKED_CUSTOMER_PROVENANCE_INCOMPLETE"
         )
         risk_labels = list(dataset.risk_labels) if dataset else ["DEMO_ONLY", "NO_EFFECT_CLAIM"]
-        report_scope = {
-            "factory-a": "Factory A",
-            "factory-b": "Factory B",
-            "duerr-demo": "Duerr Demo",
-        }.get(tenant_id, tenant_id)
+        # The report path is tenant-derived at runtime; the platform core does
+        # not carry a customer catalogue or brand-specific display map.
+        report_scope = tenant_id
         report_dir = (
             Path(__file__).resolve().parents[2]
             / "reports"
@@ -1372,7 +1590,12 @@ class VisionQCService:
     ) -> DeploymentManifest:
         if deployment.manifest:
             try:
-                return DeploymentManifest.model_validate(deployment.manifest)
+                payload = dict(deployment.manifest)
+                if deployment.configuration_snapshot and "configuration" not in payload:
+                    payload["configuration"] = deployment.configuration_snapshot
+                if deployment.configuration_layers and "configuration_layers" not in payload:
+                    payload["configuration_layers"] = deployment.configuration_layers
+                return DeploymentManifest.model_validate(payload)
             except ValidationError as exc:
                 raise DependencyUnavailable(
                     "active deployment pack manifest is invalid",
@@ -1424,14 +1647,27 @@ class VisionQCService:
             assert isinstance(value, str)
             return value.strip()
 
+        metadata = self._context_metadata(fields)
+        submitted_workpiece_id = fields.get("workpiece_id")
+        if submitted_workpiece_id is not None and str(submitted_workpiece_id).strip():
+            workpiece_id_text = str(submitted_workpiece_id).strip()
+            existing_workpiece_id = metadata.get("workpiece_id")
+            if (
+                existing_workpiece_id is not None
+                and str(existing_workpiece_id).strip() != workpiece_id_text
+            ):
+                raise InvalidInput("workpiece_id conflicts with metadata.workpiece_id")
+            metadata["workpiece_id"] = workpiece_id_text
+        workpiece_id = metadata.get("workpiece_id")
         context = InspectionContext(
+            workpiece_id=(str(workpiece_id).strip() if workpiece_id is not None else None),
             product_code=read_field("product_code") or "",
             product_revision=read_field("product_revision", optional=True),
             batch_no=read_field("batch_no") or "",
             station_code=read_field("station_code") or "",
             captured_at=read_field("captured_at") or "",
             source=read_field("source", optional=True) or "api",
-            metadata=self._context_metadata(fields),
+            metadata=metadata,
         )
         if manifest.resolve_product(context.product_code) is None:
             raise InvalidInput(
@@ -1453,7 +1689,7 @@ class VisionQCService:
 
     @staticmethod
     def _context_metadata(fields: Mapping[str, Any]) -> dict[str, Any]:
-        raw = fields.get("context_metadata_json")
+        raw = fields.get("context_metadata_json", fields.get("metadata_json"))
         if raw is None or raw == "":
             return {}
         if not isinstance(raw, str):
@@ -1465,11 +1701,12 @@ class VisionQCService:
         if not isinstance(value, dict):
             raise InvalidInput("context metadata must be a JSON object")
         # The metadata envelope is intentionally bounded and JSON-only.  It is
-        # evidence context, not an unvalidated command channel.
-        encoded = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
-        if len(encoded.encode("utf-8")) > 16_384:
-            raise InvalidInput("context metadata is too large")
-        return value
+        # evidence context, not an unvalidated command channel.  Industry
+        # identifiers stay in this controlled extension surface.
+        try:
+            return validate_controlled_metadata(value)
+        except (ConfigurationError, ValueError) as exc:
+            raise InvalidInput("context metadata is not a controlled extension object") from exc
 
     def _record_security_rejection(
         self,
@@ -1544,6 +1781,27 @@ class VisionQCService:
         if manifest.resolve_station(context.station_code) is None:
             raise InvalidInput("station is not enabled by the active deployment pack")
 
+        if context.workpiece_id:
+            workpiece = session.scalar(
+                select(Workpiece).where(
+                    Workpiece.tenant_id == principal.tenant_id,
+                    Workpiece.workpiece_id == context.workpiece_id,
+                )
+            )
+            if workpiece is None:
+                session.add(
+                    Workpiece(
+                        tenant_id=principal.tenant_id,
+                        workpiece_id=context.workpiece_id,
+                        product_code=context.product_code,
+                        product_revision=context.product_revision,
+                        batch_no=context.batch_no,
+                        metadata_json=context.metadata,
+                    )
+                )
+            elif workpiece.product_code != context.product_code:
+                raise InvalidInput("workpiece is already bound to a different product")
+
         inspection = Inspection(
             tenant_id=principal.tenant_id,
             deployment_pack_id=deployment.id,
@@ -1553,6 +1811,7 @@ class VisionQCService:
             status=InspectionStatus.RECEIVED,
             product_code=context.product_code,
             product_revision=context.product_revision,
+            workpiece_id=context.workpiece_id,
             batch_no=context.batch_no,
             station_code=context.station_code,
             captured_at=context.captured_at,
@@ -1699,6 +1958,12 @@ class VisionQCService:
             status=inspection.status,
             correlation_id=inspection.correlation_id,
             context=InspectionContext(
+                workpiece_id=inspection.workpiece_id
+                or (
+                    str((inspection.context_metadata or {}).get("workpiece_id"))
+                    if (inspection.context_metadata or {}).get("workpiece_id") is not None
+                    else None
+                ),
                 product_code=inspection.product_code,
                 product_revision=inspection.product_revision,
                 batch_no=inspection.batch_no,
@@ -1861,6 +2126,32 @@ class VisionQCService:
             )
             return
 
+        if output.warnings:
+            inspection.failure_reason = (
+                "safe-degrade: model returned warning signals ("
+                + ", ".join(output.warnings)
+                + ")"
+            )
+            self._transition_inspection(
+                session,
+                inspection,
+                InspectionStatus.INFERENCE_FAILED,
+                actor="system:model-worker",
+                reason=inspection.failure_reason,
+            )
+            self._transition_inspection(
+                session,
+                inspection,
+                InspectionStatus.REVIEW_REQUIRED,
+                actor="system:policy",
+                reason="model warning requires human review; automatic release prohibited",
+            )
+            self._ensure_review_task(session, inspection)
+            self._mark_inference_outbox_processed(
+                session, inspection.id, tenant_id=inspection.tenant_id
+            )
+            return
+
         heatmap_hash = hashlib.sha256(output.heatmap_png).hexdigest()
         heatmap_key = f"{inspection.tenant_id}/heatmaps/{inspection.id}/{heatmap_hash}.png"
         heatmap_uri = self.storage.put_immutable(heatmap_key, output.heatmap_png, "image/png")
@@ -1902,18 +2193,32 @@ class VisionQCService:
             reason="immutable model result saved",
         )
         assert manifest is not None
-        policy = manifest.policy
+        config = self.effective_configuration(session, deployment) if deployment else None
+        policy = self._policy_for_configuration(manifest, config) if config else manifest.policy
         evaluation = evaluate_policy(
             output.score,
             policy,
             product_code=inspection.product_code,
             station_code=inspection.station_code,
+            auto_release_enabled=(
+                config.effective_config.workflow.auto_release_enabled if config else True
+            ),
+            manual_review_enabled=(
+                config.effective_config.workflow.manual_review_enabled if config else True
+            ),
+            batch_hold_enabled=(
+                config.effective_config.workflow.batch_hold_enabled if config else True
+            ),
         )
         snapshot: dict[str, Any] = policy.model_dump(mode="json")
         snapshot["resolved_rule"] = {
             "review_threshold": evaluation.review_threshold,
             "hold_threshold": evaluation.hold_threshold,
         }
+        if config is not None:
+            snapshot["configuration_version"] = config.version
+            snapshot["configuration_hash"] = config.config_hash
+            snapshot["safety_gates"] = config.effective_config.risk_gates.model_dump(mode="json")
         session.add(
             PolicyDecision(
                 tenant_id=inspection.tenant_id,
@@ -2224,6 +2529,7 @@ class VisionQCService:
             status="ACTION_PENDING",
             disposition=disposition,
             severity="MAJOR",
+            metadata_json=inspection.context_metadata or {},
         )
         session.add(incident)
         session.flush()
@@ -2333,12 +2639,7 @@ class VisionQCService:
         disposition: str,
         reason: str,
     ) -> dict[str, Any]:
-        """Build the generic simulated digital quality record boundary.
-
-        The payload contains references and reviewed context, never the raw
-        image bytes.  Defaults are explicit so an incomplete pilot context is
-        visible to the simulated contract instead of being silently guessed.
-        """
+        """Build the optional simulated quality-record adapter payload."""
 
         metadata = inspection.context_metadata or {}
         inference = session.scalar(
@@ -2350,47 +2651,22 @@ class VisionQCService:
             .order_by(InferenceResult.attempt.desc())
         )
 
-        def text_value(key: str, fallback: str) -> str:
-            value = metadata.get(key)
-            return str(value).strip() if value is not None and str(value).strip() else fallback
-
-        return {
-            "body_id": text_value("body_id", inspection.batch_no),
-            "workpiece_id": text_value("workpiece_id", inspection.id),
-            "paint_shop": text_value("paint_shop", "PAINT_SHOP_DEMO"),
-            "booth_station": text_value("booth_station", inspection.station_code),
-            "line": text_value("line", "LINE_UNSPECIFIED"),
-            "model_variant": text_value("model_variant", "MODEL_UNSPECIFIED"),
-            "color_code": text_value("color_code", "COLOR_UNSPECIFIED"),
-            "paint_recipe": text_value("paint_recipe", "RECIPE_UNSPECIFIED"),
-            "shift": text_value("shift", "SHIFT_UNSPECIFIED"),
-            "timestamp": inspection.captured_at.isoformat(),
-            "visual_defect_type": text_value("visual_defect_type", "UNCONFIRMED_ANOMALY"),
-            "severity": incident.severity,
-            "mask_or_heatmap": (
+        return build_simulated_quality_record(
+            metadata=metadata,
+            inspection_id=inspection.id,
+            batch_no=inspection.batch_no,
+            station_code=inspection.station_code,
+            captured_at=inspection.captured_at.isoformat(),
+            severity=incident.severity,
+            disposition=disposition,
+            quality_case_id=incident.id,
+            reason=reason,
+            heatmap=(
                 {"heatmap_uri": inference.heatmap_uri}
                 if inference is not None and inference.heatmap_uri
                 else {"heatmap_uri": None, "quality_flags": inspection.quality_flags or []}
             ),
-            "operator_decision": disposition,
-            "equipment_alarm_refs": self._metadata_list(metadata, "equipment_alarm_refs"),
-            "process_parameter_refs": self._metadata_list(metadata, "process_parameter_refs"),
-            "root_cause_candidates": self._metadata_list(
-                metadata, "root_cause_candidates", fallback=["PENDING_INVESTIGATION"]
-            ),
-            "disposition": disposition,
-            "quality_case_id": incident.id,
-            "review_reason": reason,
-        }
-
-    @staticmethod
-    def _metadata_list(
-        metadata: Mapping[str, Any], key: str, fallback: list[str] | None = None
-    ) -> list[Any]:
-        value = metadata.get(key)
-        if isinstance(value, list):
-            return value
-        return list(fallback or [])
+        )
 
     def request_incident_action(
         self,
@@ -2830,6 +3106,7 @@ class VisionQCService:
         )
         return QualityIncidentResponse(
             id=incident.id,
+            quality_case_id=incident.id,
             inspection_id=inspection.id,
             status=incident.status,
             severity=incident.severity,
@@ -2871,6 +3148,7 @@ class VisionQCService:
                 for item in self.timeline(session, tenant_id=tenant_id, incident_id=incident_id)
             ],
             correlation_id=inspection.correlation_id,
+            metadata=incident.metadata_json or inspection.context_metadata or {},
         )
 
     def inspection_timeline(
@@ -3013,16 +3291,63 @@ class VisionQCService:
                 policy=request.policy,
                 connectors=request.connectors,
             )
+        active_configuration_version = session.scalar(
+            select(DeploymentPack.configuration_version).where(
+                DeploymentPack.tenant_id == principal.tenant_id,
+                DeploymentPack.status == "ACTIVE",
+            )
+        )
+        config, layers = self._configuration_for_create(
+            tenant_id=principal.tenant_id,
+            manifest=manifest,
+            request=request,
+            actor_id=principal.actor_id,
+            parent_version=active_configuration_version,
+        )
+        selected_policy = self._policy_for_configuration(manifest, config)
+        # Store the effective config on the manifest as a compatibility aid;
+        # the dedicated configuration columns/table remain the source of the
+        # provenance and rollback contract.
+        manifest_payload = manifest.model_dump(mode="json")
+        manifest_payload["policy"] = selected_policy.model_dump(mode="json")
+        manifest_payload["configuration"] = config.effective_config.model_dump(mode="json")
+        manifest_payload["configuration_layers"] = self._configuration_layers_payload(layers)
+        manifest = DeploymentManifest.model_validate(manifest_payload)
+        config_snapshot = redact_configuration(config.effective_config.model_dump(mode="json"))
+        config_layers = self._configuration_layers_payload(layers)
+        config_audit = self._configuration_audit_payload(config)
         deployment = DeploymentPack(
             tenant_id=principal.tenant_id,
             version=manifest.version,
             status="DRAFT",
             model_config_snapshot=redact(manifest.model.model_dump(mode="json")),
-            policy_config=manifest.policy.model_dump(mode="json"),
+            policy_config=redact(manifest.policy.model_dump(mode="json")),
             connector_config=redact(manifest.connectors.model_dump(mode="json")),
-            manifest=redact(manifest.model_dump(mode="json")),
+            manifest=redact_configuration(manifest.model_dump(mode="json")),
+            configuration_version=config.version,
+            configuration_schema_version=config.schema_version,
+            configuration_hash=config.config_hash,
+            configuration_snapshot=config_snapshot,
+            configuration_layers=config_layers,
+            configuration_sources=dict(config.sources),
+            configuration_validation_status=config.validation_status,
+            configuration_audit=config_audit,
         )
         session.add(deployment)
+        configuration_version = TenantConfigurationVersion(
+            tenant_id=principal.tenant_id,
+            schema_version=config.schema_version,
+            version=config.version,
+            config_hash=config.config_hash,
+            effective_config=config_snapshot,
+            source_layers=config_layers,
+            validation_status=config.validation_status,
+            audit_metadata=config_audit,
+            status="DRAFT",
+            created_by=principal.actor_id,
+            parent_version=config.audit.parent_version,
+        )
+        session.add(configuration_version)
         try:
             session.flush()
         except IntegrityError as exc:
@@ -3035,7 +3360,28 @@ class VisionQCService:
             target_type="deployment_pack",
             target_id=deployment.id,
             correlation_id=correlation_id,
-            payload={"version": deployment.version, "pack_key": manifest.pack_key},
+            payload={
+                "version": deployment.version,
+                "pack_key": manifest.pack_key,
+                "configuration_version": config.version,
+                "configuration_hash": config.config_hash,
+                "configuration_layers": list(CONFIGURATION_LAYER_ORDER),
+            },
+        )
+        record_audit(
+            session,
+            tenant_id=principal.tenant_id,
+            actor=principal.actor_id,
+            action="configuration.created",
+            target_type="tenant_configuration",
+            target_id=configuration_version.id,
+            correlation_id=correlation_id,
+            payload={
+                "version": config.version,
+                "config_hash": config.config_hash,
+                "sources": config.sources,
+                "validation_status": config.validation_status,
+            },
         )
         return deployment
 
@@ -3068,6 +3414,9 @@ class VisionQCService:
         manifest = self.deployment_manifest(session, deployment)
         if manifest.tenant.id != principal.tenant_id:
             raise Forbidden("deployment pack tenant boundary is invalid")
+        config = self.effective_configuration(session, deployment)
+        if config.validation_status != "VALID":
+            raise InvalidInput("deployment configuration has not passed validation")
         try:
             for product in manifest.products:
                 for station in manifest.stations:
@@ -3117,6 +3466,46 @@ class VisionQCService:
         deployment.status = "ACTIVE"
         deployment.approved_by = principal.actor_id
         deployment.activated_at = datetime.now(UTC)
+        previous_configurations = session.scalars(
+            select(TenantConfigurationVersion).where(
+                TenantConfigurationVersion.tenant_id == principal.tenant_id,
+                TenantConfigurationVersion.status == "ACTIVE",
+                TenantConfigurationVersion.version != config.version,
+            )
+        ).all()
+        for previous in previous_configurations:
+            previous.status = "RETIRED"
+        active_configuration = session.scalar(
+            select(TenantConfigurationVersion).where(
+                TenantConfigurationVersion.tenant_id == principal.tenant_id,
+                TenantConfigurationVersion.version == config.version,
+            )
+        )
+        if active_configuration is None:
+            active_configuration = TenantConfigurationVersion(
+                tenant_id=principal.tenant_id,
+                schema_version=config.schema_version,
+                version=config.version,
+                config_hash=config.config_hash,
+                effective_config=redact_configuration(
+                    config.effective_config.model_dump(mode="json")
+                ),
+                source_layers=deployment.configuration_layers or {},
+                validation_status="VALID",
+                audit_metadata=self._configuration_audit_payload(config),
+                status="ACTIVE",
+                created_by=principal.actor_id,
+                parent_version=config.audit.parent_version,
+                activated_at=deployment.activated_at,
+            )
+            session.add(active_configuration)
+        else:
+            active_configuration.status = "ACTIVE"
+            active_configuration.activated_at = deployment.activated_at
+        deployment.configuration_version = config.version
+        deployment.configuration_schema_version = config.schema_version
+        deployment.configuration_hash = config.config_hash
+        deployment.configuration_validation_status = "VALID"
         record_audit(
             session,
             tenant_id=principal.tenant_id,
@@ -3130,6 +3519,8 @@ class VisionQCService:
                 "pack_key": manifest.pack_key,
                 "reason": reason,
                 "preflight": checks,
+                "configuration_version": config.version,
+                "configuration_hash": config.config_hash,
             },
         )
         return deployment

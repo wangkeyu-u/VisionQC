@@ -46,6 +46,34 @@ class Tenant(Base, TimestampMixin):
     status: Mapped[str] = mapped_column(String(32), default="ACTIVE", nullable=False)
 
 
+class TenantConfigurationVersion(Base, TimestampMixin):
+    """Immutable, tenant-scoped effective configuration and provenance."""
+
+    __tablename__ = "tenant_configuration_versions"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "version", name="uq_tenant_configuration_tenant_version"
+        ),
+        Index("ix_tenant_configuration_tenant_status", "tenant_id", "status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: new_id("cfg"))
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), index=True, nullable=False)
+    schema_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    version: Mapped[str] = mapped_column(String(128), nullable=False)
+    config_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    effective_config: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    source_layers: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    validation_status: Mapped[str] = mapped_column(String(32), nullable=False, default="VALID")
+    audit_metadata: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict, server_default=text("'{}'")
+    )
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="DRAFT")
+    created_by: Mapped[str] = mapped_column(String(128), nullable=False)
+    parent_version: Mapped[str | None] = mapped_column(String(128))
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class EdgeGateway(Base, TimestampMixin):
     __tablename__ = "edge_gateways"
     __table_args__ = (
@@ -95,6 +123,24 @@ class DeploymentPack(Base, TimestampMixin):
     # compatible reads and for existing migrations; new workflow decisions use
     # this immutable configuration bundle.
     manifest: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict, server_default=text("'{}'")
+    )
+    configuration_version: Mapped[str | None] = mapped_column(String(128))
+    configuration_schema_version: Mapped[str | None] = mapped_column(String(64))
+    configuration_hash: Mapped[str | None] = mapped_column(String(64), index=True)
+    configuration_snapshot: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict, server_default=text("'{}'")
+    )
+    configuration_layers: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict, server_default=text("'{}'")
+    )
+    configuration_sources: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict, server_default=text("'{}'")
+    )
+    configuration_validation_status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="VALID", server_default="VALID"
+    )
+    configuration_audit: Mapped[dict[str, Any]] = mapped_column(
         JSON, nullable=False, default=dict, server_default=text("'{}'")
     )
     approved_by: Mapped[str | None] = mapped_column(String(128))
@@ -200,6 +246,23 @@ class Batch(Base, TimestampMixin):
     status: Mapped[str] = mapped_column(String(32), default="OPEN", nullable=False)
 
 
+class Workpiece(Base, TimestampMixin):
+    """Generic physical item identity; industry fields stay in metadata."""
+
+    __tablename__ = "workpieces"
+    __table_args__ = (UniqueConstraint("tenant_id", "workpiece_id", name="uq_workpiece_identity"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: new_id("wp"))
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), index=True, nullable=False)
+    workpiece_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    product_code: Mapped[str] = mapped_column(String(128), nullable=False)
+    product_revision: Mapped[str | None] = mapped_column(String(64))
+    batch_no: Mapped[str | None] = mapped_column(String(128))
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(
+        "metadata", JSON, nullable=False, default=dict, server_default=text("'{}'")
+    )
+
+
 class Inspection(Base, TimestampMixin):
     __tablename__ = "inspections"
     __table_args__ = (
@@ -218,13 +281,14 @@ class Inspection(Base, TimestampMixin):
     status: Mapped[str] = mapped_column(String(48), nullable=False, default="RECEIVED")
     product_code: Mapped[str] = mapped_column(String(128), nullable=False)
     product_revision: Mapped[str | None] = mapped_column(String(64))
+    workpiece_id: Mapped[str | None] = mapped_column(String(128), index=True)
     batch_no: Mapped[str] = mapped_column(String(128), nullable=False)
     station_code: Mapped[str] = mapped_column(String(128), nullable=False)
     captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     source: Mapped[str] = mapped_column(String(64), default="api", nullable=False)
     # Optional site-specific context stays generic and tenant-scoped.  It is
-    # deliberately not promoted to customer-specific columns so Factory A/B
-    # and future Deployment Packs keep the same workflow contract.
+    # deliberately not promoted to customer-specific columns so every
+    # Deployment Pack keeps the same workflow contract.
     context_metadata: Mapped[dict[str, Any]] = mapped_column(
         JSON, nullable=False, default=dict, server_default=text("'{}'")
     )
@@ -372,9 +436,17 @@ class QualityIncident(Base, TimestampMixin):
     owner: Mapped[str | None] = mapped_column(String(128))
     outcome: Mapped[str | None] = mapped_column(Text)
     verification_record: Mapped[str | None] = mapped_column(Text)
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(
+        "metadata", JSON, nullable=False, default=dict, server_default=text("'{}'")
+    )
 
     inspection: Mapped[Inspection] = relationship(back_populates="incident")
     external_actions: Mapped[list[ExternalAction]] = relationship(back_populates="incident")
+
+
+# The storage table keeps its historical name for compatibility; the generic
+# domain term exposed to new code is quality case.
+QualityCase = QualityIncident
 
 
 class ExternalAction(Base, TimestampMixin):

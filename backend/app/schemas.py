@@ -8,6 +8,12 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.deployment import DeploymentManifest
 from app.domain import ReviewChoice
+from app.platform_config import (
+    PLATFORM_CONFIGURATION_SCHEMA_VERSION,
+    ConfigurationLayers,
+    ConfigurationOverlay,
+    PlatformConfiguration,
+)
 from app.policy import PolicyConfig
 
 
@@ -23,6 +29,10 @@ class ErrorBody(APIModel):
 
 
 class InspectionContext(APIModel):
+    # ``workpiece_id`` is optional because some plants identify the physical
+    # item only through a batch/lot.  Industry-specific identifiers belong in
+    # the metadata extension envelope, not in required core fields.
+    workpiece_id: str | None = Field(default=None, max_length=128)
     product_code: str = Field(min_length=1, max_length=128)
     product_revision: str | None = Field(default=None, max_length=64)
     batch_no: str = Field(min_length=1, max_length=128)
@@ -204,6 +214,7 @@ class IncidentEvidence(APIModel):
 
 class QualityIncidentResponse(APIModel):
     id: str
+    quality_case_id: str | None = None
     inspection_id: str
     status: str
     severity: str
@@ -220,6 +231,24 @@ class QualityIncidentResponse(APIModel):
     external_actions: list[ExternalActionResponse]
     timeline: list[TimelineEntry]
     correlation_id: str
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class WorkpieceReference(APIModel):
+    """Generic workpiece identity used by quality workflows."""
+
+    workpiece_id: str
+    product_code: str
+    product_revision: str | None = None
+    batch_no: str | None = None
+    station_code: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class QualityCaseResponse(QualityIncidentResponse):
+    """Stable generic name for the existing quality-incident workflow."""
+
+    quality_case_id: str
 
 
 class DemoTokenResponse(APIModel):
@@ -238,6 +267,23 @@ class DeploymentCreateRequest(APIModel):
     model: dict[str, Any] = Field(default_factory=dict)
     policy: PolicyConfig | None = None
     connectors: dict[str, Any] = Field(default_factory=dict)
+    # New callers provide explicit four-layer platform configuration.  The
+    # legacy fields above remain accepted and are adapted by the service.
+    configuration_layers: ConfigurationLayers | None = None
+    configuration: PlatformConfiguration | ConfigurationOverlay | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def accept_configuration_aliases(cls, value: Any) -> Any:
+        if isinstance(value, dict):
+            value = dict(value)
+            if "configuration_layers" not in value and "config_layers" in value:
+                value["configuration_layers"] = value.pop("config_layers")
+            if "configuration_layers" not in value and "layers" in value:
+                value["configuration_layers"] = value.pop("layers")
+            if "configuration" not in value and "effective_config" in value:
+                value["configuration"] = value.pop("effective_config")
+        return value
 
     @model_validator(mode="after")
     def require_manifest_or_legacy_fields(self) -> DeploymentCreateRequest:
@@ -257,6 +303,12 @@ class DeploymentResponse(APIModel):
     approved_by: str | None
     activated_at: datetime | None
     manifest: DeploymentManifest
+    configuration_version: str | None = None
+    configuration_schema_version: str | None = None
+    configuration_hash: str | None = None
+    effective_config: dict[str, Any] = Field(default_factory=dict)
+    configuration_sources: dict[str, str] = Field(default_factory=dict)
+    configuration_validation_status: Literal["VALID", "INVALID"] = "VALID"
 
 
 class TenantSummary(APIModel):
@@ -269,6 +321,81 @@ class TenantContextResponse(APIModel):
     tenant: TenantSummary
     current_deployment: DeploymentResponse | None
     available_tenants: list[TenantSummary]
+
+
+class ConfigurationPreviewRequest(APIModel):
+    """Request body for validating explicit platform configuration layers."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal["visionqc.platform-config.v1"] | None = None
+    platform_defaults: ConfigurationOverlay = Field(default_factory=ConfigurationOverlay)
+    industry_pack: ConfigurationOverlay = Field(default_factory=ConfigurationOverlay)
+    tenant_override: ConfigurationOverlay = Field(default_factory=ConfigurationOverlay)
+    runtime_site_override: ConfigurationOverlay = Field(default_factory=ConfigurationOverlay)
+    version: str | None = Field(default=None, min_length=1, max_length=128)
+
+    @model_validator(mode="before")
+    @classmethod
+    def accept_layers_wrapper(cls, value: Any) -> Any:
+        if isinstance(value, dict):
+            supplied_schema = value.get("schema_version")
+            if (
+                supplied_schema is not None
+                and supplied_schema != PLATFORM_CONFIGURATION_SCHEMA_VERSION
+            ):
+                raise ValueError("unsupported configuration schema_version")
+        if isinstance(value, dict) and ("layers" in value or "configuration_layers" in value):
+            layers = value.get("layers", value.get("configuration_layers"))
+            if not isinstance(layers, dict):
+                raise ValueError("layers must be an object")
+            layer_schema = layers.get("schema_version")
+            if layer_schema is not None and layer_schema != PLATFORM_CONFIGURATION_SCHEMA_VERSION:
+                raise ValueError("unsupported configuration layer schema_version")
+            merged = dict(layers)
+            merged.pop("schema_version", None)
+            if "version" in value:
+                merged["version"] = value["version"]
+            return merged
+        return value
+
+    def as_layers(self) -> ConfigurationLayers:
+        return ConfigurationLayers(
+            platform_defaults=self.platform_defaults,
+            industry_pack=self.industry_pack,
+            tenant_override=self.tenant_override,
+            runtime_site_override=self.runtime_site_override,
+        )
+
+
+class EffectiveConfigurationResponse(APIModel):
+    schema_version: str
+    tenant_id: str
+    version: str
+    config_hash: str
+    effective_config: dict[str, Any]
+    sources: dict[str, str]
+    validation_status: Literal["VALID", "INVALID"]
+    validation_errors: list[str] = Field(default_factory=list)
+    audit: dict[str, Any]
+    rollback_versions: list[str] = Field(default_factory=list)
+
+
+class ConfigurationVersionResponse(APIModel):
+    id: str
+    tenant_id: str
+    schema_version: str
+    version: str
+    config_hash: str
+    status: str
+    validation_status: str
+    effective_config: dict[str, Any]
+    source_layers: dict[str, Any]
+    audit: dict[str, Any]
+    created_by: str
+    parent_version: str | None
+    created_at: datetime
+    activated_at: datetime | None
 
 
 class DatasetSourceType(StrEnum):

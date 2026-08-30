@@ -12,9 +12,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any, Literal, cast
+from urllib.parse import unquote, urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.platform_config import (
+    ConfigurationLayers,
+    PlatformConfiguration,
+    assert_no_embedded_secrets,
+)
 from app.policy import PolicyConfig
 
 CANONICAL_FIELDS = (
@@ -131,12 +137,29 @@ class ConnectorDefinition(DeploymentContract):
     fixed_fields: dict[str, Any] = Field(default_factory=dict)
     operations: list[str] = Field(min_length=1, max_length=20)
 
+    @model_validator(mode="after")
+    def reject_embedded_credentials(self) -> ConnectorDefinition:
+        parsed = urlsplit(self.endpoint)
+        if parsed.username or parsed.password:
+            raise ValueError("connector endpoint must not contain embedded credentials")
+        query_keys = [
+            unquote(part.split("=", 1)[0]).lower()
+            for part in parsed.query.split("&")
+            if part
+        ]
+        if any(
+            any(marker in key for marker in ("password", "secret", "token", "api_key"))
+            for key in query_keys
+        ):
+            raise ValueError("connector endpoint query must not contain secret values")
+        return self
+
 
 class ConnectorSet(DeploymentContract):
     mes: ConnectorDefinition
     qms: ConnectorDefinition
     # Optional, explicitly simulated digital-quality contract.  Existing
-    # Factory A/B packs remain valid and continue to use only MES/QMS.
+    # deployment packs remain valid and can continue to use only MES/QMS.
     dxq_mock: ConnectorDefinition | None = None
 
 
@@ -148,7 +171,9 @@ class DeploymentManifest(DeploymentContract):
     different tenant.
     """
 
-    schema_version: Literal["visionqc.deployment-pack.v1"] = "visionqc.deployment-pack.v1"
+    schema_version: Literal["visionqc.deployment-pack.v1", "visionqc.deployment-pack.v2"] = (
+        "visionqc.deployment-pack.v1"
+    )
     pack_key: str = Field(min_length=1, max_length=128)
     version: str = Field(min_length=1, max_length=64)
     display_name: str = Field(min_length=1, max_length=200)
@@ -163,6 +188,10 @@ class DeploymentManifest(DeploymentContract):
     connectors: ConnectorSet
     metadata: dict[str, Any] = Field(default_factory=dict)
     edge_gateway: EdgeGatewayDefinition | None = None
+    # v1 manifests remain valid.  New deployments may carry the canonical
+    # effective platform config and/or its explicit source layers.
+    configuration: PlatformConfiguration | None = None
+    configuration_layers: ConfigurationLayers | None = None
 
     @model_validator(mode="after")
     def validate_catalog(self) -> DeploymentManifest:
@@ -180,6 +209,19 @@ class DeploymentManifest(DeploymentContract):
         unknown_labels = set(self.field_labels) - set(CANONICAL_FIELDS)
         if unknown_labels:
             raise ValueError(f"field_labels contains unknown fields: {sorted(unknown_labels)}")
+        if self.configuration is not None and self.configuration.tenant_id != self.tenant.id:
+            raise ValueError("manifest configuration tenant_id must match tenant.id")
+        if self.configuration_layers is not None:
+            for layer_name in (
+                "platform_defaults",
+                "industry_pack",
+                "tenant_override",
+                "runtime_site_override",
+            ):
+                layer = getattr(self.configuration_layers, layer_name)
+                if layer.tenant_id is not None and layer.tenant_id != self.tenant.id:
+                    raise ValueError(f"{layer_name}.tenant_id must match tenant.id")
+        assert_no_embedded_secrets(self.model_dump(mode="json", exclude_none=True))
         return self
 
     @property

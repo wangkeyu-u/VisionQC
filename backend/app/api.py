@@ -26,11 +26,14 @@ from app.schemas import (
     ActivateDeploymentRequest,
     ClaimReviewRequest,
     CloseIncidentRequest,
+    ConfigurationPreviewRequest,
+    ConfigurationVersionResponse,
     DatasetRegistrationRequest,
     DatasetRegistrationResponse,
     DemoTokenResponse,
     DeploymentCreateRequest,
     DeploymentResponse,
+    EffectiveConfigurationResponse,
     ExternalActionResponse,
     GatewayHeartbeatRequest,
     GatewayStatusResponse,
@@ -43,6 +46,7 @@ from app.schemas import (
     OperationsSummaryResponse,
     QualificationCreateRequest,
     QualificationDecisionRequest,
+    QualityCaseResponse,
     QualityIncidentResponse,
     ReplayRequest,
     ReviewDecisionRequest,
@@ -101,6 +105,9 @@ def external_response(action: ExternalAction) -> ExternalActionResponse:
 
 
 def deployment_response(deployment: Any, manifest: Any) -> DeploymentResponse:
+    effective_config = getattr(deployment, "configuration_snapshot", None) or {}
+    if not effective_config and getattr(manifest, "configuration", None) is not None:
+        effective_config = manifest.configuration.model_dump(mode="json")
     return DeploymentResponse(
         id=deployment.id,
         tenant_id=deployment.tenant_id,
@@ -112,6 +119,14 @@ def deployment_response(deployment: Any, manifest: Any) -> DeploymentResponse:
         approved_by=deployment.approved_by,
         activated_at=deployment.activated_at,
         manifest=manifest,
+        configuration_version=getattr(deployment, "configuration_version", None),
+        configuration_schema_version=getattr(deployment, "configuration_schema_version", None),
+        configuration_hash=getattr(deployment, "configuration_hash", None),
+        effective_config=effective_config,
+        configuration_sources=getattr(deployment, "configuration_sources", None) or {},
+        configuration_validation_status=(
+            getattr(deployment, "configuration_validation_status", None) or "VALID"
+        ),
     )
 
 
@@ -130,6 +145,8 @@ def demo_token(request: Request) -> DemoTokenResponse:
     settings = request.app.state.settings
     if settings.environment == "production":
         raise HTTPException(status_code=404, detail="not found")
+    bootstrap_tenants = settings.parsed_bootstrap_tenant_ids
+    demo_tenant_id = bootstrap_tenants[0] if bootstrap_tenants else settings.bootstrap_tenant_id
     roles: list[Role | str] = [
         Role.INSPECTOR,
         Role.QUALITY_MANAGER,
@@ -141,10 +158,10 @@ def demo_token(request: Request) -> DemoTokenResponse:
         access_token=create_access_token(
             settings,
             actor_id=actor_id,
-            tenant_id=settings.bootstrap_tenant_id,
+            tenant_id=demo_tenant_id,
             roles=roles,
         ),
-        tenant_id=settings.bootstrap_tenant_id,
+        tenant_id=demo_tenant_id,
         actor_id=actor_id,
         roles=[str(role) for role in roles],
     )
@@ -242,6 +259,118 @@ def tenant_context(
         current_deployment=current,
         available_tenants=sorted(summaries, key=lambda item: item.id),
     )
+
+
+def _effective_configuration_response(result: Any) -> EffectiveConfigurationResponse:
+    return EffectiveConfigurationResponse.model_validate(result.model_dump(mode="json"))
+
+
+def _configuration_version_response(item: Any) -> ConfigurationVersionResponse:
+    return ConfigurationVersionResponse(
+        id=item.id,
+        tenant_id=item.tenant_id,
+        schema_version=item.schema_version,
+        version=item.version,
+        config_hash=item.config_hash,
+        status=item.status,
+        validation_status=item.validation_status,
+        effective_config=item.effective_config,
+        source_layers=item.source_layers,
+        audit=item.audit_metadata,
+        created_by=item.created_by,
+        parent_version=item.parent_version,
+        created_at=item.created_at,
+        activated_at=item.activated_at,
+    )
+
+
+@router.get(
+    "/config/effective",
+    response_model=EffectiveConfigurationResponse,
+    tags=["configuration"],
+)
+@router.get(
+    "/configuration/effective",
+    response_model=EffectiveConfigurationResponse,
+    include_in_schema=False,
+    tags=["configuration"],
+)
+def effective_configuration(
+    session: SessionDep,
+    service: ServiceDep,
+    principal: Annotated[
+        Principal,
+        Depends(
+            require_roles(
+                Role.QUALITY_MANAGER,
+                Role.ADMIN,
+                Role.AUDITOR,
+                Role.FDE,
+            )
+        ),
+    ],
+) -> EffectiveConfigurationResponse:
+    deployment = service.active_deployment(session, principal.tenant_id)
+    return _effective_configuration_response(service.effective_configuration(session, deployment))
+
+
+@router.post(
+    "/config/validate",
+    response_model=EffectiveConfigurationResponse,
+    tags=["configuration"],
+)
+@router.post(
+    "/config/preview",
+    response_model=EffectiveConfigurationResponse,
+    include_in_schema=False,
+    tags=["configuration"],
+)
+@router.post(
+    "/configuration/validate",
+    response_model=EffectiveConfigurationResponse,
+    include_in_schema=False,
+    tags=["configuration"],
+)
+def validate_configuration(
+    body: ConfigurationPreviewRequest,
+    service: ServiceDep,
+    principal: Annotated[
+        Principal,
+        Depends(require_roles(Role.ADMIN, Role.FDE, Role.QUALITY_MANAGER)),
+    ],
+) -> EffectiveConfigurationResponse:
+    result = service.configuration_preview(
+        tenant_id=principal.tenant_id,
+        layers=body.as_layers(),
+        version=body.version,
+        created_by=principal.actor_id,
+    )
+    return _effective_configuration_response(result)
+
+
+@router.get(
+    "/config/versions",
+    response_model=list[ConfigurationVersionResponse],
+    tags=["configuration"],
+)
+@router.get(
+    "/configuration/versions",
+    response_model=list[ConfigurationVersionResponse],
+    include_in_schema=False,
+    tags=["configuration"],
+)
+def configuration_versions(
+    session: SessionDep,
+    service: ServiceDep,
+    principal: Annotated[
+        Principal,
+        Depends(require_roles(Role.ADMIN, Role.QUALITY_MANAGER, Role.AUDITOR, Role.FDE)),
+    ],
+) -> list[ConfigurationVersionResponse]:
+    return [
+        _configuration_version_response(item)
+        for item in service.list_configuration_versions(session, principal.tenant_id)
+    ]
 
 
 @router.post(
@@ -541,6 +670,27 @@ def get_incident(
     return service.get_incident(session, tenant_id=principal.tenant_id, incident_id=incident_id)
 
 
+@router.get(
+    "/quality-cases/{quality_case_id}",
+    response_model=QualityCaseResponse,
+    include_in_schema=False,
+    tags=["quality-cases"],
+)
+def get_quality_case(
+    quality_case_id: str,
+    session: SessionDep,
+    service: ServiceDep,
+    principal: Annotated[
+        Principal,
+        Depends(require_roles(Role.INSPECTOR, Role.QUALITY_MANAGER, Role.ADMIN, Role.AUDITOR)),
+    ],
+) -> QualityCaseResponse:
+    incident = service.get_incident(
+        session, tenant_id=principal.tenant_id, incident_id=quality_case_id
+    )
+    return QualityCaseResponse.model_validate(incident.model_dump(mode="json"))
+
+
 @router.get("/incidents", response_model=list[IncidentSummaryResponse], tags=["quality-incidents"])
 def list_incidents(
     session: SessionDep,
@@ -567,6 +717,29 @@ def list_incidents(
             station_code=(
                 incident.inspection.station_code if incident.inspection is not None else "—"
             ),
+        )
+        for incident in service.list_incidents(session, principal.tenant_id)
+    ]
+
+
+@router.get(
+    "/quality-cases",
+    response_model=list[QualityCaseResponse],
+    include_in_schema=False,
+    tags=["quality-cases"],
+)
+def list_quality_cases(
+    session: SessionDep,
+    service: ServiceDep,
+    principal: Annotated[
+        Principal,
+        Depends(require_roles(Role.INSPECTOR, Role.QUALITY_MANAGER, Role.ADMIN, Role.AUDITOR)),
+    ],
+) -> list[QualityCaseResponse]:
+    return [
+        QualityCaseResponse.model_validate(
+            service.get_incident(session, tenant_id=principal.tenant_id, incident_id=incident.id)
+            .model_dump(mode="json")
         )
         for incident in service.list_incidents(session, principal.tenant_id)
     ]
