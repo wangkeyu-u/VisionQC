@@ -1,8 +1,8 @@
 # VisionQC Industrial Edge Gateway 部署与运维手册
 
-本手册也覆盖 `duerr-demo/paint_quality`：这是面向 Dürr 汽车涂装场景的独立作品集概念方案，不代表 Dürr 委托、授权或背书。`dxq_mock` 是明确标记的模拟连接器，不是真实 DXQ API。
+本手册定义通用的目录/USB 工业边缘采集链路。electronics、packaging、automotive-paint 只是可切换的 Industry Pack 示例；客户现场通过 tenant/site overlay 生成 resolved pack，不需要修改 Gateway 源码。Dürr 仅在单独的 automotive-paint concept overlay 中出现，`dxq_mock` 是明确标记的模拟连接器，不是真实 DXQ API。
 
-本手册定义 VisionQC 第一版目录型工业边缘采集链路。范围是“相机/目录产生图片 → Gateway 稳定性检查与质量门禁 → 本地持久化队列 → 幂等上传 → VisionQC 推理与策略 → 人工复核 → MES/QMS → 关闭”。第一版不引入 Kafka、Kubernetes 或真实 RTSP；目录监听是现场相机落盘或文件交换目录的适配层。
+链路范围是“相机/目录产生图片 → Gateway 稳定性检查与质量门禁 → 本地持久化队列 → 幂等上传 → VisionQC 推理与策略 → 人工复核 → 外部 Connector → 关闭”。不引入 Kafka、Kubernetes 或真实 RTSP；目录监听是现场相机落盘或文件交换目录的适配层。
 
 ## 1. 组件与信任边界
 
@@ -25,7 +25,7 @@ flowchart LR
 
 ## 2. Deployment Pack 合同
 
-边缘配置必须和产品、工位、字段映射、租户绑定一起版本化。`backend/deployment-packs/manifests/factory-a-transistor.json` 和 `factory-b-bottle.json` 已包含 `edge_gateway` 节点：
+边缘配置必须和产品、工位、字段映射、租户绑定一起版本化。当前推荐使用 `visionqc.industry-pack.v1` + `visionqc.tenant-overlay.v1` 解析出的 `visionqc.deployment-pack.v2`：
 
 ```json
 {
@@ -52,7 +52,7 @@ flowchart LR
 }
 ```
 
-Factory A 使用 `ST-07-final/<product>__<batch>__<timestamp>__<sequence>.png`；Factory B 使用 `cell/<CELL>/date/YYYY/MM/DD/<sku>__lot=<lot>__captured=<timestamp>__seq=<sequence>.jpg`。差异全部在 manifest 的正则、capture map、defaults 和 field mapping 中，Gateway 代码没有客户 ID 分支。
+electronics、packaging 和 automotive-paint 示例分别使用自己的产品、工位、路径/文件名和术语合同。差异全部在 Industry Pack/overlay 的正则、capture map、defaults 和 field mapping 中，Gateway 代码没有客户 ID 分支。旧的 v1 manifest 仍可读取，迁移说明保存在 pack 的 `migration` 节点。
 
 Dürr demo 使用 `paint-shop/<PAINT_SHOP>/<LINE>/<BOOTH>/<YYYY>/<MM>/<DD>/<body_id>__model=<model_variant>__color=<color_code>__recipe=<paint_recipe>__shift=<shift>__captured=<timestamp>.jpg`。它把车身/工件字段写入数字质量档案，并可在复核后触发 simulated MES/QMS 与 `dxq_mock` 质量事件；代码不连接私有 DXQ 协议。
 
@@ -94,18 +94,20 @@ VQC_GATEWAY_PACK_PATH=/etc/visionqc/deployment-packs/customer.json
 
 ## 4. 启动与模拟器
 
-完整 Compose：
+默认可配置 Compose 入口：
 
 ```bash
 cd infra
-docker compose up --build
+docker compose up --build api frontend edge-gateway-selected
 ```
+
+通过 `VQC_GATEWAY_PACK_PATH` 选择 resolved pack；三个行业示例可以用
+`--profile industry-examples` 同时启动。Dürr concept 只在显式选择其 overlay/服务时出现。
 
 网关状态 API：
 
-- Factory A：`http://localhost:8091/status`
-- Factory B：`http://localhost:8092/status`
-- Dürr demo：`http://localhost:8093/status`
+- selected pack：`http://localhost:8090/status`
+- electronics / packaging / automotive-paint examples：`8094 / 8095 / 8096`
 - 本地队列：`/queue?limit=100`
 - 失败项人工放回重试：`POST /queue/{id}/retry`
 - 强制运行一轮扫描/上传/心跳：`POST /cycle`

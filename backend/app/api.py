@@ -255,7 +255,21 @@ def gateway_heartbeat(
     session: SessionDep,
     service: ServiceDep,
     principal: Annotated[Principal, Depends(require_roles(Role.EDGE_GATEWAY))],
+    tenant_header: Annotated[str | None, Header(alias="X-Tenant-ID")] = None,
+    pack_header: Annotated[str | None, Header(alias="X-Deployment-Pack")] = None,
+    pack_version_header: Annotated[str | None, Header(alias="X-Deployment-Pack-Version")] = None,
 ) -> GatewayStatusResponse:
+    if tenant_header is not None and tenant_header != principal.tenant_id:
+        raise HTTPException(status_code=403, detail="tenant header does not match token")
+    if pack_header is not None and body.deployment_pack_key not in {None, pack_header}:
+        raise HTTPException(status_code=403, detail="deployment pack header does not match body")
+    if pack_version_header is not None and body.deployment_pack_version not in {
+        None,
+        pack_version_header,
+    }:
+        raise HTTPException(
+            status_code=403, detail="deployment pack version header does not match body"
+        )
     return service.record_gateway_heartbeat(
         session,
         principal=principal,
@@ -349,9 +363,26 @@ async def create_inspection(
     image: Annotated[UploadFile, File()],
     idempotency_key: Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=200)],
     gateway_id: Annotated[str | None, Header(alias="X-Gateway-ID")] = None,
+    tenant_header: Annotated[str | None, Header(alias="X-Tenant-ID")] = None,
+    pack_header: Annotated[str | None, Header(alias="X-Deployment-Pack")] = None,
+    pack_version_header: Annotated[str | None, Header(alias="X-Deployment-Pack-Version")] = None,
 ) -> InspectionResponse:
     if Role.EDGE_GATEWAY in principal.roles and gateway_id != principal.actor_id:
         raise HTTPException(status_code=403, detail="gateway identity header does not match token")
+    if Role.EDGE_GATEWAY in principal.roles:
+        if tenant_header is not None and tenant_header != principal.tenant_id:
+            raise HTTPException(status_code=403, detail="tenant header does not match token")
+        deployment = service.active_deployment(session, principal.tenant_id)
+        manifest = service.deployment_manifest(session, deployment)
+        if pack_header is not None and pack_header != manifest.pack_key:
+            raise HTTPException(
+                status_code=403, detail="deployment pack header does not match active pack"
+            )
+        if pack_version_header is not None and pack_version_header != manifest.version:
+            raise HTTPException(
+                status_code=403,
+                detail="deployment pack version header does not match active pack",
+            )
     form = await request.form()
     context = service.context_from_fields(session, principal=principal, fields=form)
     data = await image.read(service.settings.max_upload_bytes + 1)

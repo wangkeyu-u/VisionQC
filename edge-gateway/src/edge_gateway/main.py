@@ -93,9 +93,18 @@ def create_app(
     pack_path = resolved.pack_path
     if not pack_path.is_absolute() and not pack_path.exists():
         repository_root = Path(__file__).resolve().parents[3]
-        candidate = repository_root / "backend/deployment-packs/manifests" / pack_path.name
-        if candidate.exists():
-            pack_path = candidate
+        candidates = [
+            repository_root
+            / (
+                "backend/deployment-packs/examples/electronics-transistor/"
+                "resolved-deployment-pack.json"
+            ),
+            repository_root / "backend/deployment-packs/manifests" / pack_path.name,
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                pack_path = candidate
+                break
     pack = GatewayDeploymentPack.load(pack_path)
     resolved.gateway_id = (
         pack.gateway_id if resolved.gateway_id == "gateway-local" else resolved.gateway_id

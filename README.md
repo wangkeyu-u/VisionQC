@@ -1,14 +1,10 @@
 # VisionQC
 
-**工业视觉异常检测与质量处置闭环平台**
+**可配置的工业视觉质量闭环平台 / Configurable industrial quality platform**
 
-## VisionQC for Dürr — Automotive Paint Quality Edge Pilot
+VisionQC 不止回答“图片是否异常”，还负责检测之后的企业流程：证据留存、双阈值路由、人工复核、批次暂扣、MES/QMS 动作、模型发布门禁和全链路审计。平台以配置优先的 Deployment Pack 交付：行业默认能力由 Industry Pack 提供，客户只需生成 tenant/site overlay，即可适配产品、字段、采集规则、策略、审批和 Connector，不需要 fork 业务代码。
 
-这是一个面向 Dürr 汽车涂装业务场景设计的独立作品集概念方案：以边缘视觉证据、人工复核和质量闭环编排作为 DXQ 数字化栈的扩展概念。它不替代 DXQ，不调用或模拟任何私有 Dürr API，也不声称与 Dürr 存在合作、授权或官方背书。
-
-> **面向 Dürr 业务场景设计的独立作品集概念方案 / Independent portfolio concept; not commissioned or endorsed by Dürr.**
-
-VisionQC 不止回答“图片是否异常”，还负责检测之后的企业流程：证据留存、双阈值路由、人工复核、批次暂扣、MES/QMS 动作、模型发布门禁和全链路审计。项目以 Forward Deployed Engineer 的交付方式设计，可通过 Deployment Pack 适配不同工厂的产品、字段、策略和 Connector。
+仓库内置三个明确标注为 synthetic configuration 的行业示例：electronics/transistor、packaging/bottle 和 automotive-paint/painted body panel。它们证明同一套 edge 与连接器边界可以切换租户；示例模型、外部系统和数据均不是生产证据。
 
 > 当前定位：可运行的企业级作品集 / Pre-Pilot MVP。默认使用演示数据；MVTec 仅作为非商业公开基准，不代表任何工厂现场效果。
 
@@ -22,7 +18,7 @@ VisionQC 不止回答“图片是否异常”，还负责检测之后的企业�
 | 决策 | `AUTO_RELEASE / REVIEW_REQUIRED / BATCH_HOLD_AND_REVIEW` 双阈值策略 |
 | 人在回路 | 复核认领、乐观锁、理由与确认门槛、模型反馈 |
 | 业务闭环 | Mock MES 暂扣/放行、Mock QMS 工单、事件验证与关闭 |
-| 多客户适配 | Factory A/B 与 Dürr demo Deployment Pack、字段映射、产品与 Connector 隔离 |
+| 多客户适配 | Industry Pack 与 tenant/site overlay、字段映射、产品与 Connector 隔离 |
 | ModelOps | DRAFT → EVALUATED → APPROVED → ACTIVE，职责分离与回滚审计 |
 | 数据治理 | 演示、官方 Benchmark、客户 Pilot 三种来源；不可变 fingerprint |
 | 安全降级 | 推理或证据失败时禁止自动放行；业务 Gate 失败阻断模型上线 |
@@ -75,7 +71,7 @@ Pilot Gate Recovery 的安全契约已经固定为：异常自动放行 `= 0`（
 | ML | 以 `docs/TEST-REPORT.md` 的最终记录为准；可选 PatchCore 运行时缺失会明确标记 |
 | Edge Gateway | 以 `docs/TEST-REPORT.md` 的最终记录为准 |
 | Frontend | 以 `docs/TEST-REPORT.md` 的最终记录为准 |
-| 多租户闭环 | Factory A/B 回归、Dürr demo、模拟 DXQ/MES/QMS 与跨租户隔离 |
+| 多租户闭环 | 三个行业示例、模拟 MES/QMS 与跨租户隔离 |
 
 ## 三分钟体验
 
@@ -92,15 +88,31 @@ Pilot Gate Recovery 的安全契约已经固定为：异常自动放行 `= 0`（
 
 ```bash
 cd infra
-docker compose up --build
+docker compose up --build api frontend edge-gateway-selected
+```
+
+`edge-gateway-selected` 通过一个配置路径选择租户。默认是 electronics 示例；切换到其他 checked-in 示例时只改环境变量：
+
+```bash
+VQC_GATEWAY_PACK_PATH=/app/configs/examples/packaging-bottle/resolved-deployment-pack.json \
+VQC_GATEWAY_ID=example-packaging-gateway \
+docker compose -f infra/docker-compose.yml up --build api frontend edge-gateway-selected
+```
+
+也可以一次启动三个行业 Gateway 示例：
+
+```bash
+cd infra
+docker compose --profile industry-examples up --build api edge-gateway-electronics-example \
+  edge-gateway-packaging-example edge-gateway-automotive-paint-example
 ```
 
 服务就绪后打开：
 
 - Web UI：[http://localhost:3000](http://localhost:3000)
 - API 文档：[http://localhost:8000/docs](http://localhost:8000/docs)
-- Factory A/B Gateway 状态：`8091 / 8092`
-- Dürr demo Gateway 状态：`8093`（明确的 `dxq_mock`，不是官方 DXQ API）
+- selected Gateway 状态：`8090`（端口可由 `VQC_GATEWAY_STATUS_PORT` 覆盖）
+- 三行业示例 Gateway 状态：`8094 / 8095 / 8096`
 
 推荐演示路径：
 
@@ -110,7 +122,7 @@ docker compose up --build
 4. 在质量事件中查看 MES/QMS 幂等动作并完成验证关闭。
 5. 在 ModelOps 查看数据来源、Benchmark NO-GO 和模型 DRAFT 状态。
 
-Dürr 三分钟路线从首页“开始检测”进入：选择“示例图”，查看车身数字质量档案，完成人工复核，再在质量事件中查看模拟 MES/QMS 与 `dxq_mock` 质量闭环。选择文件夹或 USB 相机前，页面会先做预检，并且只有显式同意上传时才会把原图发送给服务；默认本地处理。
+选择文件夹或 USB 相机前，页面会先做预检，并且只有显式同意上传时才会把原图发送给服务；默认本地处理。
 
 完整口播和镜头表见 [三分钟演示脚本](docs/DEMO-SCRIPT.md)。停止环境：
 
@@ -161,7 +173,7 @@ reports/       可公开的 Benchmark 与模型评测摘要
 tools/blender/ 可复现的工业工位、产品、缺陷和掩码生成器
 ```
 
-## Dürr 业务场景边界
+## 可选的 automotive-paint 概念 overlay
 
 Dürr demo tenant 是中性、无品牌资产的可运行场景，字段包含 `body_id/workpiece_id`、paint shop、booth/station、line、model variant、color code、paint recipe、shift、设备告警/工艺参数引用、根因候选和 disposition。`dxq_mock` 只实现概念层质量记录与模拟事件流，适配器隔离在连接器层；它不代表真实 DXQcontrol、DXQquality.management 或 DXQplant.analytics 协议。
 
@@ -182,6 +194,12 @@ Dürr demo tenant 是中性、无品牌资产的可运行场景，字段包含 `
 
 ## 作品集材料
 
+- [平台快速开始](docs/PLATFORM-QUICKSTART.md)
+- [企业定制指南](docs/ENTERPRISE-CUSTOMIZATION.md)
+- [Industry Pack 规范](docs/INDUSTRY-PACK-SPEC.md)
+- [Connector SDK 开发指南](docs/CONNECTOR-DEVELOPMENT.md)
+- [数据与安全边界](docs/DATA-SECURITY-BOUNDARY.md)
+- [从 Dürr 定制迁移为示例](docs/DUERR-MIGRATION-EXAMPLE.md)
 - [系统架构与信任边界](docs/ARCHITECTURE.md)
 - [As-Is / To-Be 与 48 小时客户接入案例](docs/CASE-STUDY.md)
 - [Dürr 汽车涂装 Pilot 概念说明](docs/DUERR-PILOT.md)

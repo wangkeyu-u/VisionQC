@@ -1,0 +1,43 @@
+{
+  "schema_version": "visionqc.tenant-overlay.v1",
+  "overlay_key": "examples/automotive-paint",
+  "version": "1.0.0",
+  "display_name": "Example automotive paint site",
+  "industry_pack": {"key": "automotive-paint", "version": "1.0.0", "sha256": "5c8ef7a86c2632cdf9329037292f2f03b4f306101e867cd7b9c2b760d3dcb16f"},
+  "tenant": {"id": "example-automotive-paint", "name": "Example Automotive Paint Site"},
+  "site": {"id": "paint-site-01", "name": "Example automotive paint site", "timezone": "+08:00", "locale": "en-US"},
+  "input_mode": "folder_watch",
+  "products": [{"code": "painted_body_panel", "display_name": "Painted body panel", "revision": "PILOT-EXAMPLE", "aliases": ["PAINT-SAMPLE"]}],
+  "stations": [{"code": "PAINT-QC-01", "display_name": "Paint inspection booth", "description": "Neutral example painted-surface inspection station.", "camera_profile": "paint-panel-multi-angle"}],
+  "field_labels": {"product_code": "Workpiece", "product_revision": "Revision", "batch_no": "Body or workpiece reference", "station_code": "Booth", "captured_at": "Captured at", "source": "Source"},
+  "terminology": {"inspection": "Paint-surface inspection", "anomaly": "Surface anomaly evidence", "batch_hold": "Workpiece hold"},
+  "connectors": {
+    "mes": {"display_name": "Simulated MES for example smoke", "driver": "mock_http", "contract_version": "mes-batch-v1-simulated", "endpoint": "http://mock-external:8081/mes", "payload_mapping": {"batch_no": "body_id", "reason": "containment_reason", "disposition": "disposition"}, "fixed_fields": {"source_system": "VisionQC neutral automotive-paint example; simulated"}, "operations": ["HOLD_BATCH", "RELEASE_BATCH"], "capability": "mes", "secret_refs": [], "simulated": true},
+    "qms": {"display_name": "Generic QMS for example smoke", "driver": "mock_http", "contract_version": "generic-qms-case.v1-simulated", "endpoint": "http://mock-external:8081/generic-qms", "payload_mapping": {"inspection_id": "case_reference", "batch_no": "batch_reference", "station_code": "station_reference", "disposition": "disposition", "reason": "reason"}, "fixed_fields": {"source_system": "VisionQC generic QMS mock; simulated"}, "operations": ["CREATE_TICKET", "UPDATE_TICKET", "CLOSE_TICKET"], "capability": "qms", "secret_refs": [], "simulated": true}
+  },
+  "localization": {"default_locale": "en-US", "supported_locales": ["en-US", "zh-CN"], "timezone": "+08:00", "terminology": {"review_required": "Review required", "batch_hold": "Workpiece hold"}},
+  "retention": {"raw_image_days": 30, "metadata_days": 365, "local_processing_default": true, "delete_after_upload": false, "legal_hold_supported": true},
+  "edge_gateway": {
+    "gateway_id": "example-automotive-paint-gateway",
+    "target_tenant_id": "example-automotive-paint",
+    "watch": {
+      "root": "/var/lib/visionqc-gateway/incoming",
+      "relative_path_regex": "^paint-shop/(?P<station_code>PAINT-QC-[A-Z0-9_-]+)/line/(?P<line>[A-Z0-9_-]+)$",
+      "filename_regex": "^(?P<body_id>BODY-[A-Z0-9_-]+)__model=(?P<model_variant>[A-Z0-9_-]+)__color=(?P<color_code>[A-Z0-9_-]+)__captured=(?P<captured_at>[0-9]{8}T[0-9]{6})__seq=(?P<sequence>[0-9]{6})\\.(?P<extension>png|jpe?g)$",
+      "capture_map": {"batch_no": "body_id", "station_code": "station_code", "captured_at": "captured_at"},
+      "defaults": {"product_code": "painted_body_panel", "product_revision": "PILOT-EXAMPLE"},
+      "source": "edge-camera/example-automotive-paint",
+      "allowed_extensions": [".png", ".jpg", ".jpeg"],
+      "timestamp_formats": ["%Y%m%dT%H%M%S"],
+      "timezone_offset": "+08:00",
+      "stable_for_seconds": 0,
+      "archive_subdir": ".archive",
+      "quarantine_subdir": ".quarantine"
+    },
+    "simulator": {"relative_dir_template": "paint-shop/PAINT-QC-01/line/LINE-01", "filename_template": "{body_id}__model={model_variant}__color={color_code}__captured={captured_at}__seq={sequence}.{extension}", "product": "PAINT-SAMPLE", "station": "PAINT-QC-01", "product_revision": "PILOT-EXAMPLE", "batch_prefix": "BODY-PAINT-DEMO", "extension": ".png"}
+  },
+  "validation": {"status": "checked-in-example", "validator": "scripts/visionqc.py validate-pack", "checks": ["overlay_schema", "industry_reference", "tenant_gateway_binding", "secret_refs", "integrity_hash"], "warnings": ["This is neutral synthetic configuration; no customer or vendor integration is implied.", "All external systems are simulated; replace endpoints only after contract approval."]},
+  "integrity": {"algorithm": "sha256", "manifest_sha256": "08419291d52c0f9cd0f0f6d96c55ba0171baffe407ea64454cdb96f49ad5537d", "canonicalization": "json-sort-keys-utf8-no-whitespace-v1", "excludes": ["integrity.manifest_sha256"]},
+  "migration": {"from_schema_versions": ["visionqc.tenant-overlay.v1", "visionqc.deployment-pack.v1"], "strategy": "resolver", "notes": "This neutral tenant/site overlay is generated from the automotive-paint Industry Pack; customer concepts remain independent overlays."},
+  "metadata": {"example_status": "neutral_synthetic_configuration_only", "customer_specific": false, "real_customer_integration": false, "secret_material_included": false}
+}

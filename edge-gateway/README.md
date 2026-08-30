@@ -1,15 +1,17 @@
 # VisionQC Edge Gateway
 
-`edge-gateway` is a standalone Python process for a factory workstation. It watches a Deployment Pack-defined directory contract, waits for files to stop changing, runs local image input quality gates, and sends accepted images to VisionQC through the tenant-scoped upload API.
+`edge-gateway` is a standalone Python process for a factory workstation. It consumes one resolved Deployment Pack selected by path, watches its directory contract, waits for files to stop changing, runs local image input quality gates, and sends accepted images to VisionQC through the tenant-scoped upload API.
 
 The gateway never accepts a tenant ID from a filename, form field, or browser header. The target tenant comes from the signed Deployment Pack and the JWT supplied by the deployment environment. In `demo` mode it may mint a five-minute `edge_gateway` token from the local shared secret; `production` mode refuses to start without `VQC_GATEWAY_AUTH_TOKEN` injected by an IdP/secret provider.
+
+The same binary can serve electronics, packaging, automotive-paint, or a customer-generated overlay. Tenant and site behavior live in the pack; the gateway code has no customer-name branch.
 
 ## Local run
 
 ```bash
 cd edge-gateway
 uv sync --extra dev
-VQC_GATEWAY_PACK_PATH=../backend/deployment-packs/manifests/factory-a-transistor.json \
+VQC_GATEWAY_PACK_PATH=../backend/deployment-packs/examples/electronics-transistor/resolved-deployment-pack.json \
 VQC_GATEWAY_WATCH_ROOT=/tmp/visionqc-factory-a \
 VQC_GATEWAY_BACKEND_URL=http://localhost:8000/api/v1 \
 uv run uvicorn edge_gateway.main:app --host 127.0.0.1 --port 8090
@@ -23,7 +25,7 @@ The simulator uses the same pack rules as the gateway and does not require a cam
 
 ```bash
 uv run python -m edge_gateway.simulator \
-  --pack ../backend/deployment-packs/manifests/factory-a-transistor.json \
+  --pack ../backend/deployment-packs/examples/electronics-transistor/resolved-deployment-pack.json \
   --root /tmp/visionqc-factory-a \
   --kind normal anomaly dark overexposed corrupt duplicate \
   --count 12 --interval 0.5
@@ -42,4 +44,4 @@ Use `--continuous` for a continuous directory source. `normal`, `anomaly`, `dark
 
 ## Configuration boundary
 
-Factory A and Factory B use different folder and filename contracts in the checked-in Deployment Packs. The gateway code only evaluates `relative_path_regex`, `filename_regex`, `capture_map`, `defaults`, and `field_mapping`; it contains no customer ID branch.
+The checked-in examples use three different industry/site configurations. The gateway code only evaluates `relative_path_regex`, `filename_regex`, `capture_map`, `defaults`, and `field_mapping`; it contains no customer ID branch. Generate a new site pack with `scripts/visionqc.py init-tenant`, then point `VQC_GATEWAY_PACK_PATH` at the resolved output.

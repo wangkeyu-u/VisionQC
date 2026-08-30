@@ -1,12 +1,12 @@
-# VisionQC for Dürr — 验收测试报告
+# VisionQC 平台验收测试报告
 
-日期：2026-08-24（Asia/Shanghai）
+日期：2026-08-31（Asia/Shanghai）
 
-> 本项目是面向 Dürr 业务场景设计的独立作品集概念方案 / Independent portfolio concept; not commissioned or endorsed by Dürr。`dxq_mock`、MES 和 QMS 均为 simulated/mock 适配器，不是真实 DXQ API。
+> VisionQC 是配置优先的通用工业质量平台。仓库中的 electronics、packaging、automotive-paint 仅为 synthetic configuration 示例；Dürr 只出现在 automotive-paint 下的独立 concept overlay。`dxq_mock`、MES 和 QMS 均为 simulated/mock 适配器，不是真实客户 API。
 
 ## 结论摘要
 
-工程闭环已实现并通过可执行的后端、边缘网关、前端、门禁校准、部署包和合成数据验证。真实 benchmark 的已登记历史证据按当前 `visionqc-pilot-gates.v3` 重新审计后仍为 `BENCHMARK_NO_GO / DRAFT_ONLY`，没有被改口径为通过。
+工程闭环已实现并通过可执行的后端、边缘网关、前端、行业包/租户 overlay、Connector contract 和合成数据验证。真实 benchmark 的已登记历史证据按当前 `visionqc-pilot-gates.v3` 重新审计后仍为 `BENCHMARK_NO_GO / DRAFT_ONLY`，没有被改口径为通过。
 
 当前不能宣称生产准确率，也不能宣称真实 Dürr 集成。完整正式 PatchCore 运行和 Compose 端到端启动分别受本机缺少可选 ML 运行时和 Docker daemon 阻塞；这些状态已在下面列出。
 
@@ -14,12 +14,12 @@
 
 | 范围 | 迭代前基线 | 当前最终结果 |
 | --- | --- | --- |
-| Backend | `37 passed, 1 warning` | `42 passed, 1 warning` |
-| Edge Gateway | `17 passed` | `21 passed` |
+| Backend | `37 passed, 1 warning` | `55 passed, 1 warning` |
+| Edge Gateway | `17 passed` | `26 passed` |
 | Frontend | `9 passed`; typecheck/build 通过 | `10 passed`; typecheck/build 通过 |
 | ML | `32 passed, 1 skipped, 3 failed`（PatchCore 可选运行时缺失） | `36 passed, 1 skipped, 3 failed`（同一环境阻塞） |
 | ML qualification/calibration | — | `17 passed` |
-| Backend/Edge/ML lint & typecheck | Backend 有 2 个既有 import-sort；其余通过 | Backend、Edge、ML Ruff 与 mypy 全部通过 |
+| Backend/Edge/ML lint & typecheck | Backend 有 2 个既有 import-sort；其余通过 | 本任务范围的 Backend/Edge Ruff 通过；ML 记录沿用历史结果 |
 
 关键命令：
 
@@ -72,16 +72,26 @@ Blender 报告了 5.2 对 `World.use_nodes`/`Material.use_nodes` 的弃用提醒
 
 ## 真实输入与闭环测试
 
-- Folder watcher：坏图、重复文件、文件夹路径和状态提示覆盖。
+- Industry Pack v2：三份 resolved pack 均完成 Industry Pack → tenant/site overlay → integrity verification → edge preflight → mock connector smoke。
+- Folder watcher：坏图、重复文件、文件夹路径和状态提示覆盖；相同内容的新 sequence 持久化为 `DUPLICATE`。
 - USB camera：OpenCV 可选依赖，缺少依赖时返回中文可执行错误；测试使用 mock camera，不假设本机有摄像头。
 - Privacy：默认本地处理；上传必须同时满足显式 consent、用途和配置开关，队列支持断网、本地 spool、重试、幂等和恢复。
 - Retention：支持按期限清理本地 spool；上传成功后是否删除原图由显式 `delete_after_upload` 控制。
-- Dürr：`duerr-demo` Deployment Pack 与 Factory A/B 隔离回归通过；`dxq_mock` contract、重复发布幂等和关闭事件测试通过。
-- UI：中文新手向导提供“示例图 / 文件夹 / USB 相机”三条路径，先预检再检测；检测详情展示车身数字质量档案、人工复核和 simulated MES/QMS/`dxq_mock` 闭环。
+- Connector SDK：generic QMS contract、缺字段、失败重试、timeout-after-commit、幂等 replay、secret ref/redaction 和最终失败均有测试。
+- Concept overlay：`duerr-concept` 仅验证 automotive-paint 的 overlay resolver 和 `dxq_mock` 模拟合同，不代表真实集成。
+- UI：既有中文新手向导和多租户回归保留；本任务未修改 frontend。
 
 ## Compose 与浏览器 QA
 
-`docker compose -f infra/docker-compose.yml config --quiet` 通过，包含默认本地处理的基础服务和 `duerr-demo` Gateway `8093`。实际执行 `docker compose up --build -d` 时，Docker socket 指向 `/Users/wangkeyu/.colima/default/docker.sock`，本机 Colima/daemon 未运行；尝试启动 Colima 时停在磁盘镜像下载阶段并主动中断，未启动任何容器。因此 Compose API 端到端不是通过，而是环境阻塞。
+`docker compose -f infra/docker-compose.yml config --quiet` 通过，包含环境控制的 `edge-gateway-selected` 和三个 `industry-examples` profile 服务。实际 Compose API 端到端是否执行，以本机 Docker daemon 状态为准；如果 daemon 不可用，不能把 config 校验冒充为容器 smoke 通过。
+
+本次 `docker info --format '{{.ServerVersion}}'` 未通过：Docker CLI 指向
+`unix:///Users/wangkeyu/.colima/default/docker.sock`，该 socket 不存在，因此没有启动容器，也没有把 Compose 实际 smoke 标记为通过。恢复 Docker/Colima 后可运行：
+
+```bash
+docker compose -f infra/docker-compose.yml --profile industry-examples up --build -d
+python scripts/compose_industry_smoke.py
+```
 
 Compose 恢复后可复现：
 
@@ -91,7 +101,7 @@ docker compose -f infra/docker-compose.yml up --build -d
 python3 scripts/duerr_compose_smoke.py
 ```
 
-浏览器在本地 Vite `http://127.0.0.1:4174/start` 完成关键路径视觉 QA：选择 USB 相机、确认默认“不发送原图”、进入现场设备连接页；切换 `duerr-demo` 后检查 ModelOps 页面显示 `Dürr Demo Paint Quality`、`Pilot Gate Recovery`、`DRAFT` 和不可放行提示。浏览器 QA 未上传客户原图，也未启用遥测。
+浏览器既有本地 Vite QA 仍覆盖 USB 相机、默认“不发送原图”和设备连接页；本任务未修改 frontend，也未上传客户原图或启用遥测。
 
 ## 未满足门禁与真实 Pilot 还缺什么
 

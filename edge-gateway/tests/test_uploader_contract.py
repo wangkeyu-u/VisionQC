@@ -85,4 +85,7 @@ def test_factory_b_upload_contract_uses_pack_mapping_without_tenant_override(
     }
     assert "tenant_id" not in request["data"]
     assert request["headers"]["X-Gateway-ID"] == "factory-b-gw-cell12"
+    assert request["headers"]["X-Tenant-ID"] == "factory-b"
+    assert request["headers"]["X-Deployment-Pack"] == "factory_b/bottle"
+    assert request["headers"]["X-Deployment-Pack-Version"] == "2.1.0"
     assert request["headers"]["Idempotency-Key"] == "edge_contract_b"

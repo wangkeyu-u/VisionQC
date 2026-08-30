@@ -1,0 +1,40 @@
+{
+  "schema_version": "visionqc.industry-pack.v1",
+  "pack_key": "automotive-paint",
+  "version": "1.0.0",
+  "display_name": "Automotive paint visual quality",
+  "industry": "automotive-paint",
+  "description": "Neutral defaults for painted panels and body-workpiece evidence; customer concepts are overlays only.",
+  "products": [{"code": "painted_body_panel", "display_name": "Painted body panel", "revision": "REV-UNSPECIFIED", "aliases": ["PAINT-SAMPLE"]}],
+  "stations": [{"code": "PAINT-QC-01", "display_name": "Paint inspection booth", "description": "Generic painted-surface inspection station.", "camera_profile": "paint-panel-multi-angle"}],
+  "field_mapping": {"product_code": "product_code", "product_revision": "product_revision", "batch_no": "batch_no", "station_code": "station_code", "captured_at": "captured_at", "source": "source"},
+  "field_labels": {"product_code": "Workpiece", "product_revision": "Revision", "batch_no": "Body or workpiece reference", "station_code": "Booth", "captured_at": "Captured at", "source": "Source"},
+  "terminology": {"inspection": "Paint-surface inspection", "anomaly": "Surface anomaly evidence", "review": "Human quality review", "batch_hold": "Workpiece hold"},
+  "collection": {
+    "input_modes": ["api_upload", "folder_watch", "usb_camera"],
+    "default_mode": "folder_watch",
+    "watch": {"root": "./incoming", "relative_path_regex": "^paint-shop/(?P<station_code>PAINT-QC-[A-Z0-9_-]+)/line/(?P<line>[A-Z0-9_-]+)$", "filename_regex": "^(?P<body_id>[A-Z0-9_-]+)__model=(?P<model_variant>[A-Z0-9_-]+)__color=(?P<color_code>[A-Z0-9_-]+)__captured=(?P<captured_at>[0-9]{8}T[0-9]{6})__seq=(?P<sequence>[0-9]{6})\\.(?P<extension>png|jpe?g)$", "capture_map": {"batch_no": "body_id", "station_code": "station_code", "captured_at": "captured_at"}, "defaults": {"product_code": "painted_body_panel", "product_revision": "REV-UNSPECIFIED"}, "source": "edge-camera/automotive-paint", "allowed_extensions": [".png", ".jpg", ".jpeg"], "timestamp_formats": ["%Y%m%dT%H%M%S"], "timezone_offset": "+00:00", "stable_for_seconds": 1.0, "archive_subdir": ".archive", "quarantine_subdir": ".quarantine"},
+    "camera": {"optional": true, "default_index": 0, "output_format": "jpeg"},
+    "queue": {"implementation": "sqlite-wal", "at_least_once_upload": true, "idempotency": "content-and-context-sha256"},
+    "privacy": {"local_processing_default": true, "upload_requires_explicit_consent": true, "secret_values_never_in_pack": true}
+  },
+  "model": {"id": "patchcore-automotive-paint-example", "version": "0.1.0-demo", "feature_bank_version": "not-qualified", "adapter": "anomalib.patchcore.v2", "runtime": "local-edge-runtime", "device": "CPU or customer-approved GPU", "package_uri": "models/automotive-paint/not-qualified", "package_sha256": "demo-only-not-qualified", "score_semantics": "Surface anomaly evidence; not a semantic defect, root cause, or production release verdict.", "limitations": ["Synthetic or public evidence is workflow evidence only.", "Real paint process validation and approved labeled evidence are required."]},
+  "policy": {"version": "automotive-paint-risk-policy-1.0.0", "default": {"review_threshold": 0.35, "hold_threshold": 0.75}},
+  "risk_strategy": {"name": "dual-threshold-human-accountable", "policy": {"version": "automotive-paint-risk-policy-1.0.0", "default": {"review_threshold": 0.35, "hold_threshold": 0.75}}, "model_output_semantics": "Anomaly evidence only; semantic defect and process cause require authorized human confirmation.", "fail_safe_route": "REVIEW_REQUIRED", "automatic_release_allowed": false, "approval_roles": ["quality_manager", "auditor"]},
+  "workflow": {"states": ["RECEIVED", "VALIDATED", "INFERENCING", "REVIEW_REQUIRED", "BATCH_HELD", "ACTION_PENDING", "ACTION_COMPLETED", "CLOSED"], "transitions": [{"from": "RECEIVED", "to": "VALIDATED"}, {"from": "REVIEW_REQUIRED", "to": "ACTION_PENDING"}, {"from": "BATCH_HELD", "to": "ACTION_PENDING"}, {"from": "ACTION_PENDING", "to": "ACTION_COMPLETED"}], "external_action_approval_required": true, "human_review_required_for": ["REVIEW_REQUIRED", "BATCH_HELD", "INFERENCE_FAILED"]},
+  "connectors": {
+    "ingest": {"display_name": "Local ingest boundary", "driver": "edge_gateway", "contract_version": "visionqc-ingest.v1", "endpoint": "local://edge-gateway", "operations": ["INGEST_IMAGE"], "capability": "ingest"},
+    "mes": {"display_name": "MES capability (configure per site)", "driver": "mock_http", "contract_version": "mes-batch-v1", "endpoint": "http://mock-external:8081/mes", "payload_mapping": {"batch_no": "body_id", "reason": "containment_reason", "disposition": "disposition"}, "fixed_fields": {"source_system": "VisionQC neutral example"}, "operations": ["HOLD_BATCH", "RELEASE_BATCH"], "capability": "mes", "secret_refs": []},
+    "qms": {"display_name": "Generic QMS case mock", "driver": "generic_qms_mock", "contract_version": "generic-qms-case.v1", "endpoint": "mock://generic-qms", "payload_mapping": {"inspection_id": "case_reference", "batch_no": "batch_reference", "station_code": "station_reference", "disposition": "disposition", "reason": "reason"}, "fixed_fields": {"source_system": "VisionQC neutral simulated QMS"}, "operations": ["CREATE_TICKET", "UPDATE_TICKET", "CLOSE_TICKET"], "capability": "qms", "secret_refs": [], "simulated": true},
+    "notification": {"display_name": "Notification capability placeholder", "driver": "mock_http", "contract_version": "notification-event-v1", "endpoint": "mock://notification", "operations": ["SEND_ALERT"], "capability": "notification", "secret_refs": []},
+    "analytics": {"display_name": "Analytics event placeholder", "driver": "mock_http", "contract_version": "analytics-event-v1", "endpoint": "mock://analytics", "operations": ["PUBLISH_METRIC"], "capability": "analytics", "secret_refs": []}
+  },
+  "permissions": {"roles": {"inspector": ["inspect", "review"], "quality_manager": ["review", "approve_external_action", "close_incident"], "fde": ["validate_pack", "draft_deployment"], "auditor": ["read_audit"]}, "external_action_approval_roles": ["quality_manager"], "deployment_approval_roles": ["quality_manager", "fde"]},
+  "retention": {"raw_image_days": 30, "metadata_days": 365, "local_processing_default": true, "delete_after_upload": false, "legal_hold_supported": true},
+  "localization": {"default_locale": "en-US", "supported_locales": ["en-US", "zh-CN"], "timezone": "+00:00", "terminology": {"batch_hold": "Workpiece hold", "review_required": "Review required"}},
+  "validation": {"status": "checked-in-example", "validator": "scripts/visionqc.py validate-pack", "checks": ["schema", "field_mapping", "policy_thresholds", "connector_contracts", "privacy_boundary", "integrity_hash"], "warnings": ["Customer/vendor names and production APIs are intentionally absent.", "Example model is not qualified for production."]},
+  "integrity": {"algorithm": "sha256", "manifest_sha256": "5c8ef7a86c2632cdf9329037292f2f03b4f306101e867cd7b9c2b760d3dcb16f", "canonicalization": "json-sort-keys-utf8-no-whitespace-v1", "excludes": ["integrity.manifest_sha256"]},
+  "migration": {"from_schema_versions": ["visionqc.deployment-pack.v1"], "strategy": "resolver", "notes": "Resolve this neutral industry pack with a tenant/site overlay; customer concepts do not change the platform contract."},
+  "defaults": {"product": {"code": "painted_body_panel", "display_name": "Painted body panel", "revision": "REV-UNSPECIFIED", "aliases": ["PAINT-SAMPLE"]}, "station": {"code": "PAINT-QC-01", "display_name": "Paint inspection booth", "description": "Generic painted-surface inspection station.", "camera_profile": "paint-panel-multi-angle"}},
+  "metadata": {"example_status": "neutral_configuration_only", "customer_specific": false, "real_connector_configured": false, "secret_material_included": false}
+}

@@ -1,0 +1,109 @@
+{
+  "schema_version": "visionqc.industry-pack.v1",
+  "pack_key": "packaging",
+  "version": "1.0.0",
+  "display_name": "Packaging visual quality",
+  "industry": "packaging",
+  "description": "Reusable defaults for packaging inspection, including the bottle example.",
+  "products": [
+    {
+      "code": "bottle",
+      "display_name": "Bottle",
+      "revision": "REV-UNSPECIFIED",
+      "aliases": ["BT-EXAMPLE"]
+    }
+  ],
+  "stations": [
+    {
+      "code": "CELL-01",
+      "display_name": "Packaging inspection cell",
+      "description": "Generic packaging surface and closure inspection cell.",
+      "camera_profile": "packaging-multi-view"
+    }
+  ],
+  "field_mapping": {
+    "product_code": "sku",
+    "product_revision": "revision",
+    "batch_no": "lot_id",
+    "station_code": "cell",
+    "captured_at": "captured_at",
+    "source": "source_system"
+  },
+  "field_labels": {
+    "product_code": "SKU",
+    "product_revision": "Revision",
+    "batch_no": "Lot ID",
+    "station_code": "Cell",
+    "captured_at": "Captured at",
+    "source": "Source system"
+  },
+  "terminology": {
+    "inspection": "Packaging inspection",
+    "anomaly": "Surface anomaly evidence",
+    "review": "Quality review",
+    "batch_hold": "Lot hold"
+  },
+  "collection": {
+    "input_modes": ["api_upload", "folder_watch", "usb_camera"],
+    "default_mode": "folder_watch",
+    "watch": {
+      "root": "./incoming",
+      "relative_path_regex": "^cell/(?P<station_code>CELL-[A-Z0-9_-]+)/date/(?P<date>[0-9]{4}/[0-9]{2}/[0-9]{2})$",
+      "filename_regex": "^(?P<product>[A-Z0-9_-]+)__lot=(?P<batch>[A-Z0-9_-]+)__captured=(?P<captured_at>[0-9]{8}T[0-9]{6})__seq=(?P<sequence>[0-9]{6})\\.(?P<extension>png|jpe?g)$",
+      "capture_map": {"product_code": "product", "batch_no": "batch", "station_code": "station_code", "captured_at": "captured_at"},
+      "defaults": {"product_revision": "REV-UNSPECIFIED"},
+      "source": "edge-camera/packaging",
+      "allowed_extensions": [".png", ".jpg", ".jpeg"],
+      "timestamp_formats": ["%Y%m%dT%H%M%S"],
+      "timezone_offset": "+00:00",
+      "stable_for_seconds": 1.0,
+      "archive_subdir": ".archive",
+      "quarantine_subdir": ".quarantine"
+    },
+    "camera": {"optional": true, "default_index": 0, "output_format": "jpeg"},
+    "queue": {"implementation": "sqlite-wal", "at_least_once_upload": true, "idempotency": "content-and-context-sha256"},
+    "privacy": {"local_processing_default": true, "upload_requires_explicit_consent": true, "secret_values_never_in_pack": true}
+  },
+  "model": {
+    "id": "patchcore-packaging-example",
+    "version": "0.1.0-demo",
+    "feature_bank_version": "not-qualified",
+    "adapter": "anomalib.patchcore.v2",
+    "runtime": "local-edge-runtime",
+    "device": "CPU or customer-approved GPU",
+    "package_uri": "models/packaging/not-qualified",
+    "package_sha256": "demo-only-not-qualified",
+    "score_semantics": "Packaging anomaly evidence; high score is not a semantic crack verdict.",
+    "limitations": ["Transparent materials need site calibration.", "Example model is not production qualification evidence."]
+  },
+  "policy": {"version": "packaging-risk-policy-1.0.0", "default": {"review_threshold": 0.3, "hold_threshold": 0.7}},
+  "risk_strategy": {
+    "name": "dual-threshold-human-accountable",
+    "policy": {"version": "packaging-risk-policy-1.0.0", "default": {"review_threshold": 0.3, "hold_threshold": 0.7}},
+    "model_output_semantics": "Anomaly evidence only; semantic defect confirmation stays with an authorized reviewer.",
+    "fail_safe_route": "REVIEW_REQUIRED",
+    "automatic_release_allowed": false,
+    "approval_roles": ["quality_manager", "auditor"]
+  },
+  "workflow": {
+    "states": ["RECEIVED", "VALIDATED", "INFERENCING", "REVIEW_REQUIRED", "BATCH_HELD", "ACTION_PENDING", "ACTION_COMPLETED", "CLOSED"],
+    "transitions": [{"from": "RECEIVED", "to": "VALIDATED"}, {"from": "REVIEW_REQUIRED", "to": "ACTION_PENDING"}, {"from": "BATCH_HELD", "to": "ACTION_PENDING"}, {"from": "ACTION_PENDING", "to": "ACTION_COMPLETED"}],
+    "external_action_approval_required": true,
+    "human_review_required_for": ["REVIEW_REQUIRED", "BATCH_HELD", "INFERENCE_FAILED"]
+  },
+  "connectors": {
+    "ingest": {"display_name": "Local ingest boundary", "driver": "edge_gateway", "contract_version": "visionqc-ingest.v1", "endpoint": "local://edge-gateway", "operations": ["INGEST_IMAGE"], "capability": "ingest"},
+    "mes": {"display_name": "MES capability (configure per site)", "driver": "mock_http", "contract_version": "mes-batch-v1", "endpoint": "http://mock-external:8081/mes", "payload_mapping": {"batch_no": "lot_id", "reason": "hold_reason", "disposition": "quality_disposition"}, "fixed_fields": {"source_system": "VisionQC neutral example"}, "operations": ["HOLD_BATCH", "RELEASE_BATCH"], "capability": "mes", "secret_refs": []},
+    "qms": {"display_name": "Generic QMS case mock", "driver": "generic_qms_mock", "contract_version": "generic-qms-case.v1", "endpoint": "mock://generic-qms", "payload_mapping": {"inspection_id": "case_reference", "batch_no": "batch_reference", "station_code": "station_reference", "disposition": "disposition", "reason": "reason"}, "fixed_fields": {"source_system": "VisionQC neutral simulated QMS"}, "operations": ["CREATE_TICKET", "UPDATE_TICKET", "CLOSE_TICKET"], "capability": "qms", "secret_refs": [], "simulated": true},
+    "notification": {"display_name": "Notification capability placeholder", "driver": "mock_http", "contract_version": "notification-event-v1", "endpoint": "mock://notification", "operations": ["SEND_ALERT"], "capability": "notification", "secret_refs": []},
+    "analytics": {"display_name": "Analytics event placeholder", "driver": "mock_http", "contract_version": "analytics-event-v1", "endpoint": "mock://analytics", "operations": ["PUBLISH_METRIC"], "capability": "analytics", "secret_refs": []}
+  },
+  "permissions": {"roles": {"inspector": ["inspect", "review"], "quality_manager": ["review", "approve_external_action", "close_incident"], "fde": ["validate_pack", "draft_deployment"], "auditor": ["read_audit"]}, "external_action_approval_roles": ["quality_manager"], "deployment_approval_roles": ["quality_manager", "fde"]},
+  "retention": {"raw_image_days": 30, "metadata_days": 365, "local_processing_default": true, "delete_after_upload": false, "legal_hold_supported": true},
+  "localization": {"default_locale": "en-US", "supported_locales": ["en-US", "zh-CN"], "timezone": "+00:00", "terminology": {"batch_hold": "Lot hold", "review_required": "Review required"}},
+  "validation": {"status": "checked-in-example", "validator": "scripts/visionqc.py validate-pack", "checks": ["schema", "field_mapping", "policy_thresholds", "connector_contracts", "privacy_boundary", "integrity_hash"], "warnings": ["Example model is not qualified for production."]},
+  "integrity": {"algorithm": "sha256", "manifest_sha256": "86161e61211d36faad2c83676c36045b6e9d842fe4f3b4b3a604bd1ffa71b703", "canonicalization": "json-sort-keys-utf8-no-whitespace-v1", "excludes": ["integrity.manifest_sha256"]},
+  "migration": {"from_schema_versions": ["visionqc.deployment-pack.v1"], "strategy": "resolver", "notes": "Resolve this reusable industry pack with a tenant/site overlay; v1 manifests remain readable during migration."},
+  "defaults": {"product": {"code": "bottle", "display_name": "Bottle", "revision": "REV-UNSPECIFIED", "aliases": ["BT-EXAMPLE"]}, "station": {"code": "CELL-01", "display_name": "Packaging inspection cell", "description": "Generic packaging surface and closure inspection cell.", "camera_profile": "packaging-multi-view"}},
+  "metadata": {"example_status": "synthetic_configuration_only", "customer_specific": false, "real_connector_configured": false, "secret_material_included": false}
+}

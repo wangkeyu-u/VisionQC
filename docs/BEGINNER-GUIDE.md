@@ -13,7 +13,7 @@ VisionQC 会用一张内置的工业产品演示图片，带你完成完整质�
 
 > 演示图片由 Blender 合成生成，MES 和 QMS 也是模拟系统；它们不会连接或修改任何真实工厂系统。
 
-如果你要体验 Dürr 汽车涂装概念路线，请从左侧“开始检测”进入向导。页面会让你选择“示例图 / 文件夹 / USB 相机”，先做预检，再开始检测；你会看到车身数字质量档案（body/workpiece、涂装车间、喷房/工位、产线、车型、颜色、配方、班次）以及人工复核后的模拟质量闭环。
+如果你刚开始使用 VisionQC，请从左侧“开始检测”进入向导。页面会让你选择“示例图 / 文件夹 / USB 相机”，先做预检，再开始检测；你可以先体验 electronics/transistor、packaging/bottle 或 automotive-paint 示例，再查看人工复核后的模拟质量闭环。Dürr 相关车身字段只属于单独的 concept overlay，不是默认产品。
 
 > **面向 Dürr 业务场景设计的独立作品集概念方案 / Independent portfolio concept; not commissioned or endorsed by Dürr.** `dxq_mock`、MES 和 QMS 都是明确的模拟适配器，不是真实 DXQ 接口。
 

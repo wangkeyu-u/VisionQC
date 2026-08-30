@@ -1,0 +1,439 @@
+{
+  "schema_version": "visionqc.deployment-pack.v2",
+  "pack_key": "example-automotive-paint/automotive-paint",
+  "version": "1.0.0",
+  "display_name": "Automotive paint visual quality · Example automotive paint site",
+  "tenant": {
+    "id": "example-automotive-paint",
+    "name": "Example Automotive Paint Site"
+  },
+  "input_mode": "folder_watch",
+  "products": [
+    {
+      "code": "painted_body_panel",
+      "display_name": "Painted body panel",
+      "revision": "PILOT-EXAMPLE",
+      "aliases": []
+    }
+  ],
+  "stations": [
+    {
+      "code": "PAINT-QC-01",
+      "display_name": "Paint inspection booth",
+      "description": "Generic painted-surface inspection station.",
+      "camera_profile": "paint-panel-multi-angle"
+    }
+  ],
+  "field_mapping": {
+    "product_code": "product_code",
+    "product_revision": "product_revision",
+    "batch_no": "batch_no",
+    "station_code": "station_code",
+    "captured_at": "captured_at",
+    "source": "source"
+  },
+  "field_labels": {
+    "product_code": "Workpiece",
+    "product_revision": "Revision",
+    "batch_no": "Body or workpiece reference",
+    "station_code": "Booth",
+    "captured_at": "Captured at",
+    "source": "Source"
+  },
+  "model": {
+    "id": "patchcore-automotive-paint-example",
+    "version": "0.1.0-demo",
+    "feature_bank_version": "not-qualified",
+    "adapter": "anomalib.patchcore.v2",
+    "runtime": "local-edge-runtime",
+    "device": "CPU or customer-approved GPU",
+    "package_uri": "models/automotive-paint/not-qualified",
+    "package_sha256": "demo-only-not-qualified",
+    "score_semantics": "Surface anomaly evidence; not a semantic defect, root cause, or production release verdict.",
+    "limitations": [
+      "Synthetic or public evidence is workflow evidence only.",
+      "Real paint process validation and approved labeled evidence are required."
+    ]
+  },
+  "policy": {
+    "version": "automotive-paint-risk-policy-1.0.0",
+    "default": {
+      "product_code": null,
+      "station_code": null,
+      "review_threshold": 0.35,
+      "hold_threshold": 0.75
+    },
+    "overrides": []
+  },
+  "connectors": {
+    "mes": {
+      "display_name": "MES capability (configure per site)",
+      "driver": "mock_http",
+      "contract_version": "mes-batch-v1",
+      "endpoint": "http://mock-external:8081/mes",
+      "payload_mapping": {
+        "batch_no": "body_id",
+        "reason": "containment_reason",
+        "disposition": "disposition"
+      },
+      "fixed_fields": {
+        "source_system": "VisionQC neutral example"
+      },
+      "operations": [
+        "HOLD_BATCH",
+        "RELEASE_BATCH"
+      ],
+      "capability": "mes",
+      "health_path": "/health",
+      "timeout_seconds": 10.0,
+      "retry_max_attempts": 3,
+      "retry_backoff_seconds": 0.5,
+      "idempotency_header": "Idempotency-Key",
+      "secret_refs": [
+        "VQC_MES_API_TOKEN"
+      ],
+      "simulated": false
+    },
+    "qms": {
+      "display_name": "Generic QMS case mock",
+      "driver": "generic_qms_mock",
+      "contract_version": "generic-qms-case.v1",
+      "endpoint": "mock://generic-qms",
+      "payload_mapping": {
+        "inspection_id": "case_reference",
+        "batch_no": "batch_reference",
+        "station_code": "station_reference",
+        "disposition": "disposition",
+        "reason": "reason"
+      },
+      "fixed_fields": {
+        "source_system": "VisionQC neutral simulated QMS"
+      },
+      "operations": [
+        "CREATE_TICKET",
+        "UPDATE_TICKET",
+        "CLOSE_TICKET"
+      ],
+      "capability": "qms",
+      "health_path": "/health",
+      "timeout_seconds": 10.0,
+      "retry_max_attempts": 3,
+      "retry_backoff_seconds": 0.5,
+      "idempotency_header": "Idempotency-Key",
+      "secret_refs": [],
+      "simulated": true
+    },
+    "dxq_mock": null,
+    "ingest": {
+      "display_name": "Local ingest boundary",
+      "driver": "edge_gateway",
+      "contract_version": "visionqc-ingest.v1",
+      "endpoint": "local://edge-gateway",
+      "payload_mapping": {},
+      "fixed_fields": {},
+      "operations": [
+        "INGEST_IMAGE"
+      ],
+      "capability": "ingest",
+      "health_path": "/health",
+      "timeout_seconds": 10.0,
+      "retry_max_attempts": 3,
+      "retry_backoff_seconds": 0.5,
+      "idempotency_header": "Idempotency-Key",
+      "secret_refs": [],
+      "simulated": false
+    },
+    "notification": {
+      "display_name": "Notification capability placeholder",
+      "driver": "mock_http",
+      "contract_version": "notification-event-v1",
+      "endpoint": "mock://notification",
+      "payload_mapping": {},
+      "fixed_fields": {},
+      "operations": [
+        "SEND_ALERT"
+      ],
+      "capability": "notification",
+      "health_path": "/health",
+      "timeout_seconds": 10.0,
+      "retry_max_attempts": 3,
+      "retry_backoff_seconds": 0.5,
+      "idempotency_header": "Idempotency-Key",
+      "secret_refs": [],
+      "simulated": false
+    },
+    "analytics": {
+      "display_name": "Analytics event placeholder",
+      "driver": "mock_http",
+      "contract_version": "analytics-event-v1",
+      "endpoint": "mock://analytics",
+      "payload_mapping": {},
+      "fixed_fields": {},
+      "operations": [
+        "PUBLISH_METRIC"
+      ],
+      "capability": "analytics",
+      "health_path": "/health",
+      "timeout_seconds": 10.0,
+      "retry_max_attempts": 3,
+      "retry_backoff_seconds": 0.5,
+      "idempotency_header": "Idempotency-Key",
+      "secret_refs": [],
+      "simulated": false
+    },
+    "generic_qms_mock": null
+  },
+  "metadata": {
+    "example_status": "neutral_configuration_only",
+    "customer_specific": true,
+    "real_connector_configured": false,
+    "secret_material_included": false,
+    "generated_by": "visionqc init-tenant",
+    "site_validation_required": true,
+    "industry_pack_key": "automotive-paint",
+    "industry_pack_version": "1.0.0",
+    "tenant_overlay_key": "tenants/example-automotive-paint/paint-site-01",
+    "tenant_overlay_version": "1.0.0",
+    "site_id": "paint-site-01",
+    "site_name": "Example automotive paint site"
+  },
+  "edge_gateway": {
+    "gateway_id": "example-automotive-paint-gateway",
+    "target_tenant_id": "example-automotive-paint",
+    "watch": {
+      "root": "/var/lib/visionqc-gateway/incoming",
+      "relative_path_regex": "^station/(?P<station_code>[A-Za-z0-9_-]+)$",
+      "filename_regex": "^(?P<product>[A-Za-z0-9_-]+)__batch=(?P<batch>[A-Za-z0-9_-]+)__captured=(?P<captured_at>[0-9]{8}T[0-9]{6})__seq=(?P<sequence>[0-9]{6})\\.(?P<extension>png|jpe?g)$",
+      "capture_map": {
+        "product_code": "product",
+        "batch_no": "batch",
+        "station_code": "station_code",
+        "captured_at": "captured_at"
+      },
+      "defaults": {
+        "product_revision": "PILOT-EXAMPLE"
+      },
+      "source": "edge-camera/example-automotive-paint/paint-site-01",
+      "allowed_extensions": [
+        ".png",
+        ".jpg",
+        ".jpeg"
+      ],
+      "timestamp_formats": [
+        "%Y%m%dT%H%M%S"
+      ],
+      "timezone_offset": "+08:00",
+      "stable_for_seconds": 1.0,
+      "archive_subdir": ".archive",
+      "quarantine_subdir": ".quarantine"
+    },
+    "simulator": {
+      "relative_dir_template": "station/PAINT-QC-01",
+      "filename_template": "{product}__batch={batch}__captured={captured_at}__seq={sequence}.{extension}",
+      "product": "painted_body_panel",
+      "station": "PAINT-QC-01",
+      "product_revision": "PILOT-EXAMPLE",
+      "batch_prefix": "EXAMPLE-AUTOMOTIVE-PAINT-DEMO",
+      "extension": ".png"
+    }
+  },
+  "industry_pack": {
+    "key": "automotive-paint",
+    "version": "1.0.0",
+    "sha256": "5c8ef7a86c2632cdf9329037292f2f03b4f306101e867cd7b9c2b760d3dcb16f"
+  },
+  "tenant_overlay": {
+    "key": "tenants/example-automotive-paint/paint-site-01",
+    "version": "1.0.0",
+    "sha256": "0aed99107eb4bdf93efd03e9468977a086caa7f24a4c822e1b93281b24e3c3ee"
+  },
+  "industry": "automotive-paint",
+  "terminology": {
+    "inspection": "Paint-surface inspection",
+    "anomaly": "Surface anomaly evidence",
+    "review": "Human quality review",
+    "batch_hold": "Workpiece hold"
+  },
+  "collection": {
+    "input_modes": [
+      "api_upload",
+      "folder_watch",
+      "usb_camera"
+    ],
+    "default_mode": "folder_watch",
+    "watch": {
+      "root": "./incoming",
+      "relative_path_regex": "^paint-shop/(?P<station_code>PAINT-QC-[A-Z0-9_-]+)/line/(?P<line>[A-Z0-9_-]+)$",
+      "filename_regex": "^(?P<body_id>[A-Z0-9_-]+)__model=(?P<model_variant>[A-Z0-9_-]+)__color=(?P<color_code>[A-Z0-9_-]+)__captured=(?P<captured_at>[0-9]{8}T[0-9]{6})__seq=(?P<sequence>[0-9]{6})\\.(?P<extension>png|jpe?g)$",
+      "capture_map": {
+        "batch_no": "body_id",
+        "station_code": "station_code",
+        "captured_at": "captured_at"
+      },
+      "defaults": {
+        "product_code": "painted_body_panel",
+        "product_revision": "REV-UNSPECIFIED"
+      },
+      "source": "edge-camera/automotive-paint",
+      "allowed_extensions": [
+        ".png",
+        ".jpg",
+        ".jpeg"
+      ],
+      "timestamp_formats": [
+        "%Y%m%dT%H%M%S"
+      ],
+      "timezone_offset": "+00:00",
+      "stable_for_seconds": 1.0,
+      "archive_subdir": ".archive",
+      "quarantine_subdir": ".quarantine"
+    },
+    "camera": {
+      "optional": true,
+      "default_index": 0,
+      "output_format": "jpeg"
+    },
+    "queue": {
+      "implementation": "sqlite-wal",
+      "at_least_once_upload": true,
+      "idempotency": "content-and-context-sha256"
+    },
+    "privacy": {
+      "local_processing_default": true,
+      "upload_requires_explicit_consent": true,
+      "secret_values_never_in_pack": true
+    }
+  },
+  "risk_strategy": {
+    "name": "dual-threshold-human-accountable",
+    "policy": {
+      "version": "automotive-paint-risk-policy-1.0.0",
+      "default": {
+        "product_code": null,
+        "station_code": null,
+        "review_threshold": 0.35,
+        "hold_threshold": 0.75
+      },
+      "overrides": []
+    },
+    "model_output_semantics": "Anomaly evidence only; semantic defect and process cause require authorized human confirmation.",
+    "fail_safe_route": "REVIEW_REQUIRED",
+    "automatic_release_allowed": false,
+    "approval_roles": [
+      "quality_manager",
+      "auditor"
+    ]
+  },
+  "workflow": {
+    "states": [
+      "RECEIVED",
+      "VALIDATED",
+      "INFERENCING",
+      "REVIEW_REQUIRED",
+      "BATCH_HELD",
+      "ACTION_PENDING",
+      "ACTION_COMPLETED",
+      "CLOSED"
+    ],
+    "transitions": [
+      {
+        "from": "RECEIVED",
+        "to": "VALIDATED"
+      },
+      {
+        "from": "REVIEW_REQUIRED",
+        "to": "ACTION_PENDING"
+      },
+      {
+        "from": "BATCH_HELD",
+        "to": "ACTION_PENDING"
+      },
+      {
+        "from": "ACTION_PENDING",
+        "to": "ACTION_COMPLETED"
+      }
+    ],
+    "external_action_approval_required": true,
+    "human_review_required_for": [
+      "REVIEW_REQUIRED",
+      "BATCH_HELD",
+      "INFERENCE_FAILED"
+    ]
+  },
+  "permissions": {
+    "roles": {
+      "inspector": [
+        "inspect",
+        "review"
+      ],
+      "quality_manager": [
+        "review",
+        "approve_external_action",
+        "close_incident"
+      ],
+      "fde": [
+        "validate_pack",
+        "draft_deployment"
+      ],
+      "auditor": [
+        "read_audit"
+      ]
+    },
+    "external_action_approval_roles": [
+      "quality_manager"
+    ],
+    "deployment_approval_roles": [
+      "quality_manager",
+      "fde"
+    ]
+  },
+  "retention": {
+    "raw_image_days": 30,
+    "metadata_days": 365,
+    "local_processing_default": true,
+    "delete_after_upload": false,
+    "legal_hold_supported": true
+  },
+  "localization": {
+    "default_locale": "en-US",
+    "supported_locales": [
+      "en-US",
+      "zh-CN"
+    ],
+    "timezone": "+08:00",
+    "terminology": {
+      "batch_hold": "Workpiece hold",
+      "review_required": "Review required"
+    }
+  },
+  "validation": {
+    "status": "resolved",
+    "validator": "app.deployment.resolve_pack",
+    "checks": [
+      "industry_pack_integrity",
+      "tenant_overlay_integrity",
+      "tenant_gateway_binding",
+      "field_mapping",
+      "policy_thresholds",
+      "connector_contracts"
+    ],
+    "warnings": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "manifest_sha256": "b68eaef84466219bdc9c22935238237747da638cdab0df8e393bf54d2757b4b6",
+    "canonicalization": "json-sort-keys-utf8-no-whitespace-v1",
+    "excludes": [
+      "integrity.manifest_sha256"
+    ]
+  },
+  "migration": {
+    "from_schema_versions": [
+      "visionqc.industry-pack.v1",
+      "visionqc.tenant-overlay.v1",
+      "visionqc.deployment-pack.v1"
+    ],
+    "strategy": "resolver",
+    "notes": "Resolve the immutable industry pack and tenant/site overlay before runtime activation."
+  }
+}

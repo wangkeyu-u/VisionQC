@@ -39,6 +39,19 @@ def test_gateway_heartbeat_is_tenant_and_gateway_scoped(
     assert heartbeat.json()["tenant_id"] == "factory-a"
     assert heartbeat.json()["status"] == "DEGRADED"
 
+    wrong_tenant_header = {**headers, "X-Tenant-ID": "factory-b"}
+    rejected_heartbeat = client.post(
+        "/api/v1/gateways/heartbeat",
+        headers=wrong_tenant_header,
+        json={
+            "gateway_id": "factory-a-gw-st07",
+            "gateway_version": "0.1.0",
+            "station_code": "ST-07 / 终检",
+            "queue_depth": 0,
+        },
+    )
+    assert rejected_heartbeat.status_code == 403
+
     statuses = client.get("/api/v1/gateways/status", headers=auth_headers(tenant_id="factory-a"))
     assert statuses.status_code == 200
     assert statuses.json()[0]["gateway_id"] == "factory-a-gw-st07"

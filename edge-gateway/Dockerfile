@@ -13,6 +13,10 @@ RUN groupadd --system visionqc && useradd --system --gid visionqc --create-home 
 COPY edge-gateway/pyproject.toml ./
 COPY edge-gateway/src ./src
 COPY backend/deployment-packs/manifests ./configs
+COPY backend/deployment-packs/industry-packs ./configs/industry-packs
+COPY backend/deployment-packs/overlays ./configs/overlays
+COPY backend/deployment-packs/examples ./configs/examples
+COPY backend/deployment-packs/schemas ./configs/schemas
 
 RUN pip install --upgrade pip && pip install . \
     && mkdir -p /var/lib/visionqc-gateway \

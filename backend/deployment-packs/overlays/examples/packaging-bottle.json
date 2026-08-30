@@ -1,0 +1,43 @@
+{
+  "schema_version": "visionqc.tenant-overlay.v1",
+  "overlay_key": "examples/packaging-bottle",
+  "version": "1.0.0",
+  "display_name": "Example packaging site · bottle",
+  "industry_pack": {"key": "packaging", "version": "1.0.0", "sha256": "86161e61211d36faad2c83676c36045b6e9d842fe4f3b4b3a604bd1ffa71b703"},
+  "tenant": {"id": "example-packaging", "name": "Example Packaging Site"},
+  "site": {"id": "packaging-site-01", "name": "Example packaging site", "timezone": "+08:00", "locale": "en-US"},
+  "input_mode": "folder_watch",
+  "products": [{"code": "bottle", "display_name": "Bottle", "revision": "B-2026.07", "aliases": ["BT-EXAMPLE"]}],
+  "stations": [{"code": "CELL-12", "display_name": "Bottle ring inspection", "description": "Example packaging surface inspection cell.", "camera_profile": "packaging-multi-view"}],
+  "field_labels": {"product_code": "SKU", "product_revision": "Revision", "batch_no": "Lot ID", "station_code": "Cell", "captured_at": "Captured at", "source": "Source system"},
+  "terminology": {"inspection": "Bottle inspection", "anomaly": "Surface anomaly evidence", "batch_hold": "Lot hold"},
+  "connectors": {
+    "mes": {"display_name": "Simulated MES for example smoke", "driver": "mock_http", "contract_version": "mes-batch-v1-simulated", "endpoint": "http://mock-external:8081/mes", "payload_mapping": {"batch_no": "lot_id", "reason": "hold_reason", "disposition": "quality_disposition"}, "fixed_fields": {"source_system": "VisionQC example packaging; simulated"}, "operations": ["HOLD_BATCH", "RELEASE_BATCH"], "capability": "mes", "secret_refs": [], "simulated": true},
+    "qms": {"display_name": "Generic QMS for example smoke", "driver": "mock_http", "contract_version": "generic-qms-case.v1-simulated", "endpoint": "http://mock-external:8081/generic-qms", "payload_mapping": {"inspection_id": "case_reference", "batch_no": "batch_reference", "station_code": "station_reference", "disposition": "disposition", "reason": "reason"}, "fixed_fields": {"source_system": "VisionQC generic QMS mock; simulated"}, "operations": ["CREATE_TICKET", "UPDATE_TICKET", "CLOSE_TICKET"], "capability": "qms", "secret_refs": [], "simulated": true}
+  },
+  "localization": {"default_locale": "en-US", "supported_locales": ["en-US", "zh-CN"], "timezone": "+08:00", "terminology": {"review_required": "Review required", "batch_hold": "Lot hold"}},
+  "retention": {"raw_image_days": 30, "metadata_days": 365, "local_processing_default": true, "delete_after_upload": false, "legal_hold_supported": true},
+  "edge_gateway": {
+    "gateway_id": "example-packaging-gateway",
+    "target_tenant_id": "example-packaging",
+    "watch": {
+      "root": "/var/lib/visionqc-gateway/incoming",
+      "relative_path_regex": "^cell/(?P<station_code>CELL-[A-Z0-9_-]+)/date/(?P<date>[0-9]{4}/[0-9]{2}/[0-9]{2})$",
+      "filename_regex": "^(?P<product>BT-EXAMPLE|bottle)__lot=(?P<batch>LOT-[A-Z0-9_-]+)__captured=(?P<captured_at>[0-9]{8}T[0-9]{6})__seq=(?P<sequence>[0-9]{6})\\.(?P<extension>png|jpe?g)$",
+      "capture_map": {"product_code": "product", "batch_no": "batch", "station_code": "station_code", "captured_at": "captured_at"},
+      "defaults": {"product_revision": "B-2026.07"},
+      "source": "edge-camera/example-packaging",
+      "allowed_extensions": [".png", ".jpg", ".jpeg"],
+      "timestamp_formats": ["%Y%m%dT%H%M%S"],
+      "timezone_offset": "+08:00",
+      "stable_for_seconds": 0,
+      "archive_subdir": ".archive",
+      "quarantine_subdir": ".quarantine"
+    },
+    "simulator": {"relative_dir_template": "cell/CELL-12/date/{date}", "filename_template": "{product}__lot={batch}__captured={captured_at}__seq={sequence}.{extension}", "product": "BT-EXAMPLE", "station": "CELL-12", "product_revision": "B-2026.07", "batch_prefix": "LOT-P-DEMO", "extension": ".jpg"}
+  },
+  "validation": {"status": "checked-in-example", "validator": "scripts/visionqc.py validate-pack", "checks": ["overlay_schema", "industry_reference", "tenant_gateway_binding", "secret_refs", "integrity_hash"], "warnings": ["All external systems are simulated; replace endpoints only after contract approval."]},
+  "integrity": {"algorithm": "sha256", "manifest_sha256": "29c0cdd5a395dc0c385d857bfd7d242ae5269500ca18fd4cda6f95dc52e5f46e", "canonicalization": "json-sort-keys-utf8-no-whitespace-v1", "excludes": ["integrity.manifest_sha256"]},
+  "migration": {"from_schema_versions": ["visionqc.tenant-overlay.v1", "visionqc.deployment-pack.v1"], "strategy": "resolver", "notes": "This tenant/site overlay is generated from the packaging Industry Pack and can be replaced without changing application code."},
+  "metadata": {"example_status": "synthetic_configuration_only", "customer_specific": false, "real_customer_integration": false, "secret_material_included": false}
+}

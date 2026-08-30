@@ -1,6 +1,14 @@
 # VisionQC backend
 
-The backend is a FastAPI modular monolith backed by PostgreSQL and an outbox worker. It deliberately treats model output as anomaly evidence, never as a confirmed semantic defect.
+The backend is a FastAPI modular monolith backed by PostgreSQL and an outbox worker. It deliberately treats model output as anomaly evidence, never as a confirmed semantic defect. Industry Pack and tenant/site overlay configuration are resolved before bootstrap; the workflow consumes canonical fields and connector capabilities rather than customer-name branches.
+
+Generate a customer configuration without a code fork:
+
+```bash
+uv run python ../scripts/visionqc.py init-tenant \
+  --industry electronics --tenant-id customer-1 --output-dir deployment-packs/tenants/customer-1
+uv run python ../scripts/visionqc.py validate-pack deployment-packs/tenants/customer-1
+```
 
 ## Local test
 
@@ -17,7 +25,8 @@ python -m venv .venv
 docker compose -f infra/docker-compose.yml up --build
 ```
 
-OpenAPI is available at `http://localhost:8000/docs`; Mock MES/QMS is at `http://localhost:8081/docs`.
+OpenAPI is available at `http://localhost:8000/docs`; the local external service and
+`generic_qms_mock` are simulated contracts at `http://localhost:8081/docs`.
 
 Business endpoints require an HS256 JWT whose claims include `sub`, `tenant_id`, `roles`, and issuer `visionqc`. Generate a local token with `app.auth.create_access_token`; do not use the compose development secret outside local/demo environments.
 

@@ -78,7 +78,8 @@
         "source_system": "VisionQC simulated MES; not a production connector",
         "portfolio_boundary": "independent portfolio concept"
       },
-      "operations": ["HOLD_BATCH", "RELEASE_BATCH"]
+      "operations": ["HOLD_BATCH", "RELEASE_BATCH"],
+      "simulated": true
     },
     "qms": {
       "display_name": "Simulated QMS quality case",
@@ -98,7 +99,8 @@
         "source_system": "VisionQC simulated QMS; not a production connector",
         "priority": "P1"
       },
-      "operations": ["CREATE_TICKET", "UPDATE_TICKET", "CLOSE_TICKET"]
+      "operations": ["CREATE_TICKET", "UPDATE_TICKET", "CLOSE_TICKET"],
+      "simulated": true
     },
     "dxq_mock": {
       "display_name": "Simulated DXQ quality-loop record (mock only)",
@@ -136,7 +138,8 @@
         "LINK_PROCESS_CONTEXT",
         "ANALYZE_ROOT_CAUSE",
         "CLOSE_QUALITY_CASE"
-      ]
+      ],
+      "simulated": true
     }
   },
   "metadata": {

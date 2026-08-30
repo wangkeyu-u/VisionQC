@@ -1,5 +1,13 @@
 name: visionqc
 
+x-edge-gateway-base: &edge-gateway-base
+  build:
+    context: ..
+    dockerfile: edge-gateway/Dockerfile
+  depends_on:
+    api:
+      condition: service_healthy
+
 services:
   postgres:
     image: postgres:17.5-alpine
@@ -73,8 +81,9 @@ services:
       VQC_S3_SECRET_KEY: visionqc-local-minio
       VQC_MES_BASE_URL: http://mock-external:8081/mes
       VQC_QMS_BASE_URL: http://mock-external:8081/qms
-      VQC_BOOTSTRAP_TENANT_IDS: factory-a,factory-b,duerr-demo
-      VQC_DEMO_SWITCHABLE_TENANT_IDS: factory-a,factory-b,duerr-demo
+      VQC_DEPLOYMENT_MANIFEST_DIR: /app/deployment-packs/examples
+      VQC_BOOTSTRAP_TENANT_IDS: factory-a,factory-b,duerr-demo,example-electronics,example-packaging,example-automotive-paint
+      VQC_DEMO_SWITCHABLE_TENANT_IDS: factory-a,factory-b,duerr-demo,example-electronics,example-packaging,example-automotive-paint
     depends_on:
       postgres:
         condition: service_healthy
@@ -205,6 +214,121 @@ services:
       retries: 20
     ports:
       - "8093:8093"
+    profiles: ["customer-concept"]
+
+  # One clear environment-controlled entry point.  Change only
+  # VQC_GATEWAY_PACK_PATH (and, for a customer pack, VQC_GATEWAY_ID) to run a
+  # different tenant/site without changing application code.
+  edge-gateway-selected:
+    <<: *edge-gateway-base
+    command:
+      ["uvicorn", "edge_gateway.main:app", "--host", "0.0.0.0", "--port", "${VQC_GATEWAY_STATUS_PORT:-8090}"]
+    environment:
+      VQC_GATEWAY_MODE: ${VQC_GATEWAY_MODE:-demo}
+      VQC_GATEWAY_VERSION: ${VQC_GATEWAY_VERSION:-0.1.0}
+      VQC_GATEWAY_ID: ${VQC_GATEWAY_ID:-gateway-local}
+      VQC_GATEWAY_BACKEND_URL: ${VQC_GATEWAY_BACKEND_URL:-http://api:8000/api/v1}
+      VQC_GATEWAY_PACK_PATH: ${VQC_GATEWAY_PACK_PATH:-/app/configs/examples/electronics-transistor/resolved-deployment-pack.json}
+      VQC_GATEWAY_DATA_DIR: ${VQC_GATEWAY_DATA_DIR:-/var/lib/visionqc-gateway}
+      VQC_GATEWAY_WATCH_ROOT: ${VQC_GATEWAY_WATCH_ROOT:-/var/lib/visionqc-gateway/incoming}
+      VQC_GATEWAY_STATUS_PORT: ${VQC_GATEWAY_STATUS_PORT:-8090}
+      VQC_GATEWAY_AUTH_SECRET: ${VQC_GATEWAY_AUTH_SECRET:-visionqc-local-jwt-secret-change-me}
+      VQC_GATEWAY_AUTH_ISSUER: ${VQC_GATEWAY_AUTH_ISSUER:-visionqc}
+      VQC_GATEWAY_UPLOAD_ENABLED: ${VQC_GATEWAY_UPLOAD_ENABLED:-false}
+      VQC_GATEWAY_DATA_CONSENT: ${VQC_GATEWAY_DATA_CONSENT:-false}
+    volumes:
+      - edge-gateway-selected-data:/var/lib/visionqc-gateway
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:${VQC_GATEWAY_STATUS_PORT:-8090}/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "${VQC_GATEWAY_STATUS_PORT:-8090}:${VQC_GATEWAY_STATUS_PORT:-8090}"
+
+  # Deterministic three-industry examples used for onboarding and smoke tests.
+  # They are opt-in so the default demo remains small; see
+  # docs/PLATFORM-QUICKSTART.md for the command.
+  edge-gateway-electronics-example:
+    <<: *edge-gateway-base
+    command: ["uvicorn", "edge_gateway.main:app", "--host", "0.0.0.0", "--port", "8094"]
+    environment:
+      VQC_GATEWAY_MODE: demo
+      VQC_GATEWAY_VERSION: 0.1.0
+      VQC_GATEWAY_ID: example-electronics-gateway
+      VQC_GATEWAY_BACKEND_URL: http://api:8000/api/v1
+      VQC_GATEWAY_PACK_PATH: /app/configs/examples/electronics-transistor/resolved-deployment-pack.json
+      VQC_GATEWAY_DATA_DIR: /var/lib/visionqc-gateway
+      VQC_GATEWAY_WATCH_ROOT: /var/lib/visionqc-gateway/incoming
+      VQC_GATEWAY_STATUS_PORT: 8094
+      VQC_GATEWAY_AUTH_SECRET: visionqc-local-jwt-secret-change-me
+      VQC_GATEWAY_AUTH_ISSUER: visionqc
+      VQC_GATEWAY_UPLOAD_ENABLED: "false"
+      VQC_GATEWAY_DATA_CONSENT: "false"
+    volumes:
+      - edge-gateway-electronics-example-data:/var/lib/visionqc-gateway
+    profiles: ["industry-examples"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8094/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "8094:8094"
+
+  edge-gateway-packaging-example:
+    <<: *edge-gateway-base
+    command: ["uvicorn", "edge_gateway.main:app", "--host", "0.0.0.0", "--port", "8095"]
+    environment:
+      VQC_GATEWAY_MODE: demo
+      VQC_GATEWAY_VERSION: 0.1.0
+      VQC_GATEWAY_ID: example-packaging-gateway
+      VQC_GATEWAY_BACKEND_URL: http://api:8000/api/v1
+      VQC_GATEWAY_PACK_PATH: /app/configs/examples/packaging-bottle/resolved-deployment-pack.json
+      VQC_GATEWAY_DATA_DIR: /var/lib/visionqc-gateway
+      VQC_GATEWAY_WATCH_ROOT: /var/lib/visionqc-gateway/incoming
+      VQC_GATEWAY_STATUS_PORT: 8095
+      VQC_GATEWAY_AUTH_SECRET: visionqc-local-jwt-secret-change-me
+      VQC_GATEWAY_AUTH_ISSUER: visionqc
+      VQC_GATEWAY_UPLOAD_ENABLED: "false"
+      VQC_GATEWAY_DATA_CONSENT: "false"
+    volumes:
+      - edge-gateway-packaging-example-data:/var/lib/visionqc-gateway
+    profiles: ["industry-examples"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8095/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "8095:8095"
+
+  edge-gateway-automotive-paint-example:
+    <<: *edge-gateway-base
+    command: ["uvicorn", "edge_gateway.main:app", "--host", "0.0.0.0", "--port", "8096"]
+    environment:
+      VQC_GATEWAY_MODE: demo
+      VQC_GATEWAY_VERSION: 0.1.0
+      VQC_GATEWAY_ID: example-automotive-paint-gateway
+      VQC_GATEWAY_BACKEND_URL: http://api:8000/api/v1
+      VQC_GATEWAY_PACK_PATH: /app/configs/examples/automotive-paint/resolved-deployment-pack.json
+      VQC_GATEWAY_DATA_DIR: /var/lib/visionqc-gateway
+      VQC_GATEWAY_WATCH_ROOT: /var/lib/visionqc-gateway/incoming
+      VQC_GATEWAY_STATUS_PORT: 8096
+      VQC_GATEWAY_AUTH_SECRET: visionqc-local-jwt-secret-change-me
+      VQC_GATEWAY_AUTH_ISSUER: visionqc
+      VQC_GATEWAY_UPLOAD_ENABLED: "false"
+      VQC_GATEWAY_DATA_CONSENT: "false"
+    volumes:
+      - edge-gateway-automotive-paint-example-data:/var/lib/visionqc-gateway
+    profiles: ["industry-examples"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8096/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "8096:8096"
 
   edge-simulator-a:
     build:
@@ -231,7 +355,7 @@ services:
     command: ["python", "-m", "edge_gateway.simulator", "--pack", "/app/configs/duerr-demo-paint-quality.json", "--root", "/var/lib/visionqc-gateway/incoming", "--continuous", "--interval", "7"]
     volumes:
       - edge-gateway-duerr-data:/var/lib/visionqc-gateway
-    profiles: ["simulator"]
+    profiles: ["simulator", "customer-concept"]
 
 volumes:
   postgres-data:
@@ -239,3 +363,7 @@ volumes:
   edge-gateway-a-data:
   edge-gateway-b-data:
   edge-gateway-duerr-data:
+  edge-gateway-selected-data:
+  edge-gateway-electronics-example-data:
+  edge-gateway-packaging-example-data:
+  edge-gateway-automotive-paint-example-data:

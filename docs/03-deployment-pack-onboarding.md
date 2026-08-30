@@ -4,20 +4,24 @@
 
 ## 1. 交付边界
 
-一个 Deployment Pack 必须同时定义：
+一个可运行的 v2 Deployment Pack 由 Industry Pack 和 tenant/site overlay 解析得到，必须同时定义：
 
 - 客户和 pack key：`tenant.id`、`pack_key`、版本和接入模式。
+- 来源引用与完整性：`industry_pack`、`tenant_overlay`、schema/validation、SHA-256 和 migration notes。
 - 产品目录和工位目录：允许的产品代码/别名、版本、工位、相机 profile。
 - 字段映射：canonical 的 `product_code`、`product_revision`、`batch_no`、`station_code`、`captured_at`、`source` 到客户入站字段的映射。
 - 模型证据元数据：模型 ID、版本、特征库版本、适配器、包 URI、运行时和限制。
 - 策略：默认复核/暂扣阈值以及按产品/工位的覆盖规则。
 - Connector 合同：显示名、驱动、外部合同版本、端点、canonical→外部字段映射、固定字段和允许操作。
 - Edge Gateway 合同（若启用目录采集）：`gateway_id`、`target_tenant_id`、监听根目录、相对路径/文件名正则、capture map、默认上下文、稳定窗口和模拟器模板。
+- 治理边界：权限/审批角色、raw/metadata 保留期、local processing 默认值和 locale/timezone。
 
-当前仓库的示例位于：
+当前仓库的三组可复用/可运行示例位于：
 
-- `backend/deployment-packs/manifests/factory-a-transistor.json`
-- `backend/deployment-packs/manifests/factory-b-bottle.json`
+- `backend/deployment-packs/industry-packs/electronics.json` + `overlays/examples/electronics-transistor.json`
+- `backend/deployment-packs/industry-packs/packaging.json` + `overlays/examples/packaging-bottle.json`
+- `backend/deployment-packs/industry-packs/automotive-paint.json` + `overlays/examples/automotive-paint.json`
+- 解析后的 artifact 在 `backend/deployment-packs/examples/*/resolved-deployment-pack.json`。
 
 边缘网关的运行与故障排查见 [工业边缘采集网关部署与运维手册](04-edge-gateway-deployment.md)。Gateway 只读取当前 pack 的 tenant/product/station/field mapping，不在代码里写客户条件分支。
 
@@ -25,21 +29,31 @@ Factory B 刻意使用 `sku / lot_id / cell`，瓶体模型元数据、阈值和
 
 ## 2. 接入新客户流程
 
-### 2.1 创建 manifest
+### 2.1 生成 overlay 和 resolved pack
 
-复制一份示例并修改客户数据。不要把密码、Bearer token、数据库连接串或对象存储密钥放进 manifest。Connector 的 `endpoint`、固定字段和映射可以提交，凭据必须由部署环境的 secret provider 注入。
+使用参数化 CLI 生成客户配置，不需要复制代码或手写完整 manifest：
+
+```bash
+cd backend
+uv run python ../scripts/visionqc.py init-tenant \
+  --industry electronics --tenant-id customer-1 \
+  --site-id site-01 --output-dir deployment-packs/tenants/customer-1
+```
+
+不要把密码、Bearer token、数据库连接串或对象存储密钥放进 overlay。Connector 的 endpoint、固定字段和映射可以提交，凭据必须由部署环境的 secret provider 注入。
 
 ### 2.2 离线校验
 
 在提交代码或交付包前运行：
 
 ```bash
-python scripts/validate_deployment_pack.py \
-  backend/deployment-packs/manifests/factory-a-transistor.json \
-  backend/deployment-packs/manifests/factory-b-bottle.json
+cd backend
+uv run python ../scripts/visionqc.py validate-pack \
+  deployment-packs/industry-packs deployment-packs/overlays/examples \
+  deployment-packs/examples
 ```
 
-校验器会执行 JSON/Pydantic 合同、产品/工位唯一性、字段映射唯一性、策略阈值顺序、策略覆盖冲突和 MES/QMS 合同结构检查。同一批输入不允许出现两个相同 tenant 或 pack key。
+校验器会执行 JSON/Pydantic 合同、产品/工位唯一性、字段映射唯一性、策略阈值顺序、Connector capability/操作/secret ref、v2 hash 和 migration 检查。旧的 `scripts/validate_deployment_pack.py` 仍用于兼容的 v1 文件。
 
 ### 2.3 创建、预检查和激活
 
@@ -70,11 +84,12 @@ POST /api/v1/auth/switch-tenant { "tenant_id": "factory-b" }
 
 ## 4. 默认 Compose 验收
 
-默认演示仍然是单命令启动：
+默认演示可以通过一个配置路径启动 selected Gateway：
 
 ```bash
 cd infra
-docker compose up --build
+VQC_GATEWAY_PACK_PATH=/app/configs/examples/electronics-transistor/resolved-deployment-pack.json \
+docker compose up --build api frontend edge-gateway-selected
 ```
 
 Compose 会 bootstrap Factory A 和 Factory B，默认模型仍使用轻量 deterministic stub，因此不需要下载大模型。完整冒烟测试通过前端反向代理，并验证：

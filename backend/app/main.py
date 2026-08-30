@@ -17,9 +17,17 @@ from starlette.responses import Response
 from app.api import router
 from app.bootstrap import bootstrap_defaults
 from app.config import Settings, get_settings
-from app.connectors import Connector, HttpConnector, InMemoryConnector
+from app.connectors import (
+    Connector,
+    ConnectorCapability,
+    ConnectorRegistry,
+    ConnectorSpec,
+    HttpConnector,
+    InMemoryConnector,
+)
 from app.database import build_engine, build_session_factory
 from app.dxq_mock import DxqMockConnector
+from app.generic_qms_mock import GenericQmsMockConnector
 from app.model_adapter import build_model_adapter
 from app.schemas import ErrorBody
 from app.services import ServiceError, VisionQCService
@@ -38,20 +46,98 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         package_path=resolved.model_package_path,
         device=resolved.model_device,
     )
+    registry = ConnectorRegistry()
     if resolved.environment == "test":
-        connectors: dict[str, Connector] = {
-            "MES": InMemoryConnector("mes"),
-            "QMS": InMemoryConnector("qms"),
-            "DXQ_MOCK": DxqMockConnector(),
-        }
+        registry.register(
+            "MES",
+            InMemoryConnector("mes"),
+            ConnectorSpec(
+                name="MES",
+                capability=ConnectorCapability.MES,
+                driver="in_memory_mock",
+                contract_version="mes-batch-v1-simulated",
+                endpoint="memory://mes",
+                operations=["HOLD_BATCH", "RELEASE_BATCH"],
+                simulated=True,
+            ),
+        )
+        registry.register(
+            "QMS",
+            GenericQmsMockConnector(),
+            ConnectorSpec(
+                name="QMS",
+                capability=ConnectorCapability.QMS,
+                driver="generic_qms_mock",
+                contract_version="generic-qms-case.v1",
+                endpoint="mock://generic-qms",
+                operations=["CREATE_TICKET", "UPDATE_TICKET", "CLOSE_TICKET"],
+                simulated=True,
+            ),
+        )
+        registry.register(
+            "DXQ_MOCK",
+            DxqMockConnector(),
+            ConnectorSpec(
+                name="DXQ_MOCK",
+                capability=ConnectorCapability.QMS,
+                driver="dxq_mock",
+                contract_version="simulated-dxq-quality-loop.v1",
+                endpoint="mock://dxq-quality-loop",
+                operations=[
+                    "PUBLISH_QUALITY_EVENT",
+                    "LINK_PROCESS_CONTEXT",
+                    "ANALYZE_ROOT_CAUSE",
+                    "CLOSE_QUALITY_CASE",
+                ],
+                simulated=True,
+            ),
+        )
     else:
-        connectors = {
-            "MES": HttpConnector("mes", resolved.mes_base_url),
-            "QMS": HttpConnector("qms", resolved.qms_base_url),
-            # This is intentionally always a local in-process simulation.  A
-            # manifest must opt into it; it is never a private DXQ client.
-            "DXQ_MOCK": DxqMockConnector(),
-        }
+        registry.register(
+            "MES",
+            HttpConnector("mes", resolved.mes_base_url),
+            ConnectorSpec(
+                name="MES",
+                capability=ConnectorCapability.MES,
+                driver="http",
+                contract_version="mes-batch-v1",
+                endpoint=resolved.mes_base_url,
+                operations=["HOLD_BATCH", "RELEASE_BATCH"],
+            ),
+        )
+        registry.register(
+            "QMS",
+            HttpConnector("qms", resolved.qms_base_url),
+            ConnectorSpec(
+                name="QMS",
+                capability=ConnectorCapability.QMS,
+                driver="http",
+                contract_version="qms-ticket-v1",
+                endpoint=resolved.qms_base_url,
+                operations=["CREATE_TICKET", "UPDATE_TICKET", "CLOSE_TICKET"],
+            ),
+        )
+        # This is intentionally always a local in-process simulation.  A
+        # manifest must opt into it; it is never a private customer client.
+        registry.register(
+            "DXQ_MOCK",
+            DxqMockConnector(),
+            ConnectorSpec(
+                name="DXQ_MOCK",
+                capability=ConnectorCapability.QMS,
+                driver="dxq_mock",
+                contract_version="simulated-dxq-quality-loop.v1",
+                endpoint="mock://dxq-quality-loop",
+                operations=[
+                    "PUBLISH_QUALITY_EVENT",
+                    "LINK_PROCESS_CONTEXT",
+                    "ANALYZE_ROOT_CAUSE",
+                    "CLOSE_QUALITY_CASE",
+                ],
+                simulated=True,
+            ),
+        )
+    connectors: dict[str, Connector] = registry.connectors
     service = VisionQCService(
         settings=resolved,
         session_factory=session_factory,
@@ -81,6 +167,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.engine = engine
     app.state.session_factory = session_factory
     app.state.service = service
+    app.state.connector_registry = registry
 
     app.add_middleware(
         CORSMiddleware,
@@ -93,6 +180,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "Idempotency-Key",
             "X-Correlation-ID",
             "X-Gateway-ID",
+            "X-Tenant-ID",
+            "X-Deployment-Pack",
+            "X-Deployment-Pack-Version",
         ],
         expose_headers=["X-Correlation-ID"],
     )

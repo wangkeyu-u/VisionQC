@@ -6,6 +6,8 @@ from typing import Any
 from fastapi import FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel
 
+from app.generic_qms_mock import validate_qms_case
+
 
 class ActionResponse(BaseModel):
     external_reference: str
@@ -39,8 +41,15 @@ class MockStore:
             return response
 
 
-app = FastAPI(title="VisionQC Mock MES/QMS", version="0.1.0")
-stores = {"mes": MockStore("MES"), "qms": MockStore("QMS")}
+app = FastAPI(title="VisionQC Neutral External Connector Mocks", version="0.2.0")
+# ``qms`` keeps the original compatibility endpoint. ``generic-qms`` is an
+# explicitly neutral contract used by the Industry Pack examples; both are
+# simulations and never represent a customer or vendor API.
+stores = {
+    "mes": MockStore("MES"),
+    "qms": MockStore("QMS"),
+    "generic-qms": MockStore("GENERIC-QMS"),
+}
 
 
 @app.get("/{system}/health")
@@ -60,6 +69,11 @@ async def execute(
     if system not in stores:
         raise HTTPException(status_code=404)
     payload = await request.json()
+    if system == "generic-qms":
+        try:
+            validate_qms_case(payload)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
     if payload.get("_simulate") == "always_fail":
         raise HTTPException(status_code=503, detail="injected failure")
     try:

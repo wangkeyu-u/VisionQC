@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://visionqc.example/schemas/visionqc-industry-pack-v1.schema.json",
+  "title": "VisionQC Industry Pack v1",
+  "type": "object",
+  "required": ["schema_version", "pack_key", "version", "display_name", "description", "industry", "products", "stations", "field_mapping", "field_labels", "terminology", "collection", "model", "policy", "risk_strategy", "workflow", "connectors", "permissions", "retention", "localization", "validation", "integrity", "migration"],
+  "properties": {
+    "schema_version": {"const": "visionqc.industry-pack.v1"},
+    "pack_key": {"type": "string"},
+    "version": {"type": "string"},
+    "display_name": {"type": "string"},
+    "description": {"type": "string"},
+    "industry": {"type": "string"},
+    "products": {"type": "array", "minItems": 1},
+    "stations": {"type": "array", "minItems": 1},
+    "field_mapping": {"type": "object"},
+    "field_labels": {"type": "object"},
+    "terminology": {"type": "object"},
+    "collection": {"type": "object"},
+    "model": {"type": "object"},
+    "policy": {"type": "object"},
+    "risk_strategy": {"type": "object"},
+    "workflow": {"type": "object"},
+    "connectors": {"type": "object", "minProperties": 1},
+    "permissions": {"type": "object"},
+    "retention": {"type": "object"},
+    "localization": {"type": "object"},
+    "validation": {"type": "object"},
+    "integrity": {"type": "object"},
+    "migration": {"type": "object"}
+  }
+}

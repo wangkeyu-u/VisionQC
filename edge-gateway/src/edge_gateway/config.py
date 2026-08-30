@@ -22,7 +22,12 @@ class GatewaySettings(BaseSettings):
     version: str = "0.1.0"
     gateway_id: str = "gateway-local"
     backend_url: str = "http://localhost:8000/api/v1"
-    pack_path: Path = Path("../backend/deployment-packs/manifests/factory-a-transistor.json")
+    # The selected pack is the only tenant-specific runtime input.  The
+    # checked-in default is a neutral electronics example; production uses an
+    # absolute path supplied by the deployment environment.
+    pack_path: Path = Path(
+        "../backend/deployment-packs/examples/electronics-transistor/resolved-deployment-pack.json"
+    )
     data_dir: Path = Path("./.visionqc-gateway")
     # A relative default keeps importing the demo app safe on a developer
     # laptop; Compose/production supplies an explicit persistent mount.
@@ -40,7 +45,7 @@ class GatewaySettings(BaseSettings):
     # explicitly enables transfer and records consent for this purpose.
     upload_enabled: bool = False
     data_consent: bool = False
-    data_purpose: str = "本地涂装质量检测与人工复核"
+    data_purpose: str = "本地工业质量检测与人工复核"
     retention_days: int = Field(default=30, ge=1, le=3650)
     delete_after_upload: bool = False
     quality_failure_mode: Literal["REJECT", "SAFE_REVIEW"] = "REJECT"

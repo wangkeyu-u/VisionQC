@@ -1,0 +1,439 @@
+{
+  "schema_version": "visionqc.deployment-pack.v2",
+  "pack_key": "example-electronics/electronics",
+  "version": "1.0.0",
+  "display_name": "Electronics visual quality · Example electronics site",
+  "tenant": {
+    "id": "example-electronics",
+    "name": "Example Electronics Site"
+  },
+  "input_mode": "folder_watch",
+  "products": [
+    {
+      "code": "transistor",
+      "display_name": "Transistor module",
+      "revision": "REV-C",
+      "aliases": []
+    }
+  ],
+  "stations": [
+    {
+      "code": "ST-07",
+      "display_name": "Final inspection",
+      "description": "Generic electronics visual inspection station.",
+      "camera_profile": "electronics-single-view"
+    }
+  ],
+  "field_mapping": {
+    "product_code": "product_code",
+    "product_revision": "product_revision",
+    "batch_no": "batch_no",
+    "station_code": "station_code",
+    "captured_at": "captured_at",
+    "source": "source"
+  },
+  "field_labels": {
+    "product_code": "Product code",
+    "product_revision": "Product revision",
+    "batch_no": "Batch",
+    "station_code": "Station",
+    "captured_at": "Captured at",
+    "source": "Source"
+  },
+  "model": {
+    "id": "patchcore-electronics-example",
+    "version": "0.1.0-demo",
+    "feature_bank_version": "not-qualified",
+    "adapter": "anomalib.patchcore.v2",
+    "runtime": "local-edge-runtime",
+    "device": "CPU or customer-approved GPU",
+    "package_uri": "models/electronics/not-qualified",
+    "package_sha256": "demo-only-not-qualified",
+    "score_semantics": "Normalized anomaly evidence; not a semantic defect or release decision.",
+    "limitations": [
+      "Example model metadata is not production qualification evidence.",
+      "Site calibration and frozen holdout evidence are required before activation."
+    ]
+  },
+  "policy": {
+    "version": "electronics-risk-policy-1.0.0",
+    "default": {
+      "product_code": null,
+      "station_code": null,
+      "review_threshold": 0.4,
+      "hold_threshold": 0.8
+    },
+    "overrides": []
+  },
+  "connectors": {
+    "mes": {
+      "display_name": "MES capability (configure per site)",
+      "driver": "mock_http",
+      "contract_version": "mes-batch-v1",
+      "endpoint": "http://mock-external:8081/mes",
+      "payload_mapping": {
+        "batch_no": "batch_no",
+        "reason": "reason",
+        "disposition": "disposition"
+      },
+      "fixed_fields": {
+        "source_system": "VisionQC neutral example"
+      },
+      "operations": [
+        "HOLD_BATCH",
+        "RELEASE_BATCH"
+      ],
+      "capability": "mes",
+      "health_path": "/health",
+      "timeout_seconds": 5.0,
+      "retry_max_attempts": 3,
+      "retry_backoff_seconds": 0.5,
+      "idempotency_header": "Idempotency-Key",
+      "secret_refs": [
+        "VQC_MES_API_TOKEN"
+      ],
+      "simulated": false
+    },
+    "qms": {
+      "display_name": "Generic QMS case mock",
+      "driver": "generic_qms_mock",
+      "contract_version": "generic-qms-case.v1",
+      "endpoint": "mock://generic-qms",
+      "payload_mapping": {
+        "inspection_id": "case_reference",
+        "batch_no": "batch_reference",
+        "station_code": "station_reference",
+        "disposition": "disposition",
+        "reason": "reason"
+      },
+      "fixed_fields": {
+        "source_system": "VisionQC neutral simulated QMS"
+      },
+      "operations": [
+        "CREATE_TICKET",
+        "UPDATE_TICKET",
+        "CLOSE_TICKET"
+      ],
+      "capability": "qms",
+      "health_path": "/health",
+      "timeout_seconds": 5.0,
+      "retry_max_attempts": 3,
+      "retry_backoff_seconds": 0.5,
+      "idempotency_header": "Idempotency-Key",
+      "secret_refs": [],
+      "simulated": true
+    },
+    "dxq_mock": null,
+    "ingest": {
+      "display_name": "Local ingest boundary",
+      "driver": "edge_gateway",
+      "contract_version": "visionqc-ingest.v1",
+      "endpoint": "local://edge-gateway",
+      "payload_mapping": {},
+      "fixed_fields": {},
+      "operations": [
+        "INGEST_IMAGE"
+      ],
+      "capability": "ingest",
+      "health_path": "/health",
+      "timeout_seconds": 10.0,
+      "retry_max_attempts": 3,
+      "retry_backoff_seconds": 0.5,
+      "idempotency_header": "Idempotency-Key",
+      "secret_refs": [],
+      "simulated": false
+    },
+    "notification": {
+      "display_name": "Notification capability placeholder",
+      "driver": "mock_http",
+      "contract_version": "notification-event-v1",
+      "endpoint": "mock://notification",
+      "payload_mapping": {},
+      "fixed_fields": {},
+      "operations": [
+        "SEND_ALERT"
+      ],
+      "capability": "notification",
+      "health_path": "/health",
+      "timeout_seconds": 10.0,
+      "retry_max_attempts": 3,
+      "retry_backoff_seconds": 0.5,
+      "idempotency_header": "Idempotency-Key",
+      "secret_refs": [],
+      "simulated": false
+    },
+    "analytics": {
+      "display_name": "Analytics event placeholder",
+      "driver": "mock_http",
+      "contract_version": "analytics-event-v1",
+      "endpoint": "mock://analytics",
+      "payload_mapping": {},
+      "fixed_fields": {},
+      "operations": [
+        "PUBLISH_METRIC"
+      ],
+      "capability": "analytics",
+      "health_path": "/health",
+      "timeout_seconds": 10.0,
+      "retry_max_attempts": 3,
+      "retry_backoff_seconds": 0.5,
+      "idempotency_header": "Idempotency-Key",
+      "secret_refs": [],
+      "simulated": false
+    },
+    "generic_qms_mock": null
+  },
+  "metadata": {
+    "example_status": "synthetic_configuration_only",
+    "customer_specific": true,
+    "real_connector_configured": false,
+    "secret_material_included": false,
+    "generated_by": "visionqc init-tenant",
+    "site_validation_required": true,
+    "industry_pack_key": "electronics",
+    "industry_pack_version": "1.0.0",
+    "tenant_overlay_key": "tenants/example-electronics/electronics-site-01",
+    "tenant_overlay_version": "1.0.0",
+    "site_id": "electronics-site-01",
+    "site_name": "Example electronics site"
+  },
+  "edge_gateway": {
+    "gateway_id": "example-electronics-gateway",
+    "target_tenant_id": "example-electronics",
+    "watch": {
+      "root": "/var/lib/visionqc-gateway/incoming",
+      "relative_path_regex": "^station/(?P<station_code>[A-Za-z0-9_-]+)$",
+      "filename_regex": "^(?P<product>[A-Za-z0-9_-]+)__batch=(?P<batch>[A-Za-z0-9_-]+)__captured=(?P<captured_at>[0-9]{8}T[0-9]{6})__seq=(?P<sequence>[0-9]{6})\\.(?P<extension>png|jpe?g)$",
+      "capture_map": {
+        "product_code": "product",
+        "batch_no": "batch",
+        "station_code": "station_code",
+        "captured_at": "captured_at"
+      },
+      "defaults": {
+        "product_revision": "REV-C"
+      },
+      "source": "edge-camera/example-electronics/electronics-site-01",
+      "allowed_extensions": [
+        ".png",
+        ".jpg",
+        ".jpeg"
+      ],
+      "timestamp_formats": [
+        "%Y%m%dT%H%M%S"
+      ],
+      "timezone_offset": "+08:00",
+      "stable_for_seconds": 1.0,
+      "archive_subdir": ".archive",
+      "quarantine_subdir": ".quarantine"
+    },
+    "simulator": {
+      "relative_dir_template": "station/ST-07",
+      "filename_template": "{product}__batch={batch}__captured={captured_at}__seq={sequence}.{extension}",
+      "product": "transistor",
+      "station": "ST-07",
+      "product_revision": "REV-C",
+      "batch_prefix": "EXAMPLE-ELECTRONICS-DEMO",
+      "extension": ".png"
+    }
+  },
+  "industry_pack": {
+    "key": "electronics",
+    "version": "1.0.0",
+    "sha256": "22cce2f2705d892aa73e333ddc222cb21c29a5d7f4252261c8ebc9a1c603e4ce"
+  },
+  "tenant_overlay": {
+    "key": "tenants/example-electronics/electronics-site-01",
+    "version": "1.0.0",
+    "sha256": "05eccc87f3158c76b45a78c33cddd4f1855985feed3bb0162a74d154bf18304d"
+  },
+  "industry": "electronics",
+  "terminology": {
+    "inspection": "Visual inspection",
+    "anomaly": "Anomaly evidence",
+    "review": "Human review",
+    "batch_hold": "Batch hold"
+  },
+  "collection": {
+    "input_modes": [
+      "api_upload",
+      "folder_watch",
+      "usb_camera"
+    ],
+    "default_mode": "folder_watch",
+    "watch": {
+      "root": "./incoming",
+      "relative_path_regex": "^(?P<station_code>[A-Z0-9_-]+)$",
+      "filename_regex": "^(?P<product>[A-Z0-9_-]+)__(?P<batch>[A-Z0-9_-]+)__(?P<captured_at>[0-9]{8}T[0-9]{6})__(?P<sequence>[0-9]{6})\\.(?P<extension>png|jpe?g)$",
+      "capture_map": {
+        "product_code": "product",
+        "batch_no": "batch",
+        "station_code": "station_code",
+        "captured_at": "captured_at"
+      },
+      "defaults": {
+        "product_revision": "REV-UNSPECIFIED"
+      },
+      "source": "edge-camera/electronics",
+      "allowed_extensions": [
+        ".png",
+        ".jpg",
+        ".jpeg"
+      ],
+      "timestamp_formats": [
+        "%Y%m%dT%H%M%S"
+      ],
+      "timezone_offset": "+00:00",
+      "stable_for_seconds": 1.0,
+      "archive_subdir": ".archive",
+      "quarantine_subdir": ".quarantine"
+    },
+    "camera": {
+      "optional": true,
+      "default_index": 0,
+      "output_format": "jpeg"
+    },
+    "queue": {
+      "implementation": "sqlite-wal",
+      "at_least_once_upload": true,
+      "idempotency": "content-and-context-sha256"
+    },
+    "privacy": {
+      "local_processing_default": true,
+      "upload_requires_explicit_consent": true,
+      "secret_values_never_in_pack": true
+    }
+  },
+  "risk_strategy": {
+    "name": "dual-threshold-human-accountable",
+    "policy": {
+      "version": "electronics-risk-policy-1.0.0",
+      "default": {
+        "product_code": null,
+        "station_code": null,
+        "review_threshold": 0.4,
+        "hold_threshold": 0.8
+      },
+      "overrides": []
+    },
+    "model_output_semantics": "Anomaly evidence only; semantic defect confirmation stays with an authorized reviewer.",
+    "fail_safe_route": "REVIEW_REQUIRED",
+    "automatic_release_allowed": false,
+    "approval_roles": [
+      "quality_manager",
+      "auditor"
+    ]
+  },
+  "workflow": {
+    "states": [
+      "RECEIVED",
+      "VALIDATED",
+      "INFERENCING",
+      "REVIEW_REQUIRED",
+      "BATCH_HELD",
+      "ACTION_PENDING",
+      "ACTION_COMPLETED",
+      "CLOSED"
+    ],
+    "transitions": [
+      {
+        "from": "RECEIVED",
+        "to": "VALIDATED"
+      },
+      {
+        "from": "REVIEW_REQUIRED",
+        "to": "ACTION_PENDING"
+      },
+      {
+        "from": "BATCH_HELD",
+        "to": "ACTION_PENDING"
+      },
+      {
+        "from": "ACTION_PENDING",
+        "to": "ACTION_COMPLETED"
+      }
+    ],
+    "external_action_approval_required": true,
+    "human_review_required_for": [
+      "REVIEW_REQUIRED",
+      "BATCH_HELD",
+      "INFERENCE_FAILED"
+    ]
+  },
+  "permissions": {
+    "roles": {
+      "inspector": [
+        "inspect",
+        "review"
+      ],
+      "quality_manager": [
+        "review",
+        "approve_external_action",
+        "close_incident"
+      ],
+      "fde": [
+        "validate_pack",
+        "draft_deployment"
+      ],
+      "auditor": [
+        "read_audit"
+      ]
+    },
+    "external_action_approval_roles": [
+      "quality_manager"
+    ],
+    "deployment_approval_roles": [
+      "quality_manager",
+      "fde"
+    ]
+  },
+  "retention": {
+    "raw_image_days": 30,
+    "metadata_days": 365,
+    "local_processing_default": true,
+    "delete_after_upload": false,
+    "legal_hold_supported": true
+  },
+  "localization": {
+    "default_locale": "en-US",
+    "supported_locales": [
+      "en-US",
+      "zh-CN"
+    ],
+    "timezone": "+08:00",
+    "terminology": {
+      "batch_hold": "Batch hold",
+      "review_required": "Review required"
+    }
+  },
+  "validation": {
+    "status": "resolved",
+    "validator": "app.deployment.resolve_pack",
+    "checks": [
+      "industry_pack_integrity",
+      "tenant_overlay_integrity",
+      "tenant_gateway_binding",
+      "field_mapping",
+      "policy_thresholds",
+      "connector_contracts"
+    ],
+    "warnings": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "manifest_sha256": "98d95637de5c641890aff67580e7875a4b13fb2259e91ec9653b764ba1a20700",
+    "canonicalization": "json-sort-keys-utf8-no-whitespace-v1",
+    "excludes": [
+      "integrity.manifest_sha256"
+    ]
+  },
+  "migration": {
+    "from_schema_versions": [
+      "visionqc.industry-pack.v1",
+      "visionqc.tenant-overlay.v1",
+      "visionqc.deployment-pack.v1"
+    ],
+    "strategy": "resolver",
+    "notes": "Resolve the immutable industry pack and tenant/site overlay before runtime activation."
+  }
+}

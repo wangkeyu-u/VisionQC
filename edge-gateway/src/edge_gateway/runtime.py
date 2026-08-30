@@ -49,6 +49,8 @@ class DirectoryWatcher:
         self.allowed_extensions = allowed_extensions
         self.excluded_dirs = excluded_dirs
         self._observations: dict[str, _Observation] = {}
+        if root.exists() and not root.is_dir():
+            raise ValueError(f"采集目录不是文件夹：{root}。请检查 VQC_GATEWAY_WATCH_ROOT。")
         self.root.mkdir(parents=True, exist_ok=True)
 
     def _iter_files(self) -> list[Path]:
@@ -116,6 +118,9 @@ class GatewayRuntime:
         uploader: BackendUploader | None = None,
         camera_source: CameraFrameSource | None = None,
     ):
+        settings.validate_mode()
+        if settings.gateway_id not in {"gateway-local", pack.gateway_id}:
+            raise ValueError("VQC_GATEWAY_ID does not match the Deployment Pack gateway_id")
         self.settings = settings
         self.pack = pack
         self.gateway_id = (
@@ -134,6 +139,8 @@ class GatewayRuntime:
             allowed_extensions=watch.normalized_extensions,
             excluded_dirs={watch.archive_subdir, watch.quarantine_subdir},
         )
+        if settings.data_dir.exists() and not settings.data_dir.is_dir():
+            raise ValueError(f"网关数据目录不是文件夹：{settings.data_dir}。请改用可写目录。")
         settings.data_dir.mkdir(parents=True, exist_ok=True)
         self.spool_dir = settings.data_dir / "spool"
         self.spool_dir.mkdir(parents=True, exist_ok=True)

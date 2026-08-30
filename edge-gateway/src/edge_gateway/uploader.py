@@ -101,6 +101,12 @@ class BackendUploader:
         return {
             "Authorization": f"Bearer {self.token_provider.token()}",
             "X-Gateway-ID": gateway_id,
+            # These headers are derived from the signed pack.  The backend
+            # treats the JWT tenant claim as authoritative and only uses these
+            # values as an integrity check/trace aid.
+            "X-Tenant-ID": self.pack.tenant_id,
+            "X-Deployment-Pack": self.pack.pack_key,
+            "X-Deployment-Pack-Version": self.pack.version,
             "X-Correlation-ID": correlation[:128],
             "Accept": "application/json",
         }

@@ -1,0 +1,43 @@
+{
+  "schema_version": "visionqc.tenant-overlay.v1",
+  "overlay_key": "examples/electronics-transistor",
+  "version": "1.0.0",
+  "display_name": "Example electronics site · transistor",
+  "industry_pack": {"key": "electronics", "version": "1.0.0", "sha256": "22cce2f2705d892aa73e333ddc222cb21c29a5d7f4252261c8ebc9a1c603e4ce"},
+  "tenant": {"id": "example-electronics", "name": "Example Electronics Site"},
+  "site": {"id": "electronics-site-01", "name": "Example electronics site", "timezone": "+08:00", "locale": "en-US"},
+  "input_mode": "folder_watch",
+  "products": [{"code": "transistor", "display_name": "Transistor module", "revision": "REV-C", "aliases": ["TR-EXAMPLE"]}],
+  "stations": [{"code": "ST-07", "display_name": "Final inspection", "description": "Example electronics final inspection station.", "camera_profile": "electronics-single-view"}],
+  "field_labels": {"product_code": "Product code", "product_revision": "Product revision", "batch_no": "Batch", "station_code": "Station", "captured_at": "Captured at", "source": "Source"},
+  "terminology": {"inspection": "Final inspection", "anomaly": "Anomaly evidence", "batch_hold": "Batch hold"},
+  "connectors": {
+    "mes": {"display_name": "Simulated MES for example smoke", "driver": "mock_http", "contract_version": "mes-batch-v1-simulated", "endpoint": "http://mock-external:8081/mes", "payload_mapping": {"batch_no": "batch_no", "reason": "reason", "disposition": "disposition"}, "fixed_fields": {"source_system": "VisionQC example electronics; simulated"}, "operations": ["HOLD_BATCH", "RELEASE_BATCH"], "capability": "mes", "secret_refs": [], "simulated": true},
+    "qms": {"display_name": "Generic QMS for example smoke", "driver": "mock_http", "contract_version": "generic-qms-case.v1-simulated", "endpoint": "http://mock-external:8081/generic-qms", "payload_mapping": {"inspection_id": "case_reference", "batch_no": "batch_reference", "station_code": "station_reference", "disposition": "disposition", "reason": "reason"}, "fixed_fields": {"source_system": "VisionQC generic QMS mock; simulated"}, "operations": ["CREATE_TICKET", "UPDATE_TICKET", "CLOSE_TICKET"], "capability": "qms", "secret_refs": [], "simulated": true}
+  },
+  "localization": {"default_locale": "en-US", "supported_locales": ["en-US", "zh-CN"], "timezone": "+08:00", "terminology": {"review_required": "Review required", "batch_hold": "Batch hold"}},
+  "retention": {"raw_image_days": 30, "metadata_days": 365, "local_processing_default": true, "delete_after_upload": false, "legal_hold_supported": true},
+  "edge_gateway": {
+    "gateway_id": "example-electronics-gateway",
+    "target_tenant_id": "example-electronics",
+    "watch": {
+      "root": "/var/lib/visionqc-gateway/incoming",
+      "relative_path_regex": "^inspection/(?P<station_code>ST-[A-Z0-9_-]+)$",
+      "filename_regex": "^(?P<product>TR-EXAMPLE|transistor)__batch=(?P<batch>BATCH-[A-Z0-9_-]+)__captured=(?P<captured_at>[0-9]{8}T[0-9]{6})__seq=(?P<sequence>[0-9]{6})\\.(?P<extension>png|jpe?g)$",
+      "capture_map": {"product_code": "product", "batch_no": "batch", "station_code": "station_code", "captured_at": "captured_at"},
+      "defaults": {"product_revision": "REV-C"},
+      "source": "edge-camera/example-electronics",
+      "allowed_extensions": [".png", ".jpg", ".jpeg"],
+      "timestamp_formats": ["%Y%m%dT%H%M%S"],
+      "timezone_offset": "+08:00",
+      "stable_for_seconds": 0,
+      "archive_subdir": ".archive",
+      "quarantine_subdir": ".quarantine"
+    },
+    "simulator": {"relative_dir_template": "inspection/ST-07", "filename_template": "{product}__batch={batch}__captured={captured_at}__seq={sequence}.{extension}", "product": "TR-EXAMPLE", "station": "ST-07", "product_revision": "REV-C", "batch_prefix": "BATCH-E-DEMO", "extension": ".png"}
+  },
+  "validation": {"status": "checked-in-example", "validator": "scripts/visionqc.py validate-pack", "checks": ["overlay_schema", "industry_reference", "tenant_gateway_binding", "secret_refs", "integrity_hash"], "warnings": ["All external systems are simulated; replace endpoints only after contract approval."]},
+  "integrity": {"algorithm": "sha256", "manifest_sha256": "8c112d0340fce5bcf3201e142d041b81fb5b15a77511f533a092ce4a3aca19a9", "canonicalization": "json-sort-keys-utf8-no-whitespace-v1", "excludes": ["integrity.manifest_sha256"]},
+  "migration": {"from_schema_versions": ["visionqc.tenant-overlay.v1", "visionqc.deployment-pack.v1"], "strategy": "resolver", "notes": "This tenant/site overlay is generated from the electronics Industry Pack and can be replaced without changing application code."},
+  "metadata": {"example_status": "synthetic_configuration_only", "customer_specific": false, "real_customer_integration": false, "secret_material_included": false}
+}

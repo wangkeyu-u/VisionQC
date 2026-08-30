@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
+from copy import deepcopy
 from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -133,6 +135,7 @@ class GatewayDeploymentPack(BaseModel):
     stations: list[GatewayStation] = Field(min_length=1)
     field_mapping: GatewayFieldMapping
     edge_gateway: EdgeGatewayDefinition
+    integrity: dict[str, object] | None = None
 
     @model_validator(mode="after")
     def validate_tenant_binding(self) -> GatewayDeploymentPack:
@@ -164,7 +167,26 @@ class GatewayDeploymentPack(BaseModel):
     @classmethod
     def load(cls, path: Path) -> GatewayDeploymentPack:
         payload = json.loads(path.read_text(encoding="utf-8"))
-        return cls.model_validate(payload)
+        pack = cls.model_validate(payload)
+        if pack.schema_version == "visionqc.deployment-pack.v2":
+            integrity = payload.get("integrity")
+            expected = integrity.get("manifest_sha256") if isinstance(integrity, dict) else None
+            if not isinstance(expected, str):
+                raise ValueError("v2 Deployment Pack must declare integrity.manifest_sha256")
+            sanitized = deepcopy(payload)
+            sanitized_integrity = sanitized.get("integrity")
+            if isinstance(sanitized_integrity, dict):
+                sanitized_integrity.pop("manifest_sha256", None)
+            actual = hashlib.sha256(
+                json.dumps(
+                    sanitized, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+                ).encode("utf-8")
+            ).hexdigest()
+            if expected != actual:
+                raise ValueError(
+                    f"Deployment Pack hash mismatch: expected {expected}, computed {actual}"
+                )
+        return pack
 
 
 def parse_timezone_offset(value: str) -> timezone:
