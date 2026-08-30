@@ -1,192 +1,68 @@
-import { useEffect, useMemo, useState } from 'react'
-import { ArrowRight, Camera, CheckCircle2, FolderOpen, ImagePlus, LockKeyhole, ShieldCheck, UploadCloud, Wifi } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowLeft, ArrowRight, Camera, Check, CheckCircle2, CircleHelp, CloudUpload, FolderOpen, ImagePlus, LockKeyhole, Palette, PlugZap, ShieldAlert, ShieldCheck, UploadCloud } from 'lucide-react'
 import { useLocation } from 'wouter'
-import { visionQcApi } from '../api/visionQc'
-import { useDeploymentContext } from '../components/AppShell'
-import type { GatewayStatus } from '../types'
-import { makeIdempotencyKey } from '../utils'
+import { useI18n } from '../hooks/useI18n'
+import { industryPacks, localized, useTenantConfig, type CaptureSource, type IndustryId } from '../config/tenant'
 
-type CaptureSource = 'example' | 'folder' | 'camera'
-
-const sourceOptions: Array<{ id: CaptureSource; label: string; detail: string; icon: typeof ImagePlus }> = [
-  { id: 'example', label: '示例图', detail: '立即体验完整闭环，不需要客户原图', icon: ImagePlus },
-  { id: 'folder', label: '监控文件夹', detail: '现场 Gateway 会读取稳定的新文件', icon: FolderOpen },
-  { id: 'camera', label: 'USB 相机', detail: '可选 OpenCV；没有硬件也能继续看示例', icon: Camera },
-]
+const steps = ['onboarding.step1', 'onboarding.step2', 'onboarding.step3', 'onboarding.step4', 'onboarding.step5', 'onboarding.step6'] as const
 
 export function OnboardingPage() {
   const [, navigate] = useLocation()
-  const { context } = useDeploymentContext()
-  const deployment = context?.currentDeployment
+  const { t, language } = useI18n()
+  const { config, industryPack, setIndustry, updateBranding, updatePrivacy, updateConnectors, updateRisk, updateConfig, resetConfig } = useTenantConfig()
+  const [step, setStep] = useState(0)
   const [source, setSource] = useState<CaptureSource>('example')
-  const [file, setFile] = useState<File | null>(null)
-  const [selectedCount, setSelectedCount] = useState(0)
-  const [consent, setConsent] = useState(false)
-  const [gateways, setGateways] = useState<GatewayStatus[]>([])
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [testing, setTesting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [fields, setFields] = useState({
-    bodyId: '',
-    station: '',
-    line: 'LINE-01',
-    modelVariant: 'SUV-DEMO',
-    colorCode: 'C101',
-    paintRecipe: 'R-01',
-    shift: 'A',
-  })
+  const logoInput = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    if (!deployment) return
-    setFields((current) => ({
-      ...current,
-      bodyId: `${deployment.tenantId.toUpperCase()}-BODY-DEMO-01`,
-      station: deployment.stations[0]?.code ?? '',
-    }))
-  }, [deployment?.packKey])
-
-  useEffect(() => {
-    visionQcApi.listGatewayStatuses().then(setGateways).catch(() => setGateways([]))
-  }, [context?.tenant.id])
-
-  const currentGateway = useMemo(
-    () => gateways.find((gateway) => gateway.tenantId === context?.tenant.id),
-    [context?.tenant.id, gateways],
-  )
-  const isSynthetic = source === 'example'
-  const localOnly = !consent && !isSynthetic
-
-  function chooseSource(next: CaptureSource) {
-    setSource(next)
-    setFile(null)
-    setSelectedCount(0)
-    setError(null)
+  useEffect(() => { document.title = `${config.branding.displayName} · ${t('nav.setup')}` }, [config.branding.displayName, t])
+  function chooseIndustry(id: IndustryId) { setIndustry(id); setError(null) }
+  function chooseSource(next: CaptureSource) { setSource(next); setSelectedFile(null); setError(null) }
+  function handleFile(event: React.ChangeEvent<HTMLInputElement>) { const file = event.target.files?.[0]; if (file) setSelectedFile(file) }
+  function handleLogo(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => { if (typeof reader.result === 'string') updateBranding({ logoUrl: reader.result }) }
+    reader.readAsDataURL(file)
   }
-
-  async function startDetection() {
+  function nextStep() {
     setError(null)
-    if (isSynthetic) {
-      navigate('/upload?demo=1')
-      return
-    }
-    if (localOnly) {
-      navigate('/operations')
-      return
-    }
-    if (!file) {
-      setError(source === 'folder' ? '请先选择一个监控文件夹中的图片。' : '请先用 USB 相机拍一张图，或选择一张相机图片。')
-      return
-    }
-    if (!deployment) {
-      setError('还没有读取到当前部署配置，请稍后再试。')
-      return
-    }
-    setSubmitting(true)
-    try {
-      const result = await visionQcApi.createInspection({
-        file,
-        productCode: deployment.products[0]?.code ?? 'painted_body_panel',
-        productRevision: deployment.products[0]?.revision ?? 'PILOT-0.1',
-        batchNo: fields.bodyId,
-        station: fields.station,
-        capturedAt: new Date().toISOString(),
-        idempotencyKey: makeIdempotencyKey(),
-        fieldMapping: deployment.fieldMapping,
-        source: source === 'camera' ? 'USB camera (operator consent)' : 'Folder upload (operator consent)',
-        metadata: {
-          body_id: fields.bodyId,
-          workpiece_id: fields.bodyId,
-          paint_shop: 'PAINT_SHOP_DEMO',
-          booth_station: fields.station,
-          line: fields.line,
-          model_variant: fields.modelVariant,
-          color_code: fields.colorCode,
-          paint_recipe: fields.paintRecipe,
-          shift: fields.shift,
-          capture_mode: source === 'camera' ? 'USB_CAMERA' : 'FOLDER_UPLOAD',
-          data_consent: true,
-          data_purpose: '本地涂装质量检测与人工复核的网页演示',
-        },
-      })
-      navigate(`/inspections/${result.inspectionId}`)
-    } catch {
-      setError('开始检测失败。请检查服务连接，或回到“示例图”继续体验。')
-    } finally {
-      setSubmitting(false)
-    }
+    if (step === 2 && source !== 'example' && !selectedFile) { setError(language === 'zh' ? '请先选择一张示例图片；没有真实相机或文件夹也可以继续。' : 'Choose a sample image first; you can continue without a real camera or folder.'); return }
+    setStep((current) => Math.min(current + 1, steps.length - 1))
   }
+  async function testConnector() {
+    setTesting(true); setError(null)
+    await new Promise((resolve) => window.setTimeout(resolve, 420))
+    updateConnectors({ lastTestedAt: new Date().toISOString(), testStatus: 'passed', mode: 'mock' })
+    setTesting(false)
+  }
+  function generateWorkspace() { updateConfig({ setupComplete: true }); navigate('/') }
 
-  return (
-    <div className="page onboarding-page">
-      <div className="page-heading">
-        <div><span className="page-kicker">新手向导 · Capture onboarding</span><h1>从一张图开始检测</h1><p>选择输入来源，完成预检，然后看异常证据、人工复核和模拟质量闭环。</p></div>
-        <div className="onboarding-disclaimer">面向 Dürr 业务场景设计的独立作品集概念方案 / Independent portfolio concept; not commissioned or endorsed by Dürr.</div>
-      </div>
+  const sourceButton = (id: CaptureSource, icon: typeof ImagePlus, title: string, body: string) => { const Icon = icon; return <button type="button" className={`source-choice ${source === id ? 'selected' : ''}`} aria-pressed={source === id} onClick={() => chooseSource(id)}><span className="source-choice-icon"><Icon size={19} /></span><span><strong>{title}</strong><small>{body}</small></span>{source === id && <CheckCircle2 size={17} />}</button> }
+  const inputLabel = language === 'zh' ? '示例图片文件' : 'Sample image file'
+  return <div className="page onboarding-page">
+    <div className="page-heading onboarding-heading"><div><span className="page-kicker">{t('onboarding.kicker')}</span><h1>{t('onboarding.title')}</h1><h2 className="path-heading">{language === 'zh' ? '从一张图开始检测' : 'Start with one image'}</h2><p>{t('onboarding.subtitle')}</p></div><div className="onboarding-status"><span>{t('onboarding.progress')}</span><strong>0{step + 1} <small>/ 06</small></strong><div className="progress-track"><i style={{ width: `${((step + 1) / steps.length) * 100}%` }} /></div></div></div>
+    <div className="onboarding-shell">
+      <aside className="onboarding-sidebar"><div className="sidebar-label">VQ / SETUP</div><ol>{steps.map((key, index) => <li key={key} className={index === step ? 'active' : index < step ? 'complete' : ''}><button type="button" onClick={() => index <= step && setStep(index)} disabled={index > step}><span>{index < step ? <Check size={14} /> : String(index + 1).padStart(2, '0')}</span><strong>{t(key)}</strong></button></li>)}</ol><div className="sidebar-boundary"><ShieldCheck size={16} /><span><strong>{t('onboarding.hardRule')}</strong>{t('onboarding.alwaysOn')}</span></div></aside>
+      <section className="onboarding-card">
+        {step === 0 && <div className="wizard-step"><div className="wizard-title"><span className="step-number">01</span><div><h2>{t('onboarding.chooseIndustry')}</h2><p>{t('onboarding.chooseIndustryBody')}</p></div></div><div className="industry-grid">{(Object.values(industryPacks)).map((pack) => <button type="button" key={pack.id} className={`industry-card ${config.industry === pack.id ? 'selected' : ''}`} onClick={() => chooseIndustry(pack.id)}><span className="industry-swatch" style={{ background: pack.colors.primary }} /><span className="industry-card-copy"><strong>{localized(pack.name, language)}</strong><small>{localized(pack.description, language)}</small></span><span className="industry-check">{config.industry === pack.id ? <CheckCircle2 size={18} /> : <CircleHelp size={17} />}</span>{pack.id === 'automotive-paint' && <><span className="industry-tag">{language === 'zh' ? '示例包' : 'Example pack'}</span><p className="onboarding-disclaimer">{t('onboarding.disclaimerEn')}</p></>}</button>)}</div><div className="quick-source"><div><span className="eyebrow">{t('onboarding.captureTitle')}</span><p>{t('onboarding.captureBody')}</p></div><div className="source-choice-grid">{sourceButton('example', ImagePlus, t('onboarding.example'), t('onboarding.exampleBody'))}{sourceButton('folder', FolderOpen, t('onboarding.folder'), t('onboarding.folderBody'))}{sourceButton('camera', Camera, t('onboarding.camera'), t('onboarding.cameraBody'))}</div>{source !== 'example' && <p className="privacy-callout"><LockKeyhole size={15} /><span><strong>{t('onboarding.local')}</strong> · {t('gateway.privacyBody')} · {t('onboarding.consentHint')}</span></p>}</div></div>}
 
-      <ol className="flow-stepper" aria-label="新手检测流程">
-        <li className="active"><span>1</span><strong>选输入</strong><small>示例图 / 文件夹 / USB 相机</small></li>
-        <li><span>2</span><strong>做预检</strong><small>连接、格式、隐私</small></li>
-        <li><span>3</span><strong>看闭环</strong><small>复核、事件、模拟 DXQ</small></li>
-      </ol>
+        {step === 1 && <div className="wizard-step"><div className="wizard-title"><span className="step-number">02</span><div><h2>{t('onboarding.brandTitle')}</h2><p>{t('onboarding.brandBody')}</p></div></div><div className="brand-form-grid"><label><span>{t('onboarding.displayName')}</span><input value={config.branding.displayName} onChange={(event) => updateBranding({ displayName: event.target.value })} /></label><label><span>{t('onboarding.siteName')}</span><input value={config.branding.siteName} onChange={(event) => updateBranding({ siteName: event.target.value })} /></label><label className="full"><span>{t('onboarding.logoUrl')} <em>{t('common.optional')}</em></span><div className="input-with-action"><input value={config.branding.logoUrl?.startsWith('data:') ? '' : config.branding.logoUrl ?? ''} placeholder={t('onboarding.logoPlaceholder')} onChange={(event) => updateBranding({ logoUrl: event.target.value || null })} /><button type="button" className="secondary-button" onClick={() => logoInput.current?.click()}><CloudUpload size={15} />{t('onboarding.logoUpload')}</button><input ref={logoInput} className="visually-hidden" type="file" accept="image/*" onChange={handleLogo} /></div><small>{t('onboarding.logoHint')}</small></label><label><span>{t('onboarding.primary')}</span><div className="color-input"><input type="color" value={config.branding.primaryColor} onChange={(event) => updateBranding({ primaryColor: event.target.value })} /><code>{config.branding.primaryColor}</code></div></label><label><span>{t('onboarding.accent')}</span><div className="color-input"><input type="color" value={config.branding.accentColor} onChange={(event) => updateBranding({ accentColor: event.target.value })} /><code>{config.branding.accentColor}</code></div></label><fieldset className="full"><legend>{t('onboarding.corner')}</legend><div className="option-pills">{(['crisp', 'soft', 'round'] as const).map((value) => <button type="button" key={value} className={config.branding.cornerStyle === value ? 'active' : ''} onClick={() => updateBranding({ cornerStyle: value })}>{t(`onboarding.${value}` as 'onboarding.crisp')}</button>)}</div></fieldset><fieldset className="full"><legend>{t('onboarding.density')}</legend><div className="option-pills">{(['comfortable', 'compact'] as const).map((value) => <button type="button" key={value} className={config.branding.density === value ? 'active' : ''} onClick={() => updateBranding({ density: value })}>{t(`onboarding.${value}` as 'onboarding.comfortable')}</button>)}</div></fieldset></div><div className="brand-preview"><span className="brand-preview-mark"><Palette size={18} /></span><span><strong>{config.branding.displayName || t('brand.platform')}</strong><small>{config.branding.siteName || t('brand.workspace')} · {localized(industryPack.name, language)}</small></span></div></div>}
 
-      <div className="onboarding-grid">
-        <section className="panel onboarding-main">
-          <div className="panel-heading"><div><span>第一步</span><h2>你手上的图片来自哪里？</h2></div><small>不用懂技术名词</small></div>
-          <div className="source-choice-grid" role="radiogroup" aria-label="选择检测输入来源">
-            {sourceOptions.map(({ id, label, detail, icon: Icon }) => (
-              <button key={id} type="button" className={`source-choice ${source === id ? 'selected' : ''}`} onClick={() => chooseSource(id)} aria-pressed={source === id}>
-                <Icon size={22} /><span><strong>{label}</strong><small>{detail}</small></span>{source === id && <CheckCircle2 size={17} />}
-              </button>
-            ))}
-          </div>
+        {step === 2 && <div className="wizard-step"><div className="wizard-title"><span className="step-number">03</span><div><h2>{t('onboarding.captureTitle')}</h2><p>{t('onboarding.captureBody')}</p></div></div><div className="source-choice-grid large">{sourceButton('example', ImagePlus, t('onboarding.example'), t('onboarding.exampleBody'))}{sourceButton('folder', FolderOpen, t('onboarding.folder'), t('onboarding.folderBody'))}{sourceButton('camera', Camera, t('onboarding.camera'), t('onboarding.cameraBody'))}</div>{source === 'example' ? <div className="sample-preview"><img src="/mock/blender/station-overview.png" alt={localized(industryPack.terms.sample, language)} /><div><span className="eyebrow">{t('header.synthetic')}</span><h3>{localized(industryPack.terms.sample, language, true)}</h3><p>{t('upload.syntheticBody')}</p></div></div> : <label className="source-file-picker"><span className="drop-icon">{source === 'camera' ? <Camera size={24} /> : <FolderOpen size={24} />}</span><strong>{source === 'camera' ? t('onboarding.cameraSelect') : t('onboarding.folderSelect')}</strong><small>{selectedFile?.name ?? (language === 'zh' ? '没有硬件也可以选一张示例图继续' : 'You can choose a sample without hardware')}</small><input aria-label={inputLabel} type="file" accept="image/jpeg,image/png" onChange={handleFile} /></label>}{source !== 'example' && <div className="privacy-callout"><LockKeyhole size={16} /><span><strong>{t('onboarding.local')}</strong><small>{t('onboarding.localBody')}</small><small>{t('onboarding.consentHint')}</small></span></div>}</div>}
 
-          {source !== 'example' && (
-            <div className="capture-input-card">
-              <label className="capture-file-label">
-                {source === 'folder' ? <FolderOpen size={20} /> : <Camera size={20} />}
-                <span><strong>{source === 'folder' ? '选择文件夹中的一张代表图' : '调用 USB 相机或选择一张相机图'}</strong><small>{source === 'folder' ? '现场文件夹由 Edge Gateway 按稳定文件规则持续监控；这里用一张图做网页预检。' : '如果浏览器或电脑没有相机，系统会告诉你，不会让流程卡死。'}</small></span>
-                <input type="file" accept="image/jpeg,image/png" multiple={source === 'folder'} capture={source === 'camera' ? 'environment' : undefined} {...({ webkitdirectory: source === 'folder' ? '' : undefined } as Record<string, string | undefined>)} onChange={(event) => { const files = Array.from(event.target.files ?? []); setSelectedCount(files.length); setFile(files[0] ?? null); setError(null) }} />
-              </label>
-              {file && <div className="selected-file"><CheckCircle2 size={16} /><span>{file.name}</span><small>{selectedCount > 1 ? `已选 ${selectedCount} 张，将先演示第一张` : '已准备好'}</small></div>}
-            </div>
-          )}
+        {step === 3 && <div className="wizard-step"><div className="wizard-title"><span className="step-number">04</span><div><h2>{t('onboarding.privacyTitle')}</h2><p>{t('onboarding.privacyBody')}</p></div></div><div className="privacy-options"><button type="button" className={`privacy-option ${config.privacy.processingMode === 'local' ? 'selected' : ''}`} onClick={() => updatePrivacy({ processingMode: 'local', uploadAuthorized: false })}><span><LockKeyhole size={19} /><strong>{t('onboarding.local')}</strong></span><small>{t('onboarding.localBody')}</small><b>{config.privacy.processingMode === 'local' ? <CheckCircle2 size={18} /> : null}</b></button><button type="button" className={`privacy-option ${config.privacy.processingMode === 'authorized-upload' ? 'selected' : ''}`} onClick={() => updatePrivacy({ processingMode: 'authorized-upload' })}><span><CloudUpload size={19} /><strong>{t('onboarding.authorized')}</strong></span><small>{t('onboarding.authorizedBody')}</small><b>{config.privacy.processingMode === 'authorized-upload' ? <CheckCircle2 size={18} /> : null}</b></button></div><div className="privacy-form"><label><span>{t('onboarding.retention')}</span><input type="number" min="1" max="3650" value={config.privacy.retentionDays} onChange={(event) => updatePrivacy({ retentionDays: Number(event.target.value) || 30 })} /></label><label className="check-row"><input type="checkbox" checked={config.privacy.deleteAfterUpload} onChange={(event) => updatePrivacy({ deleteAfterUpload: event.target.checked })} /><span>{t('onboarding.deleteAfter')}</span></label><label className="check-row"><input type="checkbox" checked={config.privacy.uploadAuthorized} onChange={(event) => updatePrivacy({ uploadAuthorized: event.target.checked, processingMode: event.target.checked ? 'authorized-upload' : 'local' })} /><span><strong>{t('onboarding.consent')}</strong><small>{t('onboarding.consentHint')}</small></span></label></div></div>}
 
-          <div className="panel-heading context-heading"><div><span>业务上下文</span><h2>车身数字质量档案的基本信息</h2></div><small>提交后写入只读证据</small></div>
-          <div className="form-grid onboarding-form-grid">
-            <label><span>车身/工件号 <b>*</b></span><input value={fields.bodyId} onChange={(event) => setFields({ ...fields, bodyId: event.target.value })} /></label>
-            <label><span>涂装检查站 <b>*</b></span><select value={fields.station} onChange={(event) => setFields({ ...fields, station: event.target.value })}>{deployment?.stations.map((station) => <option key={station.code} value={station.code}>{station.code} · {station.displayName}</option>)}</select></label>
-            <label><span>产线 / Line</span><input value={fields.line} onChange={(event) => setFields({ ...fields, line: event.target.value })} /></label>
-            <label><span>车型 / Model variant</span><input value={fields.modelVariant} onChange={(event) => setFields({ ...fields, modelVariant: event.target.value })} /></label>
-            <label><span>车漆颜色 / Color code</span><input value={fields.colorCode} onChange={(event) => setFields({ ...fields, colorCode: event.target.value })} /></label>
-            <label><span>涂料配方 / Paint recipe</span><input value={fields.paintRecipe} onChange={(event) => setFields({ ...fields, paintRecipe: event.target.value })} /></label>
-            <label><span>班次 / Shift</span><select value={fields.shift} onChange={(event) => setFields({ ...fields, shift: event.target.value })}><option>A</option><option>B</option><option>C</option></select></label>
-          </div>
+        {step === 4 && <div className="wizard-step"><div className="wizard-title"><span className="step-number">05</span><div><h2>{t('onboarding.connectorTitle')}</h2><p>{t('onboarding.connectorBody')}</p></div></div><div className="connector-config"><div className="connector-card featured"><div className="connector-icon"><PlugZap size={20} /></div><div><span className="eyebrow">{t('onboarding.mockConnector')}</span><h3>{config.connectors.gateway}</h3><p>{t('onboarding.mockConnectorBody')}</p></div><span className="connector-status"><i />{language === 'zh' ? '模拟' : 'Simulated'}</span></div><div className="connector-selects"><label><span>MES</span><select value={config.connectors.mes} onChange={(event) => updateConnectors({ mes: event.target.value })}><option>Mock MES</option><option>Enterprise MES (adapter)</option></select></label><label><span>QMS</span><select value={config.connectors.qms} onChange={(event) => updateConnectors({ qms: event.target.value })}><option>Mock QMS</option><option>Enterprise QMS (adapter)</option></select></label><label><span>Gateway</span><select value={config.connectors.gateway} onChange={(event) => updateConnectors({ gateway: event.target.value })}><option>Simulated Gateway</option><option>Edge Gateway (adapter)</option></select></label></div><button type="button" className="primary-button" onClick={() => void testConnector()} disabled={testing}>{testing ? t('onboarding.testing') : t('onboarding.testConnection')}<PlugZap size={16} /></button>{config.connectors.testStatus === 'passed' && <div className="test-result passed"><CheckCircle2 size={17} /><span><strong>{t('onboarding.testPassed')}</strong><small>{t('header.simulation')} · {config.connectors.lastTestedAt}</small></span></div>}</div></div>}
 
-          <div className="privacy-consent-card">
-            <div className="privacy-icon"><LockKeyhole size={19} /></div>
-            <div><strong>默认本地处理，不上传客户原图</strong><p>示例图是合成演示证据；文件夹/USB 相机的客户原图只有在你明确勾选同意后，才会发送给网页演示服务。用途：{currentGateway?.dataPurpose ?? '本地涂装质量检测与人工复核'}；保留：{currentGateway?.retentionDays ?? 30} 天；删除：在现场 Gateway 的本地队列中按保留策略清理。</p><label className="consent-check"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /><span>我明确同意将这张原图发送给 VisionQC 演示服务，仅用于本次质量流程演示。</span></label></div>
-          </div>
+        {step === 5 && <div className="wizard-step"><div className="wizard-title"><span className="step-number">06</span><div><h2>{t('onboarding.riskTitle')}</h2><p>{t('onboarding.riskBody')}</p></div></div><div className="risk-preview"><div className="risk-hero"><ShieldAlert size={22} /><div><strong>{t('onboarding.hardRule')}</strong><p>{t('onboarding.alwaysOn')}</p></div><span className="locked-badge"><LockKeyhole size={13} />LOCKED</span></div><div className="risk-thresholds"><label><span>{t('onboarding.reviewThreshold')}</span><input type="range" min="0.1" max="0.9" step="0.05" value={config.risk.reviewThreshold} onChange={(event) => updateRisk({ reviewThreshold: Number(event.target.value) })} /><output>{config.risk.reviewThreshold.toFixed(2)}</output></label><label><span>{t('onboarding.holdThreshold')}</span><input type="range" min="0.5" max="0.99" step="0.05" value={config.risk.holdThreshold} onChange={(event) => updateRisk({ holdThreshold: Number(event.target.value) })} /><output>{config.risk.holdThreshold.toFixed(2)}</output></label></div><div className="risk-flow"><span>0.00</span><i style={{ left: `${config.risk.reviewThreshold * 100}%` }}><b>{language === 'zh' ? '复核' : 'Review'}</b></i><i style={{ left: `${config.risk.holdThreshold * 100}%` }}><b>{language === 'zh' ? '暂扣' : 'Hold'}</b></i><span>1.00</span></div></div><div className="workspace-preview"><div><span className="preview-avatar">{config.branding.displayName.slice(0, 1) || 'V'}</span><span><strong>{config.branding.displayName || t('brand.platform')}</strong><small>{config.branding.siteName || t('brand.workspace')}</small></span></div><span>{localized(industryPack.name, language)} · {localized(industryPack.terms.item, language, true)}</span><span className="preview-privacy"><LockKeyhole size={14} />{localized(industryPack.terms.capture, language)} · {config.privacy.retentionDays}d</span></div><p className="preview-note"><ShieldCheck size={15} />{t('onboarding.previewBody')}</p></div>}
 
-          {error && <div className="submission-error" role="alert"><ShieldCheck size={17} /><span>{error}</span></div>}
-          <div className="submission-bar onboarding-submit-bar"><div><ShieldCheck size={18} /><span><strong>{isSynthetic ? '合成演示安全' : consent ? '已记录发送同意' : '仍保持本地处理'}</strong><small>{isSynthetic ? '不会冒充生产或客户准确率证据。' : consent ? '原图会进入演示服务，并留下用途与幂等记录。' : '未勾选同意时不会从网页上传客户原图。'}</small></span></div><button className="primary-button" onClick={() => void startDetection()} disabled={submitting}>{submitting ? '正在创建检测…' : isSynthetic ? <>使用示例图开始<ArrowRight size={17} /></> : consent ? <>开始检测<ArrowRight size={17} /></> : <>查看本地 Gateway<ArrowRight size={17} /></>}</button></div>
-        </section>
-
-        <aside className="onboarding-side">
-          <section className="panel preflight-card">
-            <div className="panel-heading"><div><span>第二步</span><h2>开始前预检</h2></div><Wifi size={18} /></div>
-            <ul className="preflight-list">
-              <li className={deployment ? 'passed' : 'pending'}><CheckCircle2 size={16} /><span><strong>当前部署配置</strong><small>{deployment?.displayName ?? '正在读取…'}</small></span><b>{deployment ? '通过' : '等待'}</b></li>
-              <li className={currentGateway?.status === 'ONLINE' ? 'passed' : 'pending'}><Wifi size={16} /><span><strong>现场接入程序</strong><small>{currentGateway ? `${currentGateway.gatewayId} · ${currentGateway.status}` : '示例图不依赖现场设备'}</small></span><b>{currentGateway?.status === 'ONLINE' ? '在线' : isSynthetic ? '可跳过' : '待检查'}</b></li>
-              <li className="passed"><ShieldCheck size={16} /><span><strong>自动放行保护</strong><small>异常、OOD、坏图和模糊图都会安全降级到人工复核。</small></span><b>启用</b></li>
-              <li className="passed"><LockKeyhole size={16} /><span><strong>数据发送状态</strong><small>{isSynthetic ? 'DEMO_SYNTHETIC 合成证据' : consent ? '已明确同意发送原图' : '本地处理，不发送原图'}</small></span><b>{isSynthetic || consent ? '清楚' : '默认'}</b></li>
-            </ul>
-          </section>
-          <section className="panel onboarding-path-card">
-            <div className="panel-heading"><div><span>第三步</span><h2>你将看到什么</h2></div><UploadCloud size={18} /></div>
-            <ol><li>边缘接入与质量门禁</li><li>异常分数、热力图与车身数字质量档案</li><li>人工复核决定与审计时间线</li><li>模拟 MES / QMS / <code>dxq_mock</code> 质量闭环</li></ol>
-            <p>这不是官方 DXQ API，也不替代 Dürr DXQ；它是隔离的概念连接器，方便验证 FDE 交付边界。</p>
-          </section>
-        </aside>
-      </div>
+        {error && <div className="wizard-error" role="alert"><ShieldAlert size={16} />{error}</div>}
+        <div className="wizard-footer"><div>{step === 0 ? <button type="button" className="text-button" onClick={resetConfig}>{language === 'zh' ? '恢复默认中性配置' : 'Reset neutral defaults'}</button> : <button type="button" className="secondary-button" onClick={() => setStep((current) => Math.max(0, current - 1))}><ArrowLeft size={15} />{t('common.previous')}</button>}</div><span>{step < steps.length - 1 ? t('onboarding.nextHint') : t('onboarding.saved')}</span>{step < steps.length - 1 ? <button type="button" className="primary-button" onClick={nextStep}>{t('common.next')}<ArrowRight size={16} /></button> : <button type="button" className="primary-button" onClick={generateWorkspace}><UploadCloud size={16} />{t('onboarding.generate')}</button>}</div>
+      </section>
     </div>
-  )
+  </div>
 }
