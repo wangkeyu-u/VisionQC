@@ -1,14 +1,22 @@
 # VisionQC
 
-**工业视觉异常检测与质量处置闭环平台**
+面向工业质量复核的 AI 系统工程原型：把模型证据接入人工审核、ModelOps 发布门禁和可审计的 MES/QMS 动作边界。
 
-VisionQC 不止回答“图片是否异常”，还负责检测之后的企业流程：证据留存、双阈值路由、人工复核、批次暂扣、MES/QMS 动作、模型发布门禁和全链路审计。项目以 Forward Deployed Engineer 的交付方式设计，可通过 Deployment Pack 适配不同工厂的产品、字段、策略和 Connector。
+## Problem
 
-> 当前定位：可运行的企业级作品集 / Pre-Pilot MVP。默认使用演示数据；MVTec 仅作为非商业公开基准，不代表任何工厂现场效果。
+模型排序分数很高，也可能在选定阈值下自动放行异常品。VisionQC 检查检测之后的决策与操作：哪些样本要复核、谁能确认处置、外部动作失败如何恢复、什么证据允许模型上线。
+
+当前为 Pre-Pilot 原型。默认使用演示数据，MES/QMS 使用 Mock。MVTec 公开基准不代表工厂现场效果。[MVIS](https://github.com/wangkeyu-u/mvis-industrial-vision-pilot) 研究模型、训练和定位评估；本仓库侧重 ModelOps、人工复核、权限和审计。
 
 ![VisionQC 运营总览](docs/portfolio/overview-1440.png)
 
-## 为什么不是普通缺陷检测 Demo
+## Engineering Decisions
+
+- [业务门禁优先于单一 AUROC](docs/decisions/001-business-gates.md)：阈值产生的放行/复核/暂扣结果需要独立验证。
+- [服务端复核与并发控制](docs/decisions/002-human-review.md)：认领、版本和权限校验防止过期客户端覆盖处置结果。
+- [隔离 MES/QMS 写入边界](docs/decisions/003-connector-boundary.md)：用确定性流程控制可审计动作，模型输出不直接授权外部写入。
+
+## System boundaries
 
 | 能力 | VisionQC 的实现 |
 | --- | --- |
@@ -43,6 +51,8 @@ flowchart LR
 
 ## 已验证结果
 
+下面的模型指标来自保留的历史报告；本次重跑的是软件工作流及合成样本的模型契约测试，未重跑原始 MVTec 基准。
+
 ### 公开 Benchmark
 
 MVTec AD `transistor` 使用 213 张正常训练图、50 张 validation 和 50 张冻结 holdout。阈值只由 validation 产生，holdout 不参与调参。
@@ -59,15 +69,21 @@ MVTec AD `transistor` 使用 213 张正常训练图、50 张 validation 和 50 �
 
 最终状态为 `BENCHMARK_NO_GO / DRAFT_ONLY`。这说明高 AUROC 不等于安全可上线；VisionQC 会把不满足业务风险门槛的候选留在 DRAFT，而不是粉饰成生产结果。完整说明见 [Benchmark 评测报告](reports/benchmark-evaluation.md)。
 
-### 自动化验证
+### 自动化验证（2026-09-15 复测）
 
 | 模块 | 当前结果 |
 | --- | ---: |
-| Backend | 37 passed + Ruff + MyPy |
-| ML | 36 passed + Ruff + MyPy |
-| Edge Gateway | 17 passed + Ruff |
-| Frontend | 9 passed + TypeScript + production build |
-| 双客户闭环 | Factory A/B 全链路与跨租户隔离通过 |
+| Backend | 37 passed；隔离数据库和 Mock 外部系统 |
+| ML | 36 passed；含小型合成数据 PatchCore 流程 |
+| Edge Gateway | 17 passed |
+
+命令、环境与剩余边界见 [验证记录](docs/experiments/workflow-validation.md)。Frontend 与双客户 Compose 冒烟仍保留运行说明，不计入本次上述复测数字。
+
+## Baseline / Failure Cases / Ablation
+
+设计对照是只按模型排序分数放行。真实历史失败是 `AUROC=1.000` 时仍有 30% 异常自动放行；当前门禁把候选留在 DRAFT。见 [失败记录](docs/failures/001-benchmark-no-go.md)。代码测试覆盖推理失败转复核、并发复核冲突、跨租户访问和 Connector 失败恢复。
+
+目前没有测量“增加人工审核降低多少现场缺陷率”的组件消融。业务门禁拒绝错误候选是软件行为证据，不等于生产收益。保守门禁增加复核负担；真实客户需要单独确定可接受阈值。
 
 ## 三分钟体验
 
@@ -165,7 +181,6 @@ tools/blender/ 可复现的工业工位、产品、缺陷和掩码生成器
 - [As-Is / To-Be 与 48 小时客户接入案例](docs/CASE-STUDY.md)
 - [Benchmark 评测报告](reports/benchmark-evaluation.md)
 - [三分钟演示脚本](docs/DEMO-SCRIPT.md)
-- [简历写法与面试讲解](docs/RESUME.md)
 - [产品需求与系统规格](docs/01-product-requirements.md)
 - [Deployment Pack 接入手册](docs/03-deployment-pack-onboarding.md)
 - [现场验收测试](docs/06-site-acceptance-test.md)
@@ -185,3 +200,7 @@ cd ../frontend && npm ci && npm test -- --run && npm run typecheck && npm run bu
 cd backend
 uv run python ../scripts/compose_smoke.py
 ```
+
+## AI-assisted Development
+
+[AI 辅助范围与技术责任](docs/AI_ASSISTED_DEVELOPMENT.md) 说明本次代码核查、测试和文档整理方式。架构决策、评估解释与最终验收需要可查证据，历史失败和归属保持可见。
