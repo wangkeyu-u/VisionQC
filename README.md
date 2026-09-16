@@ -16,19 +16,6 @@
 - [服务端复核与并发控制](docs/decisions/002-human-review.md)：认领、版本和权限校验防止过期客户端覆盖处置结果。
 - [隔离 MES/QMS 写入边界](docs/decisions/003-connector-boundary.md)：用确定性流程控制可审计动作，模型输出不直接授权外部写入。
 
-## System boundaries
-
-| 能力 | VisionQC 的实现 |
-| --- | --- |
-| 检测 | PatchCore 异常分数、像素级热力图、可校验模型包 |
-| 决策 | `AUTO_RELEASE / REVIEW_REQUIRED / BATCH_HOLD_AND_REVIEW` 双阈值策略 |
-| 人在回路 | 复核认领、乐观锁、理由与确认门槛、模型反馈 |
-| 业务闭环 | Mock MES 暂扣/放行、Mock QMS 工单、事件验证与关闭 |
-| 多客户适配 | Factory A/B Deployment Pack、字段映射、产品与 Connector 隔离 |
-| ModelOps | DRAFT → EVALUATED → APPROVED → ACTIVE，职责分离与回滚审计 |
-| 数据治理 | 演示、官方 Benchmark、客户 Pilot 三种来源；不可变 fingerprint |
-| 安全降级 | 推理或证据失败时禁止自动放行；业务 Gate 失败阻断模型上线 |
-
 ## 系统闭环
 
 ```mermaid
@@ -62,12 +49,12 @@ MVTec AD `transistor` 使用 213 张正常训练图、50 张 validation 和 50 �
 | Image AUROC | 1.000 | 排序能力良好 |
 | Pixel AUROC | 0.9722 | 异常区域定位能力良好 |
 | AUPRO | 0.9411 | 区域重叠质量良好 |
-| Warm P95 | 96.6 ms | 当前 Apple Silicon 本地环境 |
+| Warm P95 | 96.6 ms | 历史报告中的 Apple Silicon 环境 |
 | 异常自动放行率 | 30% | **业务 Gate 失败** |
 | Review + Hold Recall | 70% | **业务 Gate 失败** |
 | Hold Recall | 50% | **业务 Gate 失败** |
 
-最终状态为 `BENCHMARK_NO_GO / DRAFT_ONLY`。这说明高 AUROC 不等于安全可上线；VisionQC 会把不满足业务风险门槛的候选留在 DRAFT，而不是粉饰成生产结果。完整说明见 [Benchmark 评测报告](reports/benchmark-evaluation.md)。
+最终状态为 `BENCHMARK_NO_GO / DRAFT_ONLY`。这说明高 AUROC 不等于安全可上线；VisionQC 会把不满足业务风险门槛的候选留在 DRAFT。完整说明见 [Benchmark 评测报告](reports/benchmark-evaluation.md)。
 
 ### 自动化验证（2026-09-15 复测）
 
@@ -85,71 +72,16 @@ MVTec AD `transistor` 使用 213 张正常训练图、50 张 validation 和 50 �
 
 目前没有测量“增加人工审核降低多少现场缺陷率”的组件消融。业务门禁拒绝错误候选是软件行为证据，不等于生产收益。保守门禁增加复核负担；真实客户需要单独确定可接受阈值。
 
-## 三分钟体验
-
-### 完全不懂代码：双击启动（macOS）
-
-1. 安装并启动 [Docker Desktop](https://www.docker.com/products/docker-desktop/)。
-2. 在项目文件夹中双击 `start-demo.command`。
-3. 浏览器打开后，点击首页的“使用演示图片开始”。
-4. 体验结束后双击 `stop-demo.command`。
-
-详细截图式说明、常见问题和术语解释见 [零基础使用指南](docs/BEGINNER-GUIDE.md)。
-
-### 熟悉终端：命令启动
+## 运行
 
 ```bash
 cd infra
 docker compose up --build
 ```
 
-服务就绪后打开：
+服务就绪后打开 [localhost:3000](http://localhost:3000)。默认使用演示资料和 Mock 外部系统；关闭环境使用 `docker compose down`。
 
-- Web UI：[http://localhost:3000](http://localhost:3000)
-- API 文档：[http://localhost:8000/docs](http://localhost:8000/docs)
-- Factory A/B Gateway 状态：`8091 / 8092`
-
-推荐演示路径：
-
-1. 在运营总览确认租户、Gateway 和待复核队列。
-2. 上传异常图片，查看异常分数、热力图和策略证据。
-3. 在复核工作台确认异常并触发批次暂扣。
-4. 在质量事件中查看 MES/QMS 幂等动作并完成验证关闭。
-5. 在 ModelOps 查看数据来源、Benchmark NO-GO 和模型 DRAFT 状态。
-
-完整口播和镜头表见 [三分钟演示脚本](docs/DEMO-SCRIPT.md)。停止环境：
-
-```bash
-cd infra
-docker compose down
-```
-
-## 可选数据来源
-
-项目不携带、不自动下载、也不要求 Benchmark 或客户数据。
-
-| 来源 | 用途 | 可产生的最高状态 |
-| --- | --- | --- |
-| `DEMO_SYNTHETIC` | Blender 可复现合成样本与默认业务演示 | `DEMO_ONLY` |
-| `OFFICIAL_BENCHMARK` | 实验室基准验证 | `READY_FOR_CUSTOMER_DATA` |
-| `CUSTOMER_PILOT` | 客户现场 Pilot | 完整 provenance 与 Gate 通过后才可审批 |
-
-受控上传会检查许可证确认、扩展名、压缩包路径穿越、特殊文件、文件数量、压缩/解压大小、压缩比和内容哈希。原始数据进入租户隔离对象存储，不进入 Git 或前端静态目录。服务端挂载导入在生产环境还必须配置 `VQC_DATASET_IMPORT_ROOTS`。
-
-### Blender 合成演示
-
-内置晶体管样本不是不可追溯的占位图，而是由
-[`tools/blender/generate_transistor_demo.py`](tools/blender/generate_transistor_demo.py)
-参数化生成。脚本会输出正常样本、弯折引脚缺陷、像素掩码、检测工位全景、SHA-256 清单和可编辑 `.blend` 场景。
-
-```bash
-/Applications/Blender.app/Contents/MacOS/Blender --background \
-  --python tools/blender/generate_transistor_demo.py -- \
-  --output-dir frontend/public/mock/blender \
-  --blend-file artifacts/blender/visionqc-inspection-station.blend
-```
-
-Blender 合成数据只用于新手演示、接口联调和流程测试，不能替代 MVTec Benchmark，更不能证明客户现场效果。完整边界见 [Blender 合成数据说明](docs/07-blender-synthetic-data.md)。
+[运行与验证](OPERATIONS.md) 包含数据导入、Blender 样本生成、分模块测试和 Compose 冒烟命令。
 
 ## 仓库结构
 
@@ -175,7 +107,7 @@ tools/blender/ 可复现的工业工位、产品、缺陷和掩码生成器
 
 当前明确未生产化：企业 OIDC、PostgreSQL RLS、真实相机驱动、Kafka、Kubernetes、真实 MES/QMS，以及真实客户现场效果证明。
 
-## 作品集材料
+## 技术文档
 
 - [系统架构与信任边界](docs/ARCHITECTURE.md)
 - [As-Is / To-Be 与 48 小时客户接入案例](docs/CASE-STUDY.md)
@@ -184,22 +116,6 @@ tools/blender/ 可复现的工业工位、产品、缺陷和掩码生成器
 - [产品需求与系统规格](docs/01-product-requirements.md)
 - [Deployment Pack 接入手册](docs/03-deployment-pack-onboarding.md)
 - [现场验收测试](docs/06-site-acceptance-test.md)
-
-## 完整回归
-
-```bash
-cd backend && uv sync --extra dev && uv run pytest -q
-cd ../ml && uv sync --extra model --extra dev && uv run pytest -q
-cd ../edge-gateway && uv sync --extra dev && uv run pytest -q
-cd ../frontend && npm ci && npm test -- --run && npm run typecheck && npm run build
-```
-
-双客户 Compose 冒烟测试：
-
-```bash
-cd backend
-uv run python ../scripts/compose_smoke.py
-```
 
 ## AI-assisted Development
 
