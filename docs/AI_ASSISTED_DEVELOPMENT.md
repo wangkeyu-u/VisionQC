@@ -1,5 +1,7 @@
 # AI-assisted development
 
+The project owner, Wang Keyu, set the original quality-workflow architecture and core framework. The [first commit](https://github.com/wangkeyu-u/VisionQC/commit/275df4edff) contains the application, ML and workflow structure. Later AI-assisted implementation and review remain separate from the unverified customer-integration claims below.
+
 Codex assisted the September 2026 code review, local validation and documentation changes. Historical model reports and earlier attribution are preserved.
 
 ## Evidence from this revision
