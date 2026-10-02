@@ -56,9 +56,13 @@ MVTec AD `transistor` 使用 213 张正常训练图、50 张 validation 和 50 �
 
 最终状态为 `BENCHMARK_NO_GO / DRAFT_ONLY`。这说明高 AUROC 不等于安全可上线；VisionQC 会把不满足业务风险门槛的候选留在 DRAFT。完整说明见 [Benchmark 评测报告](reports/benchmark-evaluation.md)。
 
-### 自动化验证（2026-09-15 复测）
+### 自动化验证
 
-| 模块 | 当前结果 |
+2026-10-02：Backend 在 Python 3.12 和锁定依赖下 **51 passed**，Ruff 与 mypy 通过。新增回归覆盖证据替换、发布决定阻断及撤销客户数据后的回滚；有效证据仍可完成完整生命周期。见[故障复现与修复](docs/failures/002-qualification-evidence-replacement.md)。这些是合成 API 契约测试，未重新训练或验证客户效果。
+
+2026-09-15 的模块复测保留如下：
+
+| 模块 | 历史结果 |
 | --- | ---: |
 | Backend | 37 passed；隔离数据库和 Mock 外部系统 |
 | ML | 36 passed；含小型合成数据 PatchCore 流程 |
