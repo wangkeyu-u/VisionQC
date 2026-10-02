@@ -977,18 +977,11 @@ class VisionQCService:
             raise NotFound("model qualification not found")
         return item
 
-    def evaluate_qualification(
-        self,
-        session: Session,
-        *,
-        principal: Principal,
-        qualification_id: str,
-        reason: str,
-        correlation_id: str,
-    ) -> ModelQualification:
-        item = self._qualification(session, principal.tenant_id, qualification_id)
-        if item.status != "DRAFT":
-            raise Conflict(f"only DRAFT qualifications can be evaluated, got {item.status}")
+    @staticmethod
+    def _verified_qualification_evidence(
+        item: ModelQualification, *, require_approval: bool = False
+    ) -> dict[str, Any]:
+        """Verify both file integrity and the immutable registered evidence identity."""
         try:
             evidence = verify_evidence_package(
                 Path(item.evidence_path), expected_model_package_sha256=item.package_sha256
@@ -1004,13 +997,65 @@ class VisionQCService:
             raise InvalidInput(
                 "qualification evidence source type does not match the registered dataset"
             )
-        evidence_fingerprint = evidence.get("dataset_fingerprint")
-        if item.dataset_fingerprint and evidence_fingerprint != item.dataset_fingerprint:
+        if (
+            item.dataset_fingerprint
+            and evidence.get("dataset_fingerprint") != item.dataset_fingerprint
+        ):
             raise InvalidInput(
                 "qualification evidence dataset fingerprint does not match the registration"
             )
         if source_type != "DEMO_SYNTHETIC" and not item.dataset_registration_id:
             raise InvalidInput("benchmark/customer evidence must bind a dataset registration")
+        # The core digest excludes release-decision.json to avoid a circular hash.
+        # Recheck its mutable release metadata rather than relying on cached GO gates.
+        if require_approval and (
+            evidence.get("gate_decision") != "GO"
+            or evidence.get("approval_status") != "PENDING_APPROVAL"
+            or source_type != "CUSTOMER_PILOT"
+        ):
+            raise InvalidInput("qualification evidence is not eligible for customer approval")
+        return evidence
+
+    @staticmethod
+    def _require_activation_dataset(
+        session: Session, principal: Principal, item: ModelQualification
+    ) -> None:
+        """Rollback must meet the same current dataset authorization as activation."""
+        if item.dataset_source_type != "CUSTOMER_PILOT" or not item.dataset_registration_id:
+            raise Forbidden("only CUSTOMER_PILOT evidence with provenance can be activated")
+        dataset = session.scalar(
+            select(DatasetRegistrationRecord).where(
+                DatasetRegistrationRecord.id == item.dataset_registration_id,
+                DatasetRegistrationRecord.tenant_id == principal.tenant_id,
+            )
+        )
+        if (
+            dataset is None
+            or dataset.source_type != "CUSTOMER_PILOT"
+            or dataset.status != "VALIDATED"
+            or dataset.dataset_fingerprint != item.dataset_fingerprint
+        ):
+            raise Forbidden(
+                "customer dataset registration is missing, revoked, or fingerprint-mismatched"
+            )
+        provenance = dataset.metadata_json.get("customer_provenance", {})
+        if provenance.get("tenant") != principal.tenant_id or provenance.get("consent") is not True:
+            raise Forbidden("customer data provenance consent is not complete")
+
+    def evaluate_qualification(
+        self,
+        session: Session,
+        *,
+        principal: Principal,
+        qualification_id: str,
+        reason: str,
+        correlation_id: str,
+    ) -> ModelQualification:
+        item = self._qualification(session, principal.tenant_id, qualification_id)
+        if item.status != "DRAFT":
+            raise Conflict(f"only DRAFT qualifications can be evaluated, got {item.status}")
+        evidence = self._verified_qualification_evidence(item)
+        source_type = evidence["source_type"]
         gate_decision = str(evidence.get("gate_decision") or "INSUFFICIENT_EVIDENCE")
         approval_status = str(evidence.get("approval_status") or "BLOCKED")
         item.status = (
@@ -1085,9 +1130,7 @@ class VisionQCService:
         provenance = dataset.metadata_json.get("customer_provenance", {})
         if provenance.get("tenant") != principal.tenant_id or provenance.get("consent") is not True:
             raise InvalidInput("customer data provenance gate is incomplete")
-        verify_evidence_package(
-            Path(item.evidence_path), expected_model_package_sha256=item.package_sha256
-        )
+        self._verified_qualification_evidence(item, require_approval=True)
         item.status = "APPROVED"
         item.approved_by = principal.actor_id
         item.decision_reason = reason
@@ -1134,27 +1177,8 @@ class VisionQCService:
                 "active Deployment Pack model identity or package digest does not match "
                 "qualification evidence"
             )
-        if item.dataset_source_type != "CUSTOMER_PILOT" or not item.dataset_registration_id:
-            raise Forbidden("only CUSTOMER_PILOT evidence with provenance can be activated")
-        dataset = session.scalar(
-            select(DatasetRegistrationRecord).where(
-                DatasetRegistrationRecord.id == item.dataset_registration_id,
-                DatasetRegistrationRecord.tenant_id == principal.tenant_id,
-            )
-        )
-        if (
-            dataset is None
-            or dataset.status != "VALIDATED"
-            or dataset.dataset_fingerprint != item.dataset_fingerprint
-        ):
-            raise Forbidden(
-                "customer dataset registration is missing, revoked, or fingerprint-mismatched"
-            )
-        if dataset.metadata_json.get("customer_provenance", {}).get("consent") is not True:
-            raise Forbidden("customer data provenance consent is not complete")
-        verify_evidence_package(
-            Path(item.evidence_path), expected_model_package_sha256=item.package_sha256
-        )
+        self._require_activation_dataset(session, principal, item)
+        self._verified_qualification_evidence(item, require_approval=True)
         current = session.scalar(
             select(ModelQualification).where(
                 ModelQualification.tenant_id == principal.tenant_id,
@@ -1233,9 +1257,8 @@ class VisionQCService:
             or manifest.model.package_sha256 != item.package_sha256
         ):
             raise Forbidden("rollback package is not bound to the active Deployment Pack")
-        verify_evidence_package(
-            Path(item.evidence_path), expected_model_package_sha256=item.package_sha256
-        )
+        self._require_activation_dataset(session, principal, item)
+        self._verified_qualification_evidence(item, require_approval=True)
         current = session.scalar(
             select(ModelQualification).where(
                 ModelQualification.tenant_id == principal.tenant_id,
