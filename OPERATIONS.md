@@ -32,7 +32,7 @@ docker compose up --build
 4. 在质量事件中查看 MES/QMS 幂等动作并完成验证关闭。
 5. 在 ModelOps 查看数据来源、Benchmark NO-GO 和模型 DRAFT 状态。
 
-完整口播和镜头表见 [三分钟演示脚本](docs/DEMO-SCRIPT.md)。停止环境：
+默认 MES/QMS 为 Mock；上述路径验证工作流，模型效果以对应评测报告为准。停止环境：
 
 ```bash
 cd infra
@@ -82,4 +82,3 @@ cd ../frontend && npm ci && npm test -- --run && npm run typecheck && npm run bu
 cd backend
 uv run python ../scripts/compose_smoke.py
 ```
-
