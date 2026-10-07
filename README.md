@@ -114,12 +114,10 @@ tools/blender/ 可复现的工业工位、产品、缺陷和掩码生成器
 ## 技术文档
 
 - [系统架构与信任边界](docs/ARCHITECTURE.md)
-- [As-Is / To-Be 与 48 小时客户接入案例](docs/CASE-STUDY.md)
 - [Benchmark 评测报告](reports/benchmark-evaluation.md)
-- [三分钟演示脚本](docs/DEMO-SCRIPT.md)
-- [产品需求与系统规格](docs/01-product-requirements.md)
 - [Deployment Pack 接入手册](docs/03-deployment-pack-onboarding.md)
 - [现场验收测试](docs/06-site-acceptance-test.md)
+- [文档索引](docs/README.md)
 
 ## AI-assisted Development
 
