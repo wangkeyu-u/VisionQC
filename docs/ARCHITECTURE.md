@@ -71,6 +71,10 @@ sequenceDiagram
 
 ## 4. 数据与模型发布门禁
 
+后端 `app/qualification.py` 负责读取证据包并校验文件与包摘要；`app/qualification_policy.py` 集中判断登记摘要、数据来源、fingerprint、发布决定和当前客户数据授权。纯规则模块只接收普通值，不依赖 SQLAlchemy、服务或文件读取。`app/services.py` 保留租户过滤查询、每次生命周期操作的文件重验、角色分离、状态更新和审计事务。
+
+批准与激活/回滚共用数据登记状态、fingerprint 和 consent 判断，但保留原有调用差异：批准的数据来源限制来自资格记录，激活/回滚另外核对当前数据登记的 `CUSTOMER_PILOT` 来源。客户 consent 仍须为布尔 `True`。规则失败继续映射为各入口原有的 422/403 错误和消息；没有缓存先前的 GO 结果。
+
 ```mermaid
 flowchart LR
     S{"数据来源"}
@@ -112,4 +116,3 @@ Deployment Pack 将客户差异从核心工作流中分离：
 ## 7. 当前部署与生产化差距
 
 当前 Docker Compose 用于可重复演示和集成验证。生产化仍需企业 OIDC、密钥托管、PostgreSQL RLS、对象存储生命周期策略、真实相机 SDK、消息总线、Kubernetes、真实 MES/QMS 沙箱和客户现场监控。
-

@@ -64,6 +64,8 @@ MVTec 的阶段名称固定为 **Benchmark Qualification / Pre-Pilot Lab Validat
 
 模型生命周期只有 `DRAFT → EVALUATED → APPROVED → ACTIVE → RETIRED`。完整性通过但 benchmark 业务 gate 失败的候选必须保持 `DRAFT`；任何 `OFFICIAL_BENCHMARK` 包都禁止 `APPROVED/ACTIVE`。只有具备完整客户 provenance、客户数据 gate、全部业务 gate 和具名审批，`CUSTOMER_PILOT` 才可能进入批准/激活流程。评测由 ML Engineer 执行；审批由具名 Quality Manager 执行；激活由 Admin/FDE 执行，且不能是前两者。
 
+2026-10-07：后端将登记证据绑定和重复的数据授权判断抽到 `app/qualification_policy.py`，服务层继续在评估、批准、激活及回滚时重新验证证据文件，保留租户查询、职责分离、状态与审计。此次只调整职责位置和共用规则，未修改发布条件或 HTTP 错误契约。既有资格/数据来源回归 **22 passed**，后端完整回归 **51 passed**，Ruff 与 mypy 通过；没有新增或执行模型训练与客户现场验证。
+
 ## 5. 现场与运行边界
 
 Pilot 现场必须完成相机姿态/焦距、曝光、白平衡、灯光色温/亮度、背景和工装标定；建立正常基线和缺陷抽检频率；记录环境/镜头/工位变更。漂移监控至少观察输入质量、分数分布、复核率、误放/误杀和延迟；触发阈值时进入人工复核、冻结变更并重新评测。回滚使用之前已批准且完整性校验通过的包，保留历史结果和审计。
