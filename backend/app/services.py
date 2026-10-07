@@ -53,6 +53,10 @@ from app.models import (
 )
 from app.policy import PolicyConfig, evaluate_policy
 from app.qualification import verify_evidence_package
+from app.qualification_policy import (
+    dataset_authorization_failure,
+    validate_registered_evidence,
+)
 from app.schemas import (
     CloseIncidentRequest,
     DatasetRegistrationRequest,
@@ -990,30 +994,17 @@ class VisionQCService:
             raise InvalidInput(
                 "qualification evidence verification failed", details={"reason": str(exc)}
             ) from exc
-        if evidence["evidence_package_sha256"] != item.evidence_sha256:
-            raise InvalidInput("qualification evidence digest does not match registered digest")
-        source_type = str(evidence.get("source_type") or item.dataset_source_type or "")
-        if item.dataset_source_type and source_type != item.dataset_source_type:
-            raise InvalidInput(
-                "qualification evidence source type does not match the registered dataset"
+        try:
+            validate_registered_evidence(
+                evidence,
+                evidence_sha256=item.evidence_sha256,
+                dataset_source_type=item.dataset_source_type,
+                dataset_fingerprint=item.dataset_fingerprint,
+                dataset_registration_id=item.dataset_registration_id,
+                require_approval=require_approval,
             )
-        if (
-            item.dataset_fingerprint
-            and evidence.get("dataset_fingerprint") != item.dataset_fingerprint
-        ):
-            raise InvalidInput(
-                "qualification evidence dataset fingerprint does not match the registration"
-            )
-        if source_type != "DEMO_SYNTHETIC" and not item.dataset_registration_id:
-            raise InvalidInput("benchmark/customer evidence must bind a dataset registration")
-        # The core digest excludes release-decision.json to avoid a circular hash.
-        # Recheck its mutable release metadata rather than relying on cached GO gates.
-        if require_approval and (
-            evidence.get("gate_decision") != "GO"
-            or evidence.get("approval_status") != "PENDING_APPROVAL"
-            or source_type != "CUSTOMER_PILOT"
-        ):
-            raise InvalidInput("qualification evidence is not eligible for customer approval")
+        except ValueError as exc:
+            raise InvalidInput(str(exc)) from exc
         return evidence
 
     @staticmethod
@@ -1029,17 +1020,20 @@ class VisionQCService:
                 DatasetRegistrationRecord.tenant_id == principal.tenant_id,
             )
         )
-        if (
-            dataset is None
-            or dataset.source_type != "CUSTOMER_PILOT"
-            or dataset.status != "VALIDATED"
-            or dataset.dataset_fingerprint != item.dataset_fingerprint
-        ):
+        failure = dataset_authorization_failure(
+            dataset_status=dataset.status if dataset else None,
+            dataset_source_type=dataset.source_type if dataset else None,
+            dataset_fingerprint=dataset.dataset_fingerprint if dataset else None,
+            expected_fingerprint=item.dataset_fingerprint,
+            metadata=dataset.metadata_json if dataset else {},
+            tenant_id=principal.tenant_id,
+            require_customer_source=True,
+        )
+        if failure == "registration":
             raise Forbidden(
                 "customer dataset registration is missing, revoked, or fingerprint-mismatched"
             )
-        provenance = dataset.metadata_json.get("customer_provenance", {})
-        if provenance.get("tenant") != principal.tenant_id or provenance.get("consent") is not True:
+        if failure == "consent":
             raise Forbidden("customer data provenance consent is not complete")
 
     def evaluate_qualification(
@@ -1119,16 +1113,20 @@ class VisionQCService:
                 DatasetRegistrationRecord.tenant_id == principal.tenant_id,
             )
         )
-        if (
-            dataset is None
-            or dataset.status != "VALIDATED"
-            or dataset.dataset_fingerprint != item.dataset_fingerprint
-        ):
+        failure = dataset_authorization_failure(
+            dataset_status=dataset.status if dataset else None,
+            dataset_source_type=dataset.source_type if dataset else None,
+            dataset_fingerprint=dataset.dataset_fingerprint if dataset else None,
+            expected_fingerprint=item.dataset_fingerprint,
+            metadata=dataset.metadata_json if dataset else {},
+            tenant_id=principal.tenant_id,
+            require_customer_source=False,
+        )
+        if failure == "registration":
             raise InvalidInput(
                 "customer dataset registration is missing, revoked, or fingerprint-mismatched"
             )
-        provenance = dataset.metadata_json.get("customer_provenance", {})
-        if provenance.get("tenant") != principal.tenant_id or provenance.get("consent") is not True:
+        if failure == "consent":
             raise InvalidInput("customer data provenance gate is incomplete")
         self._verified_qualification_evidence(item, require_approval=True)
         item.status = "APPROVED"
